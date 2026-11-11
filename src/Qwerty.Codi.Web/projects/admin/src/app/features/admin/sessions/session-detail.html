@@ -1,0 +1,266 @@
+@if (!online()) {
+  <p role="status">
+    Collegamento docente interrotto. I dati possono essere superati e i comandi sono sospesi.
+  </p>
+}
+@for (command of commands(); track command.commandId) {
+  <p role="status">
+    {{ command.commandName }}: {{ command.summary.applied }} applicate,
+    {{ command.summary.pending }} in attesa, {{ command.summary.failed }} fallite.
+  </p>
+  @for (delivery of command.deliveries; track delivery.participantId) {
+    @if (delivery.requiresRecovery) {
+      <p role="alert">Un alunno richiede il recupero del lavoro.</p>
+    }
+  }
+}
+<!-- Il dialogo serve solo a confermare la chiusura: avvolge la pagina perché il pulsante «Stop» che
+     lo apre sta nella barra dei comandi. -->
+<hlm-dialog>
+  <section class="admin-page">
+    <app-detail-header
+      [crumbs]="crumbs()"
+      icon="lucideMonitorPlay"
+      [title]="title()"
+      [subtitle]="subtitle()"
+    />
+
+    @if (missingId()) {
+      <p class="error" role="alert">
+        L’indirizzo non indica una sessione: manca l’identificativo.
+        <a routerLink="/sessions">Torna all’elenco delle sessioni</a>
+      </p>
+    } @else if (error(); as failure) {
+      <p class="error" role="alert">
+        {{ failure.message }}
+        @if (failure.requiresSignIn) {
+          <a routerLink="/login">Accedi di nuovo</a>
+        } @else {
+          <a routerLink="/sessions">Torna all’elenco delle sessioni</a>
+        }
+      </p>
+    }
+
+    @if (loading()) {
+      <p role="status">Caricamento della sessione in corso…</p>
+    } @else if (session(); as current) {
+      <!-- Stato in evidenza: dice a colpo d'occhio dove si trova la classe. La revisione non compare:
+           è il token che il server usa per ordinare i comandi, e la pagina lo invia senza mostrarlo. -->
+      <section class="status" aria-label="Stato della sessione" aria-live="polite">
+        <p class="status-line">
+          <span class="status-caption">Stato</span>
+          <strong class="status-value">{{ statusLabel(current.status) }}</strong>
+        </p>
+        <dl class="facts">
+          <div class="fact">
+            <dt>Ingressi</dt>
+            <dd>{{ admissions(current.admissionsOpen) }}</dd>
+          </div>
+          <div class="fact">
+            <dt>Avvio</dt>
+            <dd>{{ instant(current.startedAtUtc) }}</dd>
+          </div>
+          <div class="fact">
+            <dt>Fine</dt>
+            <dd>{{ instant(current.endedAtUtc) }}</dd>
+          </div>
+        </dl>
+
+        <!-- Codice di ingresso (§9.4): è il modo con cui gli alunni entrano senza scegliere scuola e
+             classe. Compare all'avvio e resta lo stesso anche in pausa, così si detta una volta sola. -->
+        @if (joinCode(); as code) {
+          <div class="join-code">
+            <p class="join-code-caption">Codice da dettare agli alunni</p>
+            <p class="join-code-value">{{ code }}</p>
+            <button hlmBtn type="button" variant="outline" (click)="copyJoinCode()">
+              {{ copied() ? 'Codice copiato' : 'Copia il codice' }}
+            </button>
+            <p class="join-code-hint">
+              Sull’altro PC gli alunni aprono l’app, inseriscono il codice e il loro nome.
+            </p>
+          </div>
+        }
+      </section>
+
+      <section class="commands" aria-label="Comandi di classe">
+        <button
+          hlmBtn
+          type="button"
+          variant="outline"
+          [disabled]="busy() || !canStart()"
+          (click)="start()"
+        >
+          <ng-icon name="lucidePlay" aria-hidden="true" />
+          Avvia
+        </button>
+        <button
+          hlmBtn
+          type="button"
+          variant="outline"
+          [disabled]="busy() || !canPause()"
+          (click)="pause()"
+        >
+          <ng-icon name="lucidePause" aria-hidden="true" />
+          Pausa
+        </button>
+        <button
+          hlmBtn
+          type="button"
+          variant="outline"
+          [disabled]="busy() || !canResume()"
+          (click)="resume()"
+        >
+          <ng-icon name="lucideRotateCcw" aria-hidden="true" />
+          Riprendi
+        </button>
+        <!-- Stop chiede conferma in un dialogo, perché la chiusura è definitiva. Il pulsante è
+             disabilitato da solo, quindi l'azione non è offerta quando non è ammessa. -->
+        <button
+          hlmBtn
+          type="button"
+          variant="destructive"
+          hlmDialogTrigger
+          [disabled]="busy() || !canEnd()"
+        >
+          <ng-icon name="lucideCircleStop" aria-hidden="true" />
+          Stop
+        </button>
+      </section>
+
+      <p class="busy" role="status">{{ busy() ? 'Comando in corso…' : '' }}</p>
+
+      <!-- Contenuto della sessione (§6.4): assegnazione, abilitazione ed esecuzione. I comandi di
+           classe valgono per tutti gli alunni ammessi, le azioni individuali stanno nella griglia.
+           Il pulsante è disabilitato quando la classe non è in corso, così l'azione offerta non è
+           una che il server rifiuterebbe. -->
+      <section class="content" aria-label="Contenuto della sessione">
+        <h2>Attività</h2>
+        <div class="commands">
+          <hlm-dialog>
+            <button
+              hlmBtn
+              type="button"
+              variant="outline"
+              hlmDialogTrigger
+              [disabled]="busy() || !canCommandActivity()"
+              (click)="prepareAssignment()"
+            >
+              <ng-icon name="lucideClipboardList" aria-hidden="true" />
+              Assegna esercizio
+            </button>
+            <hlm-dialog-content *hlmDialogPortal="let ctx">
+              <hlm-dialog-header>
+                <h2 hlmDialogTitle>Assegnare un esercizio alla classe</h2>
+                <p hlmDialogDescription>
+                  La casella sceglie l’esercizio: il server assegna la sua ultima versione
+                  pubblicata. Il lavoro comincia bloccato e si abilita dopo.
+                </p>
+              </hlm-dialog-header>
+              @if (boxes().length === 0) {
+                <p>
+                  La lezione non ha esercizi nella sequenza: aggiungili dalla pagina della lezione.
+                </p>
+              } @else {
+                <ul class="boxes">
+                  @for (box of boxes(); track box.id) {
+                    <li>
+                      <span>{{ box.position }}. {{ box.title }}</span>
+                      <button
+                        hlmBtn
+                        type="button"
+                        variant="outline"
+                        [disabled]="busy()"
+                        (click)="assign(box.id)"
+                      >
+                        Assegna
+                      </button>
+                    </li>
+                  }
+                </ul>
+              }
+              <hlm-dialog-footer>
+                <button hlmBtn type="button" variant="outline" hlmDialogClose>Chiudi</button>
+              </hlm-dialog-footer>
+            </hlm-dialog-content>
+          </hlm-dialog>
+          <button
+            hlmBtn
+            type="button"
+            variant="outline"
+            [disabled]="busy() || !canCommandActivity()"
+            (click)="enableClass()"
+          >
+            <ng-icon name="lucideCircleCheck" aria-hidden="true" />
+            Abilita la classe
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            variant="outline"
+            [disabled]="busy() || !canCommandActivity()"
+            (click)="runClass()"
+          >
+            <ng-icon name="lucideRocket" aria-hidden="true" />
+            Avvia la classe
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            variant="outline"
+            [disabled]="busy() || !canCommandActivity()"
+            (click)="restartClass()"
+          >
+            <ng-icon name="lucideRotateCcw" aria-hidden="true" />
+            Riavvia la classe
+          </button>
+        </div>
+        <!-- «Accettato» non è «applicato»: l'esito dice quante consegne sono state messe in coda. -->
+        <p class="busy" role="status">{{ notice() }}</p>
+      </section>
+
+      <!-- Gli alunni non sono una griglia di righe: hanno una pagina propria con le card, dove il
+           docente vede la classe in un colpo d'occhio e agisce sul singolo (§14.1, §14.3). La regia
+           comanda la classe e qui conserva solo il numero degli alunni letti — è quello che decide
+           se i comandi di classe hanno un destinatario — e il collegamento alla pagina. -->
+      <section class="participants" aria-label="Partecipanti">
+        <h2>Partecipanti</h2>
+        <p class="count" role="status">
+          @if (participants().length === 0) {
+            Nessun alunno è ancora entrato: quando entreranno si vedranno nella loro pagina, con la
+            presenza, lo stato e il lavoro di ogni banco.
+          } @else {
+            {{ participants().length }} {{ participants().length === 1 ? 'alunno' : 'alunni' }}
+            {{ participants().length === 1 ? 'entrato' : 'entrati' }}.
+          }
+        </p>
+        <a
+          hlmBtn
+          type="button"
+          variant="outline"
+          size="sm"
+          [routerLink]="['/sessions', sessionId(), 'participants']"
+          [attr.aria-label]="'Apri i partecipanti della sessione: ' + title()"
+        >
+          <ng-icon name="lucideUsers" aria-hidden="true" />
+          Apri i partecipanti
+        </a>
+      </section>
+    }
+  </section>
+
+  <hlm-dialog-content *hlmDialogPortal="let ctx">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>Concludere la sessione?</h2>
+      <p hlmDialogDescription>
+        La chiusura è definitiva: la sessione non si riavvia. Se vuoi solo fermare la classe per un
+        momento, usa Pausa.
+      </p>
+    </hlm-dialog-header>
+    <hlm-dialog-footer>
+      <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+      <button hlmBtn type="button" variant="destructive" [disabled]="busy()" (click)="confirmEnd()">
+        Concludi
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

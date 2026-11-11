@@ -1,0 +1,30 @@
+// Modello STRUTTURALE, non compilabile: sostituire ogni segnaposto.
+// Scegliere un solo livello per file: Domain.Tests per logica pura,
+// IntegrationTests per SQLite/pipeline, ProtocolTests per contratti e trasporto.
+// Non usare questo template per creare test vuoti che risultano superati.
+
+namespace {{TEST_PROJECT_NAMESPACE}};
+
+public sealed class {{CASE_NAME}}Tests
+{
+    [Fact]
+    [Trait("Category", "{{Unit_OR_Integration}}")]
+    public async Task {{Member_Scenario_ExpectedBehavior}}()
+    {
+        // Arrange: input significativo, dipendenze controllate e stato iniziale.
+        {{ARRANGE_REAL_SCENARIO}}
+
+        // Act: esercitare il confine che garantisce il comportamento.
+        {{INVOKE_SYSTEM_UNDER_TEST}}
+
+        // Assert: risultato/stato osservabile; fallisce se il comportamento viene rimosso.
+        {{ASSERT_OBSERVABLE_RESULT}}
+    }
+}
+
+// Casi da adattare, non aggiungere metodi vuoti:
+// - Pause ripetuto conserva il precedente contesto di ripresa.
+// - Revisione superata rifiuta l'operazione senza scritture.
+// - Errore/cancellazione nella transazione non lascia scritture parziali.
+// - Policy negata non esegue l'handler (pipeline/trasporto, non solo Handle).
+// - Retry identico restituisce lo stesso comando senza ripeterne gli effetti.

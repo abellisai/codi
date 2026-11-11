@@ -1,0 +1,3 @@
+{
+  "extends": "./projects/admin/tsconfig.spec.json"
+}

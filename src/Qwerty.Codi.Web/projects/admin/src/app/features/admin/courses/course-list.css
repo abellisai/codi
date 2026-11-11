@@ -1,0 +1,100 @@
+.courses-page {
+  max-width: 56rem;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+.page-header,
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.tabs-list {
+  margin: 1rem 0 1.5rem;
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.note {
+  color: var(--muted-foreground);
+}
+
+.filter {
+  max-width: 24rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+}
+
+.ask {
+  font-weight: 600;
+}
+
+.error {
+  padding: 0.75rem;
+  border-left: 4px solid var(--destructive);
+  background: var(--muted);
+}
+
+.sequence {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sequence-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.sequence-item .position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.sequence-item .sequence-name {
+  flex: 1 1 12rem;
+}
+
+.add-exercise {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.add-exercise [hlmField] {
+  flex: 1 1 16rem;
+}

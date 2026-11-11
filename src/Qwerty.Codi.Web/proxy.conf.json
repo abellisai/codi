@@ -1,0 +1,19 @@
+{
+  "//": "Proxy condiviso dalle due app verso HTTPS 5200. Vite richiede /** per le rotte annidate. API in /api/v1/admin e /api/v1/public; /health è operativo, /hubs è previsto in T3. Riavviare ng serve dopo modifiche al proxy.",
+  "/api/**": {
+    "target": "https://localhost:5200",
+    "secure": false,
+    "changeOrigin": false
+  },
+  "/health/**": {
+    "target": "https://localhost:5200",
+    "secure": false,
+    "changeOrigin": false
+  },
+  "/hubs/**": {
+    "target": "https://localhost:5200",
+    "secure": false,
+    "changeOrigin": false,
+    "ws": true
+  }
+}

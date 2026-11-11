@@ -1,0 +1,166 @@
+<!-- Il dialogo avvolge la pagina perché i pulsanti che lo aprono stanno anche dentro le righe
+     della tabella: il clic dichiara il modo, il dialogo mostra il modulo corrispondente. -->
+<hlm-dialog>
+  <section class="admin-page">
+    <header class="page-header">
+      <h1>Scuole</h1>
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        hlmDialogTrigger
+        (click)="startCreate()"
+      >
+        <ng-icon name="lucidePlus" />
+        Nuova scuola
+      </button>
+    </header>
+
+    <p class="note">
+      Le scuole archiviate conservano lo storico e non compaiono in questo elenco. Il nome della
+      scuola apre le sue classi: si gestiscono lì, perché il nome di una classe è unico solo insieme
+      alla scuola e all’anno scolastico.
+    </p>
+
+    @if (error(); as failure) {
+      <p class="error" role="alert">
+        {{ failure.message }}
+        @if (failure.requiresSignIn) {
+          <a routerLink="/login">Accedi di nuovo</a>
+        }
+      </p>
+    }
+
+    @if (loading()) {
+      <p role="status">Caricamento dell’elenco in corso…</p>
+    } @else {
+      <app-data-table
+        [columns]="columns"
+        [rows]="schools()"
+        label="Scuole configurate"
+        emptyMessage="Non ci sono scuole configurate: crea la prima con «Nuova scuola»."
+        [rowIdentity]="identity"
+      >
+        <ng-template appDataTableCell="actions" let-school>
+          @if (pendingArchiveId() === school.id) {
+            <div class="actions">
+              <span class="ask">Archiviare «{{ school.name }}»?</span>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Conferma archiviazione: ' + school.name"
+                [hlmTooltip]="'Conferma archiviazione'"
+                [disabled]="busy()"
+                (click)="confirmArchive(school)"
+              >
+                <ng-icon name="lucideCheck" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Annulla archiviazione: ' + school.name"
+                [hlmTooltip]="'Annulla'"
+                (click)="cancelArchive()"
+              >
+                <ng-icon name="lucideX" />
+              </button>
+            </div>
+          } @else {
+            <div class="actions">
+              <!-- Il livello successivo si raggiunge da un pulsante che lo nomina: il nome del
+                   collegamento sul nome della cella non si vedeva. -->
+              <a
+                hlmBtn
+                size="xs"
+                variant="outline"
+                [routerLink]="['/schools', school.id]"
+                [attr.aria-label]="'Classi di ' + school.name"
+              >
+                <ng-icon name="lucideUsers" />
+                Classi
+              </a>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Rinomina: ' + school.name"
+                [hlmTooltip]="'Rinomina'"
+                [disabled]="busy()"
+                hlmDialogTrigger
+                (click)="startEdit(school)"
+              >
+                <ng-icon name="lucidePencil" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Archivia: ' + school.name"
+                [hlmTooltip]="'Archivia'"
+                [disabled]="busy()"
+                (click)="askArchive(school)"
+              >
+                <ng-icon name="lucideArchive" />
+              </button>
+            </div>
+          }
+        </ng-template>
+      </app-data-table>
+    }
+  </section>
+
+  <hlm-dialog-content *hlmDialogPortal="let ctx">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>{{ dialogTitle() }}</h2>
+      <p hlmDialogDescription>{{ dialogDescription() }}</p>
+    </hlm-dialog-header>
+
+    @if (mode() === 'create') {
+      <form [formRoot]="createForm" id="create-school-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="new-school-name">Nome della scuola</label>
+          <input hlmInput id="new-school-name" type="text" [formField]="createForm.name" />
+          @if (createForm.name().touched() && createForm.name().invalid()) {
+            @for (error of createForm.name().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>Per esempio «Scuola primaria Manzoni».</p>
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="create-school-form" [disabled]="busy()">
+          Crea scuola
+        </button>
+      </hlm-dialog-footer>
+    } @else {
+      <form [formRoot]="editForm" id="edit-school-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="edit-school-name">Nuovo nome della scuola</label>
+          <input hlmInput id="edit-school-name" type="text" [formField]="editForm.name" />
+          @if (editForm.name().touched() && editForm.name().invalid()) {
+            @for (error of editForm.name().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="edit-school-form" [disabled]="busy()">
+          Salva scuola
+        </button>
+      </hlm-dialog-footer>
+    }
+  </hlm-dialog-content>
+</hlm-dialog>

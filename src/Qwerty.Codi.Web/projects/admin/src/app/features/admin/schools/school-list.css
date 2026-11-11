@@ -1,0 +1,54 @@
+.schools-page {
+  max-width: 56rem;
+  margin: 2rem auto;
+  padding: 1rem;
+}
+
+h1 {
+  font-size: 1.5rem;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+.page-header,
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.note {
+  color: var(--muted-foreground);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+}
+
+.ask {
+  font-weight: 600;
+}
+
+.error {
+  padding: 0.75rem;
+  border-left: 4px solid var(--destructive);
+  background: var(--muted);
+}
+
+.classrooms {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 3px solid var(--primary);
+}
+
+.classrooms .section-header {
+  margin-bottom: 1rem;
+}

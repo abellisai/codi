@@ -1,0 +1,65 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "paths": {
+      "@core/*": ["./projects/admin/src/app/core/*"],
+      "@shared/*": ["./projects/admin/src/app/shared/*"],
+      "@codi/api": ["./libraries/api/index.ts"],
+      "@exercise-engine/*": ["./libraries/exercise-engine/*"],
+      "@spartan-ng/helm/button": ["./projects/admin/src/app/ui/button/src/index.ts"],
+      "@spartan-ng/helm/breadcrumb": ["./projects/admin/src/app/ui/breadcrumb/src/index.ts"],
+      "@spartan-ng/helm/utils": ["./projects/admin/src/app/ui/utils/src/index.ts"],
+      "@spartan-ng/helm/input": ["./projects/admin/src/app/ui/input/src/index.ts"],
+      "@spartan-ng/helm/label": ["./projects/admin/src/app/ui/label/src/index.ts"],
+      "@spartan-ng/helm/card": ["./projects/admin/src/app/ui/card/src/index.ts"],
+      "@spartan-ng/helm/sidebar": ["./projects/admin/src/app/ui/sidebar/src/index.ts"],
+      "@spartan-ng/helm/separator": ["./projects/admin/src/app/ui/separator/src/index.ts"],
+      "@spartan-ng/helm/sheet": ["./projects/admin/src/app/ui/sheet/src/index.ts"],
+      "@spartan-ng/helm/skeleton": ["./projects/admin/src/app/ui/skeleton/src/index.ts"],
+      "@spartan-ng/helm/tooltip": ["./projects/admin/src/app/ui/tooltip/src/index.ts"],
+      "@spartan-ng/helm/field": ["./projects/admin/src/app/ui/field/src/index.ts"],
+      "@spartan-ng/helm/native-select": ["./projects/admin/src/app/ui/native-select/src/index.ts"],
+      "@spartan-ng/helm/textarea": ["./projects/admin/src/app/ui/textarea/src/index.ts"],
+      "@spartan-ng/helm/empty": ["./projects/admin/src/app/ui/empty/src/index.ts"],
+      "@spartan-ng/helm/table": ["./projects/admin/src/app/ui/table/src/index.ts"],
+      "@spartan-ng/helm/pagination": ["./projects/admin/src/app/ui/pagination/src/index.ts"],
+      "@spartan-ng/helm/select": ["./projects/admin/src/app/ui/select/src/index.ts"],
+      "@spartan-ng/helm/tabs": ["./projects/admin/src/app/ui/tabs/src/index.ts"],
+      "@spartan-ng/helm/spinner": ["./projects/admin/src/app/ui/spinner/src/index.ts"],
+      "@spartan-ng/helm/dialog": ["./projects/admin/src/app/ui/dialog/src/index.ts"],
+      "@spartan-ng/helm/alert-dialog": ["./projects/admin/src/app/ui/alert-dialog/src/index.ts"],
+      "@spartan-ng/helm/sonner": ["./projects/admin/src/app/ui/sonner/src/index.ts"],
+      "@spartan-ng/helm/badge": ["./projects/admin/src/app/ui/badge/src/index.ts"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./projects/admin/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/admin/tsconfig.spec.json"
+    },
+    {
+      "path": "./projects/public/tsconfig.app.json"
+    },
+    {
+      "path": "./projects/public/tsconfig.spec.json"
+    }
+  ]
+}

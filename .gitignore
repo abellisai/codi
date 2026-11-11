@@ -1,0 +1,72 @@
+# Esclusioni della soluzione Codi.
+#
+# Un solo file alla radice: le regole di Git valgono anche per le sottocartelle, quindi non serve
+# un .gitignore per progetto. Fa eccezione il frontend, che è un mondo npm separato ed è fuori
+# dalla soluzione .NET (§4.2): ha il proprio, accanto a package.json.
+
+# --- Compilazione .NET ---
+bin/
+obj/
+*.binlog
+
+# --- Ripristino dei pacchetti ---
+# La cartella dei pacchetti vive dentro il progetto per scelta (§3.2), ma è un deposito
+# riproducibile: i packages.lock.json bastano a ricostruirla con `dotnet restore`, e versionarla
+# significherebbe portarsi dietro centinaia di megabyte di terze parti.
+packages/
+
+# --- Risultati dei test e copertura ---
+# Sono misure, non sorgenti: si rigenerano con i gate di §20.5. La baseline invece è un contratto e
+# resta versionata (`scripts/coverage-baseline.json`).
+TestResults/
+*.trx
+coverage/
+
+# --- Database e dati operativi ---
+# Nessun dato operativo entra nel repository. Il database nasce al primo avvio nella cartella dati
+# configurata, che per l'installazione locale è `src/Qwerty.Codi.Api/data`: i file del journal
+# WAL lo accompagnano e senza di essi il database sarebbe incoerente.
+src/Qwerty.Codi.Api/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.bak
+backup/
+
+# --- Segreti e certificati ---
+# Il primo accesso amministrativo legge la password dalla variabile CODI_BOOTSTRAP_PASSWORD (§9.1),
+# oppure da Codi:SeedAdmin di appsettings.Development.json, che contiene una credenziale di
+# sviluppo dichiarata in §9.1 e da rimuovere prima della consegna in laboratorio. Le configurazioni
+# locali restano fuori dal versionamento; in laboratorio i certificati si generano sulla macchina.
+appsettings.*.local.json
+*.pfx
+*.p12
+*.snk
+*.pem
+*.key
+.env
+
+# --- Frontend ---
+# `src/Qwerty.Codi.Web/.gitignore` copre già node_modules, dist e la cache di Angular; queste
+# voci proteggono dal caso di un'installazione fatta dalla radice.
+node_modules/
+.npm-cache/
+dist/
+
+# --- Editor e sistema operativo ---
+.vs/
+.idea/
+*.swp
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# La configurazione condivisa dell'editor resta versionata: serve a chi apre il progetto.
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json

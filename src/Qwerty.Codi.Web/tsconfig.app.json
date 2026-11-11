@@ -1,0 +1,4 @@
+{
+  "extends": "./projects/admin/tsconfig.app.json",
+  "include": ["src/**/*.ts", "projects/admin/src/app/ui/**/src/**/*.ts"]
+}

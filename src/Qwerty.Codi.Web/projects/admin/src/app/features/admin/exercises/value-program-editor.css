@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.value-program-editor,
+.editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+.editor-section {
+  min-width: 0;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.preview {
+  border-collapse: collapse;
+  margin-block-start: 0.75rem;
+}
+
+.preview th,
+.preview td {
+  border: 1px solid currentColor;
+  padding: 0.25rem 0.75rem;
+  text-align: left;
+}
+
+.preview .ok,
+.preview .no {
+  font-weight: 700;
+}

@@ -1,0 +1,43 @@
+.prototype {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.note {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controls button {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0.4rem 0.8rem;
+}
+
+.controls button:focus-visible {
+  outline: 2px solid #1a4f9c;
+  outline-offset: 2px;
+}
+
+.count {
+  margin-left: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.message {
+  margin: 0;
+  min-height: 1.5em;
+}
+
+.workspace {
+  height: 420px;
+  border: 1px solid #c9ced6;
+}

@@ -1,0 +1,233 @@
+<!-- Il dialogo avvolge la pagina perché il pulsante che lo apre sta nell'intestazione: il clic
+     prepara la cascata, il dialogo mostra i quattro livelli scuola → classe → corso → lezione. -->
+<hlm-dialog>
+  <section class="admin-page">
+    <header class="page-header">
+      <h1>Sessioni</h1>
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        hlmDialogTrigger
+        (click)="startCreate()"
+      >
+        <ng-icon name="lucidePlus" />
+        Nuova sessione
+      </button>
+    </header>
+
+    <p class="note">
+      Una sessione istanzia una lezione in una classe: nasce in attesa, poi si avvia e si comanda
+      dalla sua pagina di regia. L’elenco mostra lo stato di ogni sessione e porta alla regia dove
+      avviarla, metterla in pausa, riprenderla o concluderla. Una sessione conclusa o mai avviata si
+      può anche eliminare: la cancellazione toglie la sessione e i suoi dati, mentre scuola, classe,
+      lezione ed esercizi restano.
+    </p>
+
+    @if (error(); as failure) {
+      <p class="error" role="alert">
+        {{ failure.message }}
+        @if (failure.requiresSignIn) {
+          <a routerLink="/login">Accedi di nuovo</a>
+        }
+      </p>
+    }
+
+    @if (loading()) {
+      <p role="status">Caricamento dell’elenco in corso…</p>
+    } @else {
+      <app-data-table
+        [columns]="columns"
+        [rows]="sessions()"
+        label="Sessioni configurate"
+        emptyMessage="Non ci sono sessioni: istanzia una lezione in una classe con «Nuova sessione»."
+        [rowIdentity]="identity"
+      >
+        <ng-template appDataTableCell="status" let-session>
+          {{ statusLabel(session.status) }}
+        </ng-template>
+        <ng-template appDataTableCell="admissionsOpen" let-session>
+          {{ admissions(session.admissionsOpen) }}
+        </ng-template>
+        <ng-template appDataTableCell="startedAtUtc" let-session>
+          {{ instant(session.startedAtUtc) }}
+        </ng-template>
+        <ng-template appDataTableCell="actions" let-session>
+          <!-- L'eliminazione è definitiva e separata dalla chiusura (§6.1): si offre solo su una
+               sessione conclusa o mai avviata e chiede conferma **sulla riga**, con lo stesso gesto
+               dell'archiviazione di classi, scuole, corsi ed esercizi. -->
+          @if (pendingDeleteId() === session.id) {
+            <div class="actions">
+              <span class="ask">Eliminare «{{ session.lessonTitle }}»?</span>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Conferma eliminazione: ' + session.lessonTitle"
+                [hlmTooltip]="'Conferma eliminazione'"
+                [disabled]="busy()"
+                (click)="confirmDelete(session)"
+              >
+                <ng-icon name="lucideCheck" aria-hidden="true" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Annulla eliminazione: ' + session.lessonTitle"
+                [hlmTooltip]="'Annulla'"
+                (click)="cancelDelete()"
+              >
+                <ng-icon name="lucideX" aria-hidden="true" />
+              </button>
+            </div>
+          } @else {
+            <div class="actions">
+              <!-- La regia è il livello successivo: un pulsante che la nomina porta lì anche da un
+                   elenco lungo. La pagina si indirizza, quindi il collegamento è vero. -->
+              <a
+                hlmBtn
+                size="xs"
+                variant="outline"
+                [routerLink]="['/sessions', session.id]"
+                [attr.aria-label]="'Regia della sessione: ' + session.lessonTitle"
+              >
+                <ng-icon name="lucideMonitorPlay" />
+                Regia
+              </a>
+              @if (canDelete(session)) {
+                <button
+                  hlmBtn
+                  type="button"
+                  size="icon-xs"
+                  variant="outline"
+                  [disabled]="busy()"
+                  [attr.aria-label]="'Elimina la sessione: ' + session.lessonTitle"
+                  [hlmTooltip]="'Elimina la sessione'"
+                  (click)="askDelete(session)"
+                >
+                  <ng-icon name="lucideTrash2" aria-hidden="true" />
+                </button>
+              }
+            </div>
+          }
+        </ng-template>
+      </app-data-table>
+    }
+  </section>
+
+  <!-- Il dialogo più alto dell'admin: quattro selettori a cascata, la descrizione e l'eventuale
+       messaggio d'errore possono superare l'altezza della finestra. L'altezza è limitata e scorre
+       solo il corpo del modulo: intestazione, messaggio d'errore e pulsanti restano sempre
+       raggiungibili, anche su una finestra bassa. -->
+  <hlm-dialog-content class="flex max-h-[85vh] flex-col" *hlmDialogPortal="let ctx">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>Nuova sessione</h2>
+      <p hlmDialogDescription>
+        Scegli a cascata la scuola, la classe, il corso e la lezione: la sessione istanzia la
+        lezione nella classe, in attesa dell’avvio.
+      </p>
+    </hlm-dialog-header>
+
+    @if (dialogError(); as failure) {
+      <p class="error" role="alert">{{ failure.message }}</p>
+    }
+
+    <form
+      [formRoot]="createForm"
+      id="create-session-form"
+      class="grid min-h-0 flex-1 gap-6 overflow-y-auto"
+    >
+      <div hlmField>
+        <label hlmFieldLabel for="new-session-school">Scuola</label>
+        <hlm-native-select
+          selectId="new-session-school"
+          [formField]="createForm.schoolId"
+          (change)="onSchoolChange($event)"
+        >
+          <option hlmNativeSelectOption value="">Scegli una scuola…</option>
+          @for (school of schools(); track school.id) {
+            <option hlmNativeSelectOption [value]="school.id">{{ school.name }}</option>
+          }
+        </hlm-native-select>
+        @if (createForm.schoolId().touched() && createForm.schoolId().invalid()) {
+          @for (error of createForm.schoolId().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+      </div>
+
+      <div hlmField>
+        <label hlmFieldLabel for="new-session-classroom">Classe</label>
+        <hlm-native-select
+          selectId="new-session-classroom"
+          [formField]="createForm.classroomId"
+          (change)="onClassroomChange($event)"
+        >
+          <option hlmNativeSelectOption value="">Scegli una classe…</option>
+          @for (classroom of classrooms(); track classroom.id) {
+            <option hlmNativeSelectOption [value]="classroom.id">{{ classroom.name }}</option>
+          }
+        </hlm-native-select>
+        @if (createForm.classroomId().touched() && createForm.classroomId().invalid()) {
+          @for (error of createForm.classroomId().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+        @if (createForm.schoolId().value() === '') {
+          <p hlmFieldDescription>Scegli prima la scuola.</p>
+        }
+      </div>
+
+      <div hlmField>
+        <label hlmFieldLabel for="new-session-course">Corso</label>
+        <hlm-native-select
+          selectId="new-session-course"
+          [formField]="createForm.courseId"
+          (change)="onCourseChange($event)"
+        >
+          <option hlmNativeSelectOption value="">Scegli un corso…</option>
+          @for (course of courses(); track course.id) {
+            <option hlmNativeSelectOption [value]="course.id">{{ course.title }}</option>
+          }
+        </hlm-native-select>
+        @if (createForm.courseId().touched() && createForm.courseId().invalid()) {
+          @for (error of createForm.courseId().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+        @if (createForm.classroomId().value() === '') {
+          <p hlmFieldDescription>Scegli prima la classe.</p>
+        }
+      </div>
+
+      <div hlmField>
+        <label hlmFieldLabel for="new-session-lesson">Lezione</label>
+        <hlm-native-select selectId="new-session-lesson" [formField]="createForm.lessonId">
+          <option hlmNativeSelectOption value="">Scegli una lezione…</option>
+          @for (lesson of lessons(); track lesson.id) {
+            <option hlmNativeSelectOption [value]="lesson.id">{{ lesson.title }}</option>
+          }
+        </hlm-native-select>
+        @if (createForm.lessonId().touched() && createForm.lessonId().invalid()) {
+          @for (error of createForm.lessonId().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+        @if (createForm.courseId().value() === '') {
+          <p hlmFieldDescription>Scegli prima il corso.</p>
+        }
+      </div>
+    </form>
+
+    <hlm-dialog-footer>
+      <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+      <button hlmBtn type="submit" form="create-session-form" [disabled]="busy()">
+        Crea sessione
+      </button>
+    </hlm-dialog-footer>
+  </hlm-dialog-content>
+</hlm-dialog>

@@ -1,0 +1,108 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Microsoft.Data.Sqlite.Core": {
+        "type": "Transitive",
+        "resolved": "10.0.12",
+        "contentHash": "2aL9eL5HQr0V4b8V909SD+jQAx6qnTTl7sT/v3D8dIvmr2UGdpZIQxqm1pj2Js3e4EYTvpw0oMH7DjapJJuPPw==",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.12"
+        }
+      },
+      "SQLitePCLRaw.bundle_e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "mAgscpQMLw5/nfA1Q5oJVAT29yROUo1ifZGbbTpx/lwZpSxMUGoYbKfmvdm8oXER+RzxqBmmQzeBEVKfeHv2nw==",
+        "dependencies": {
+          "SQLitePCLRaw.lib.e_sqlite3": "2.1.12",
+          "SQLitePCLRaw.provider.e_sqlite3": "2.1.12"
+        }
+      },
+      "SQLitePCLRaw.core": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "ETpNw9DY3ckWLgRRAeCHj+GKOuPi61aeczkXhgHexUvqoZBAYg8RYESE2J7O1M7+o6QbdSEZwrw9bfqztUVWXg=="
+      },
+      "SQLitePCLRaw.lib.e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "fWi8Dbknuhgg72fWinIdjXVaqO1hHL4YBBwVLnr7e1c9TAZwJ0QE38j9syW1hwx6HaqEVTwI+O07WPdZn8Rp0w=="
+      },
+      "SQLitePCLRaw.provider.e_sqlite3": {
+        "type": "Transitive",
+        "resolved": "2.1.12",
+        "contentHash": "W3oH4XIfCzFrgUSDKHhN6N+dgzA5YHOR2VxX8GB6Qy7CyrJJgxPEG8NirgYWlPQC5P2jz2knSsexWu4tDUL33g==",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.12"
+        }
+      },
+      "System.ComponentModel.Annotations": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "dMkqfy2el8A8/I76n2Hi1oBFEbG1SfxD2l5nhwXV3XjlnOmwxJlQbYpJH4W51odnU9sARCSAgv7S3CyAFMkpYg=="
+      },
+      "System.Reflection.TypeExtensions": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA=="
+      },
+      "qwerty.codi.application": {
+        "type": "Project",
+        "dependencies": {
+          "Mediator.Abstractions": "[2.1.7, )",
+          "Qwerty.Codi.Domain": "[1.0.0, )"
+        }
+      },
+      "qwerty.codi.domain": {
+        "type": "Project"
+      },
+      "qwerty.codi.infrastructure": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "[10.0.12, )",
+          "Qwerty.Codi.Application": "[1.0.0, )",
+          "RepoDb": "[1.14.0, )",
+          "RepoDb.Sqlite.Microsoft": "[1.14.0, )"
+        }
+      },
+      "Mediator.Abstractions": {
+        "type": "CentralTransitive",
+        "requested": "[2.1.7, )",
+        "resolved": "2.1.7",
+        "contentHash": "93GWsxuikSVSGvWeNwkMecMXjUYURNyNj978FTnH7PhC3hrGh8mERNkxRNWIvLj7k0nnrnsQxixEQ0NxRXNkow=="
+      },
+      "Microsoft.Data.Sqlite": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "xUq9xUc653ue7ac2rMfCaf8UQN+U3zS8poWYlugycpvJllplMM0Mk7v/+MM0CTlu9zGvbGML4BPH8YWhrUOfGw==",
+        "dependencies": {
+          "Microsoft.Data.Sqlite.Core": "10.0.12",
+          "SQLitePCLRaw.bundle_e_sqlite3": "2.1.12",
+          "SQLitePCLRaw.core": "2.1.12"
+        }
+      },
+      "RepoDb": {
+        "type": "CentralTransitive",
+        "requested": "[1.14.0, )",
+        "resolved": "1.14.0",
+        "contentHash": "IaLQ+G58It9Xm+ItCK19eP2HiS8fuyuTPhli4844LRVespBYDoR11DdieI9ddG1h7HrQQmvoaak5IQ/HaRts3A==",
+        "dependencies": {
+          "System.ComponentModel.Annotations": "5.0.0",
+          "System.Reflection.TypeExtensions": "4.7.0"
+        }
+      },
+      "RepoDb.Sqlite.Microsoft": {
+        "type": "CentralTransitive",
+        "requested": "[1.14.0, )",
+        "resolved": "1.14.0",
+        "contentHash": "jImCXdWV9xD047nGpG4iYn2Z7nWmOY4/CR1nX+3yRgagsu4epOT7m1J26eT96W0wB8ZUw6rvMLlM6cCwY5c8nw==",
+        "dependencies": {
+          "Microsoft.Data.Sqlite": "10.0.9",
+          "RepoDb": "1.14.0"
+        }
+      }
+    }
+  }
+}

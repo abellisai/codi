@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <!-- Collector XPlat Code Coverage: senza di lui la raccolta della copertura produce un
+         avviso e nessun report, e il gate di §20.4 non avrebbe nulla da confrontare. -->
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qwerty.Codi.Domain\Qwerty.Codi.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Qwerty.Codi.Application\Qwerty.Codi.Application.csproj" />
+  </ItemGroup>
+
+</Project>

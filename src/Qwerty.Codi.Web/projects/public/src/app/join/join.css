@@ -1,0 +1,67 @@
+/* Ingresso grezzo: serve a vedere se il percorso funziona, non a piacere. Gli stili definitivi
+   dell'app alunni si decidono con il player e con i test in aula. */
+.join {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+  font-size: 1.125rem;
+}
+
+.join label {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.join select,
+.join input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+}
+
+.join button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1.125rem;
+}
+
+/* Il codice si legge a distanza e si digita con due dita: cifre grandi e spaziate, tastiera
+   numerica sul tablet (§14.4). */
+.code-input {
+  font-family: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, monospace;
+  font-size: 2rem;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+.presence {
+  padding: 0.5rem 0.75rem;
+  background: #eef;
+}
+
+.fallback {
+  margin: 1.5rem 0 0.5rem;
+}
+
+.link {
+  padding: 0.5rem 0;
+  border: none;
+  background: none;
+  color: #2b4a8b;
+  text-decoration: underline;
+  font-size: 1rem;
+}
+
+.chain {
+  padding-top: 0.5rem;
+  border-top: 1px solid #ccd;
+}
+
+.lesson {
+  padding: 0.5rem 0.75rem;
+  background: #eef;
+}
+
+.error {
+  padding: 0.5rem 0.75rem;
+  background: #fee;
+}

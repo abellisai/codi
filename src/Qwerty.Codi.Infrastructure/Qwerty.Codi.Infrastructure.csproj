@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <!-- RepoDb e il provider SQLite per Microsoft.Data.Sqlite vanno tenuti alla stessa versione:
+         il provider implementa le interfacce del core e una coppia disallineata fallisce a
+         runtime con TypeLoadException (A-05). Le versioni stanno in Directory.Packages.props. -->
+    <PackageReference Include="RepoDb" />
+    <PackageReference Include="RepoDb.Sqlite.Microsoft" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Le migrazioni sono risorse incorporate: il runner le legge dall'assembly, quindi non
+         dipendono dalla directory di lavoro del processo né da file copiati accanto all'eseguibile. -->
+    <EmbeddedResource Include="Migrations/Scripts/*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qwerty.Codi.Application\Qwerty.Codi.Application.csproj" />
+  </ItemGroup>
+
+</Project>

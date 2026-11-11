@@ -1,0 +1,20 @@
+<section class="prototype">
+  <h1>Prototipo workspace Blockly (T0)</h1>
+
+  <p class="note">
+    Pagina di prova della compatibilità: non è l’editor degli esercizi, che arriverà in T6. Serve
+    solo a dimostrare che il workspace Blockly si salva e si ricarica in Angular.
+  </p>
+
+  <div class="controls">
+    <button hlmBtn type="button" (click)="save()">Salva workspace</button>
+    <button hlmBtn type="button" (click)="reload()" [disabled]="!hasSavedState()">
+      Ricarica workspace
+    </button>
+    <span class="count">{{ blockCount() }} blocchi</span>
+  </div>
+
+  <p class="message" role="status" aria-live="polite">{{ message() }}</p>
+
+  <div #workspaceHost class="workspace" role="group" aria-label="Area di lavoro Blockly"></div>
+</section>

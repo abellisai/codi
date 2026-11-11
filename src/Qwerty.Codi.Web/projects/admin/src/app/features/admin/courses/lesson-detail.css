@@ -1,0 +1,75 @@
+/* Regole proprie della pagina della sequenza: l'elenco ordinabile per trascinamento e il modulo di
+   aggiunta. Contenitore, intestazione, note ed errori sono definiti una volta sola in `styles.css`. */
+.sequence {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sequence-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.375rem 0;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  background: var(--card);
+}
+
+.sequence-item .position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.sequence-item .sequence-name {
+  flex: 1 1 12rem;
+}
+
+/* La maniglia dichiara che la riga si trascina: il puntatore cambia solo su di essa, perché solo da
+   lì parte il trascinamento. */
+.sequence-handle {
+  cursor: grab;
+  color: var(--muted-foreground);
+}
+
+.sequence.cdk-drop-list-dragging .sequence-handle {
+  cursor: grabbing;
+}
+
+/* Anteprima e segnaposto del trascinamento: la riga che segue il puntatore e il vuoto che lascia
+   nella posizione di partenza. Senza uno sfondo, l'anteprima lascerebbe vedere il contenuto sotto. */
+.cdk-drag-preview {
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
+  padding-inline: 0.375rem;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.4;
+}
+
+.cdk-drag-animating,
+.sequence.cdk-drop-list-dragging .sequence-item:not(.cdk-drag-placeholder) {
+  transition: transform 150ms ease;
+}
+
+.add-exercise {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.add-exercise [hlmField] {
+  flex: 1 1 16rem;
+}

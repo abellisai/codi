@@ -1,0 +1,32 @@
+<section class="admin-home">
+  <h1>Da dove cominciare</h1>
+  <p class="intro">
+    Configura prima le scuole e le loro classi, poi i corsi con le lezioni e il materiale. Le stesse
+    sezioni sono nel menu a sinistra, sempre a portata di clic.
+  </p>
+
+  @for (group of groups; track group.label) {
+    <h2 class="group-title">{{ group.label }}</h2>
+    <ul class="sections">
+      @for (section of group.sections; track section.label) {
+        <li>
+          <a
+            hlmCard
+            class="section-card"
+            [routerLink]="section.commands"
+            [queryParams]="section.queryParams ?? null"
+          >
+            <div hlmCardHeader>
+              <h3 hlmCardTitle class="section-title">
+                <ng-icon [name]="section.icon" aria-hidden="true" />
+                {{ section.label }}
+              </h3>
+              <p hlmCardDescription>{{ section.description }}</p>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+  }
+  <a routerLink="/local-recovery">Recupera copie sul PC del bambino</a>
+</section>

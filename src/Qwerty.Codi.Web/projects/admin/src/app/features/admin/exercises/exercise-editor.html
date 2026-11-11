@@ -1,0 +1,441 @@
+<section class="admin-page">
+  <app-detail-header
+    [crumbs]="crumbs()"
+    icon="lucidePencilRuler"
+    [title]="pageTitle()"
+    [subtitle]="subtitle()"
+  >
+    @if (usesGrid()) {
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        [disabled]="busy() || loading() || !changed()"
+        (click)="resetDraft()"
+      >
+        <ng-icon name="lucideRotateCcw" aria-hidden="true" />
+        Annulla modifiche
+      </button>
+    }
+  </app-detail-header>
+
+  @if (usesGrid()) {
+    <p class="note">
+      La definizione si compone dai campi: il completamento dell’esercizio segue sempre il
+      traguardo, quindi spostandolo si aggiorna con lui. La griglia è fatta di pulsanti: scegli uno
+      strumento e attiva una cella con il clic o con Invio, oppure sposta il cursore con le frecce e
+      usa i comandi sulla cella attiva. Il titolo viene dai metadati dell’esercizio.
+    </p>
+  }
+
+  @if (usesGrid() && isNewDraft() && !loading()) {
+    <p class="note" role="status">
+      Non esiste ancora una bozza per questo esercizio: quella che vedi è una definizione iniziale
+      suggerita e il primo salvataggio la crea.
+    </p>
+  }
+
+  @if (error(); as failure) {
+    <p class="error" role="alert">
+      {{ failure.message }}
+      @if (failure.requiresSignIn) {
+        <a routerLink="/login">Accedi di nuovo</a>
+      }
+    </p>
+  }
+
+  @if (loading()) {
+    <p role="status">Caricamento della bozza in corso…</p>
+  } @else if (unknownType()) {
+    <p class="error" role="alert">
+      Questo esercizio è di un tipo che questa versione del programma non sa comporre: aggiorna
+      l’applicazione, oppure chiedi a chi la mantiene.
+    </p>
+  } @else if (usesValues()) {
+    <!-- Un esercizio che conserva valori non ha una scena: ha variabili da dichiarare e casi di prova
+         da superare, e li compone la sua form, che carica e salva per conto proprio. -->
+    <app-value-program-editor [exerciseId]="exerciseId()" [title]="title()" />
+  } @else if (usesQuiz()) {
+    <!-- Un esercizio dichiarativo non ha scena, blocchi né progetto: lo compone la sua form, che
+         carica e salva per conto proprio. -->
+    <app-quiz-editor [exerciseId]="exerciseId()" [title]="title()" />
+  } @else {
+    <div class="exercise-authoring-toolbar">
+      <ng-container [ngTemplateOutlet]="publication()?.toolbar() ?? null" />
+    </div>
+    <form [formRoot]="editorForm" id="exercise-editor-form" class="editor">
+      <!-- Consegna: il testo che il bambino legge prima di comporre il programma. -->
+      <section class="editor-section" aria-labelledby="editor-instructions-title">
+        <h2 id="editor-instructions-title">Consegna</h2>
+        <div hlmField>
+          <label hlmFieldLabel for="editor-instructions">Testo della consegna</label>
+          <textarea
+            hlmTextarea
+            id="editor-instructions"
+            rows="4"
+            [formField]="editorForm.instructions"
+          ></textarea>
+          @if (editorForm.instructions().touched() && editorForm.instructions().invalid()) {
+            @for (error of editorForm.instructions().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>Per esempio «Porta il personaggio sulla stella».</p>
+        </div>
+      </section>
+
+      <!-- Scena: dimensioni, griglia, partenza, traguardo e ostacoli. -->
+      <section class="editor-section" aria-labelledby="editor-scene-title">
+        <h2 id="editor-scene-title">Scena</h2>
+
+        <div class="scene-sizes">
+          <div hlmField>
+            <label hlmFieldLabel for="editor-width">Larghezza (colonne)</label>
+            <input
+              hlmInput
+              id="editor-width"
+              type="number"
+              inputmode="numeric"
+              [formField]="editorForm.width"
+            />
+            @if (editorForm.width().touched() && editorForm.width().invalid()) {
+              @for (error of editorForm.width().errors(); track error) {
+                <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+              }
+            }
+            <p hlmFieldDescription>Da 2 a 20 colonne.</p>
+          </div>
+
+          <div hlmField>
+            <label hlmFieldLabel for="editor-height">Altezza (righe)</label>
+            <input
+              hlmInput
+              id="editor-height"
+              type="number"
+              inputmode="numeric"
+              [formField]="editorForm.height"
+            />
+            @if (editorForm.height().touched() && editorForm.height().invalid()) {
+              @for (error of editorForm.height().errors(); track error) {
+                <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+              }
+            }
+            <p hlmFieldDescription>Da 2 a 20 righe.</p>
+          </div>
+
+          <div hlmField>
+            <label hlmFieldLabel for="editor-direction">Direzione iniziale della partenza</label>
+            <hlm-native-select selectId="editor-direction" [formField]="editorForm.direction">
+              @for (direction of directions; track direction) {
+                <option hlmNativeSelectOption [value]="direction">
+                  {{ directionLabels[direction] }}
+                </option>
+              }
+            </hlm-native-select>
+          </div>
+        </div>
+
+        <div class="scene-tools" role="group" aria-label="Strumento della griglia">
+          <span class="scene-tools-label" id="scene-tools-label">Strumento</span>
+          <button
+            hlmBtn
+            type="button"
+            size="sm"
+            [variant]="tool() === 'obstacle' ? 'default' : 'outline'"
+            [attr.aria-pressed]="tool() === 'obstacle'"
+            [attr.aria-describedby]="'scene-tools-label'"
+            [disabled]="busy()"
+            (click)="selectTool('obstacle')"
+          >
+            Ostacolo
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            size="sm"
+            [variant]="tool() === 'start' ? 'default' : 'outline'"
+            [attr.aria-pressed]="tool() === 'start'"
+            [attr.aria-describedby]="'scene-tools-label'"
+            [disabled]="busy()"
+            (click)="selectTool('start')"
+          >
+            Partenza
+          </button>
+          <button
+            hlmBtn
+            type="button"
+            size="sm"
+            [variant]="tool() === 'goal' ? 'default' : 'outline'"
+            [attr.aria-pressed]="tool() === 'goal'"
+            [attr.aria-describedby]="'scene-tools-label'"
+            [disabled]="busy()"
+            (click)="selectTool('goal')"
+          >
+            Traguardo
+          </button>
+        </div>
+
+        <p class="scene-hint" id="scene-grid-hint">
+          Attiva una cella con il clic o con Invio per applicare lo strumento scelto. Con le frecce
+          sposti il cursore di una cella.
+        </p>
+
+        <div
+          class="scene-grid"
+          role="group"
+          [attr.aria-label]="gridLabel()"
+          [attr.aria-describedby]="'scene-grid-hint'"
+          [style.--scene-columns]="scene().width"
+        >
+          @for (row of rows(); track $index) {
+            <div class="scene-row" role="presentation">
+              @for (cell of row; track cell.x) {
+                <button
+                  #cell
+                  type="button"
+                  class="scene-cell"
+                  [class.is-start]="cellState(cell) === 'start'"
+                  [class.is-goal]="cellState(cell) === 'goal'"
+                  [class.is-obstacle]="cellState(cell) === 'obstacle'"
+                  [class.is-active]="isActive(cell)"
+                  [attr.aria-label]="cellLabel(cell)"
+                  [attr.tabindex]="isActive(cell) ? 0 : -1"
+                  [disabled]="busy()"
+                  (focus)="focusCell(cell)"
+                  (keydown)="onCellKeydown(cell, $event)"
+                  (click)="applyTool(cell)"
+                >
+                  <span aria-hidden="true">{{ cellSymbol(cell) }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        <ul class="scene-legend">
+          <li>
+            <span class="scene-legend-symbol" aria-hidden="true">▲</span> Partenza (la freccia
+            indica la direzione)
+          </li>
+          <li><span class="scene-legend-symbol" aria-hidden="true">★</span> Traguardo</li>
+          <li><span class="scene-legend-symbol" aria-hidden="true">■</span> Ostacolo</li>
+          <li><span class="scene-legend-symbol" aria-hidden="true">␣</span> Cella libera</li>
+        </ul>
+
+        <div class="cell-commands">
+          <p class="cell-commands-title">Cella attiva: {{ activeCellLabel() }}</p>
+          <div class="cell-commands-buttons">
+            <button
+              hlmBtn
+              type="button"
+              size="sm"
+              variant="outline"
+              [disabled]="busy()"
+              (click)="toggleObstacle(activeCell())"
+            >
+              {{ obstacleCommandLabel() }}
+            </button>
+            <button
+              hlmBtn
+              type="button"
+              size="sm"
+              variant="outline"
+              [disabled]="busy()"
+              (click)="placeStart(activeCell())"
+            >
+              Metti la partenza
+            </button>
+            <button
+              hlmBtn
+              type="button"
+              size="sm"
+              variant="outline"
+              [disabled]="busy()"
+              (click)="placeGoal(activeCell())"
+            >
+              Metti il traguardo
+            </button>
+          </div>
+        </div>
+
+        <!-- La griglia è silenziosa: gli esiti delle modifiche si sentono da qui. -->
+        <p class="sr-only" role="status">{{ announcement() }}</p>
+      </section>
+
+      <!-- Blocchi disponibili: il catalogo di `gridpath-1`. -->
+      <section class="editor-section" aria-labelledby="editor-blocks-title">
+        <h2 id="editor-blocks-title">Blocchi disponibili</h2>
+        <p class="note">
+          Il punto di ingresso è obbligatorio: senza di lui il programma non ha nulla da eseguire.
+        </p>
+        <div class="blocks">
+          <div class="block-choice">
+            <input
+              type="checkbox"
+              class="block-checkbox"
+              id="editor-block-start"
+              [formField]="editorForm.blocks.aula_start"
+            />
+            <label for="editor-block-start">
+              {{ blockLabels.aula_start }} <span class="block-required">(obbligatorio)</span>
+            </label>
+          </div>
+
+          <div class="block-choice">
+            <input
+              type="checkbox"
+              class="block-checkbox"
+              id="editor-block-move"
+              [formField]="editorForm.blocks.aula_move"
+            />
+            <label for="editor-block-move">{{ blockLabels.aula_move }}</label>
+          </div>
+
+          <div class="block-choice">
+            <input
+              type="checkbox"
+              class="block-checkbox"
+              id="editor-block-turn"
+              [formField]="editorForm.blocks.aula_turn"
+            />
+            <label for="editor-block-turn">{{ blockLabels.aula_turn }}</label>
+          </div>
+
+          <div class="block-choice">
+            <input
+              type="checkbox"
+              class="block-checkbox"
+              id="editor-block-repeat"
+              [formField]="editorForm.blocks.aula_repeat"
+            />
+            <label for="editor-block-repeat">{{ blockLabels.aula_repeat }}</label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Limiti: il docente configura solo la durata massima, in minuti. Gli altri budgets del
+           motore — blocchi, annidamento, passi — restano quelli conservati nella bozza e non si
+           mostrano: sono vincoli tecnici, non scelte didattiche. -->
+      <section class="editor-section" aria-labelledby="editor-limits-title">
+        <h2 id="editor-limits-title">Limiti</h2>
+        <div class="limits">
+          <div hlmField>
+            <label hlmFieldLabel for="editor-limit-max-duration">
+              {{ limitLabel }}
+            </label>
+            <input
+              hlmInput
+              id="editor-limit-max-duration"
+              type="number"
+              inputmode="numeric"
+              [formField]="editorForm.maxActiveDurationMinutes"
+            />
+            @if (
+              editorForm.maxActiveDurationMinutes().touched() &&
+              editorForm.maxActiveDurationMinutes().invalid()
+            ) {
+              @for (error of editorForm.maxActiveDurationMinutes().errors(); track error) {
+                <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+              }
+            }
+            <p hlmFieldDescription>
+              Da {{ limitRange.min }} a {{ limitRange.max }} minuti. Dopo questo tempo la corsa si
+              ferma; la pausa non consuma la durata.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Messaggi: quello che il bambino legge a fine corsa. -->
+      <section class="editor-section" aria-labelledby="editor-feedback-title">
+        <h2 id="editor-feedback-title">Messaggi</h2>
+        <div class="messages">
+          <div hlmField>
+            <label hlmFieldLabel for="editor-success">Messaggio di successo</label>
+            <input
+              hlmInput
+              id="editor-success"
+              type="text"
+              [formField]="editorForm.successMessage"
+            />
+            @if (editorForm.successMessage().touched() && editorForm.successMessage().invalid()) {
+              @for (error of editorForm.successMessage().errors(); track error) {
+                <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+              }
+            }
+          </div>
+
+          <div hlmField>
+            <label hlmFieldLabel for="editor-collision">Messaggio di collisione</label>
+            <input
+              hlmInput
+              id="editor-collision"
+              type="text"
+              [formField]="editorForm.collisionMessage"
+            />
+            @if (
+              editorForm.collisionMessage().touched() && editorForm.collisionMessage().invalid()
+            ) {
+              @for (error of editorForm.collisionMessage().errors(); track error) {
+                <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+              }
+            }
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <!-- Soluzione di riferimento: riservata al docente, mai distribuita agli alunni (§13.1).
+         Il programma iniziale non si compone più da qui: l'alunno parte da un progetto vuoto. -->
+    <section
+      class="editor-section"
+      aria-labelledby="editor-solution-title"
+      [attr.inert]="busy() || publication()?.locking() ? '' : null"
+    >
+      <h2 id="editor-solution-title">Soluzione di riferimento</h2>
+      <p class="note" id="editor-solution-help">
+        Componi la soluzione dell’esercizio: serve a verificare che sia risolvibile e non viene mai
+        inviata agli alunni. Puoi metterla via anche incompleta; la pubblicazione richiede che sia
+        un programma che parte.
+      </p>
+      <app-grid-path-program-editor
+        aria-describedby="editor-solution-help"
+        [allowedBlocks]="allowedBlocks()"
+        [workspaceJson]="solutionJson()"
+        (workspaceChanged)="onSolutionChanged($event)"
+      />
+      <app-exercise-preview
+        [scene]="scene()"
+        [rules]="rules()"
+        [limits]="definition().limits"
+        [workspaceJson]="solutionJson()"
+        [successMessage]="definition().feedback.success"
+        [collisionMessage]="definition().feedback.collision"
+      />
+    </section>
+
+    <!-- Pubblicazione: verifica, versione immutabile ed elenco delle versioni. -->
+    <section class="editor-section" aria-labelledby="editor-publication-title">
+      <h2 id="editor-publication-title">Pubblicazione</h2>
+      <p class="note" id="editor-publication-help">
+        Una versione pubblicata è una fotografia immutabile di ciò che è salvato: le lezioni
+        useranno quella, e continuare a modificare la bozza non la cambia.
+      </p>
+      <app-exercise-publication
+        aria-describedby="editor-publication-help"
+        [exerciseId]="exerciseId()"
+        [definitionJson]="definitionJson()"
+        [workspaceJson]="initialWorkspace"
+        [solutionJson]="referenceSolution()"
+        [draftRowVersion]="savedRowVersion()"
+        [hasUnsavedChanges]="changed()"
+        [editorBusy]="busy()"
+        [editorError]="error()"
+        [prepareDraft]="prepareForPublication"
+        [issues]="publicationIssues()"
+        (draftReplaced)="onDraftReplaced()"
+      />
+    </section>
+  }
+</section>

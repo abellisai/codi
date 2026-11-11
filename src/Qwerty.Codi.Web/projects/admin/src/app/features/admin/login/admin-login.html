@@ -1,0 +1,57 @@
+<section hlmCard class="admin-login">
+  <div hlmCardHeader>
+    <img
+      class="mb-4 h-auto w-44 max-w-full dark:brightness-0 dark:invert"
+      src="brand/codi-logo.svg"
+      alt="Codì"
+      width="728"
+      height="232"
+    />
+    <h1 hlmCardTitle>Accesso docente</h1>
+
+    <p hlmCardDescription class="note">Accedi per preparare le attività e gestire la lezione.</p>
+  </div>
+  <div hlmCardContent>
+    <form [formRoot]="loginForm">
+      <div hlmField class="field">
+        <label hlmFieldLabel for="username">Nome utente</label>
+        <input
+          hlmInput
+          id="username"
+          type="text"
+          autocomplete="username"
+          [formField]="loginForm.username"
+        />
+        @if (loginForm.username().touched() && loginForm.username().invalid()) {
+          @for (error of loginForm.username().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+      </div>
+
+      <div hlmField class="field">
+        <label hlmFieldLabel for="password">Password</label>
+        <input
+          hlmInput
+          id="password"
+          type="password"
+          autocomplete="current-password"
+          [formField]="loginForm.password"
+        />
+        @if (loginForm.password().touched() && loginForm.password().invalid()) {
+          @for (error of loginForm.password().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+      </div>
+
+      <button hlmBtn type="submit" [disabled]="busy()">
+        {{ busy() ? 'Accesso in corso…' : 'Accedi' }}
+      </button>
+    </form>
+
+    @if (error(); as failure) {
+      <p class="error" role="alert">{{ failure.message }}</p>
+    }
+  </div>
+</section>

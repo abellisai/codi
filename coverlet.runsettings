@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Impostazioni del collector XPlat Code Coverage (§20.4, §20.5).
+
+  Il report è in formato Cobertura perché è quello che `scripts/assert-dotnet-coverage.ps1`
+  legge, e la baseline di quel confronto vive in `scripts/coverage-baseline.json`. La copertura
+  resta un guardrail di regressione: non si aggiungono asserzioni per alzare un numero e non si
+  esclude codice di produzione scritto a mano per superare una soglia.
+
+  `Include` limita la misura al codice dell'applicazione: i pacchetti di terze parti e i progetti
+  di test non dicono niente su quanto Codi sia verificato.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[Qwerty.Codi.Domain]*,[Qwerty.Codi.Application]*,[Qwerty.Codi.Infrastructure]*,[Qwerty.Codi.Api]*</Include>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

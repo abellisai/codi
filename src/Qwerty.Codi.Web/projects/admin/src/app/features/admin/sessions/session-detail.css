@@ -1,0 +1,140 @@
+/* Stili propri della regia: il contenitore, i messaggi d'errore e il percorso arrivano dai fogli
+   globali dell'admin. Qui lo stato in evidenza, la barra dei comandi, la scelta dell'esercizio da
+   assegnare e il riepilogo degli alunni, che hanno una pagina propria con le card. */
+
+h2 {
+  font-size: 1.125rem;
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 1rem 2rem;
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--primary);
+  background: var(--muted);
+}
+
+.status-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.status-caption {
+  color: var(--muted-foreground);
+}
+
+.status-value {
+  font-size: 1.25rem;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.fact dt {
+  color: var(--muted-foreground);
+}
+
+.fact dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Codice di ingresso (§9.4): riga propria dentro lo stato, con cifre grandi e spaziate, perché il
+   docente lo legge a distanza e lo detta alla classe. */
+.join-code {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border);
+}
+
+.join-code-caption {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+.join-code-value {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+}
+
+.join-code-hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+.commands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+
+.busy {
+  min-height: 1.25rem;
+  color: var(--muted-foreground);
+}
+
+.participants {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.participants p {
+  color: var(--muted-foreground);
+}
+
+/* Il riepilogo degli alunni: la regia li conta, la pagina dei partecipanti li mostra. */
+.count {
+  margin: 0 0 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.content {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+/* La scelta dell'esercizio da assegnare: l'elenco delle caselle della lezione, con il titolo
+   dell'esercizio e il pulsante «Assegna» per ognuna. */
+.boxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.boxes li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+}

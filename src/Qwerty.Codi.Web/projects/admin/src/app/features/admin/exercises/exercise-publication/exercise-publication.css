@@ -1,0 +1,112 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.authoring-controls,
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.authoring-controls {
+  justify-content: space-between;
+}
+.issue-link {
+  text-align: start;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.publication {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+/* Le versioni scorrono nella tabella senza allargare la pagina su schermi stretti. */
+.versions-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hint {
+  margin: 0;
+  max-width: 65ch;
+}
+
+.saved {
+  margin: 0;
+}
+
+.error,
+.problems {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--destructive, #b3261e);
+  border-radius: 0.5rem;
+  background: var(--destructive-background, #fdecea);
+}
+
+.problems {
+  padding-left: 2rem;
+}
+
+.versions {
+  border-collapse: collapse;
+  width: 100%;
+  max-width: 60rem;
+}
+
+.versions th,
+.versions td {
+  border-bottom: 1px solid var(--border, #cbd5e1);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.versions thead th {
+  font-weight: 600;
+}
+
+.versions code {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Le note sono un promemoria, non un dato da incolonnare: si leggono su più righe. */
+.versions .notes {
+  min-width: 12rem;
+  max-width: 24rem;
+}
+
+.row-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* La domanda di conferma sta accanto al gesto che la riguarda, come negli elenchi. */
+.row-actions .ask {
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.version-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.version-preview h4 {
+  margin: 0;
+}

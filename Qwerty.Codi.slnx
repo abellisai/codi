@@ -1,0 +1,18 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Qwerty.Codi.Api/Qwerty.Codi.Api.csproj" />
+    <Project Path="src/Qwerty.Codi.Application/Qwerty.Codi.Application.csproj" />
+    <Project Path="src/Qwerty.Codi.Domain/Qwerty.Codi.Domain.csproj" />
+    <Project Path="src/Qwerty.Codi.Infrastructure/Qwerty.Codi.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Qwerty.Codi.Domain.Tests/Qwerty.Codi.Domain.Tests.csproj" />
+    <Project Path="tests/Qwerty.Codi.IntegrationTests/Qwerty.Codi.IntegrationTests.csproj" />
+    <Project Path="tests/Qwerty.Codi.ProtocolTests/Qwerty.Codi.ProtocolTests.csproj" />
+  </Folder>
+</Solution>

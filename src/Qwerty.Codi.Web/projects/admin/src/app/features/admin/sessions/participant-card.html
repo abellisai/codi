@@ -1,0 +1,201 @@
+<!-- La card è il colpo d'occhio sulla classe: ciò che si legge senza aprire un dettaglio.
+     La selezione è dichiarata dalla pagina, che sa quale alunno è aperto; i fatti del dettaglio e
+     l'anteprima dei blocchi si mostrano solo per la card selezionata (§14.3). -->
+<article
+  hlmCard
+  [class.selected]="isSelected()"
+  [attr.aria-label]="'Partecipante: ' + participant().displayName"
+>
+  <div hlmCardHeader>
+    <h3 hlmCardTitle>{{ participant().displayName }}</h3>
+    <p hlmCardDescription>
+      {{ stationLabel() }} · {{ presence(participant().presence) }}
+      @if (unreadLabel() > 0) {
+        <span class="unread">{{ unreadLabel() }} messaggi non letti</span>
+      }
+    </p>
+  </div>
+
+  <div hlmCardContent>
+    <dl class="facts">
+      <div class="fact">
+        <dt>Stato</dt>
+        <dd>{{ viewLabel() }}</dd>
+      </div>
+      <div class="fact">
+        <dt>Lavoro</dt>
+        <dd>{{ workLabel() }}</dd>
+      </div>
+      <div class="fact">
+        <dt>Osservato</dt>
+        <dd>{{ observedLabel() }}</dd>
+      </div>
+    </dl>
+
+    @if (participant().admissionStatus !== 'Admitted') {
+      <p class="flag">escluso</p>
+    }
+  </div>
+
+  <div hlmCardFooter class="actions">
+    @for (action of actions(); track action.key) {
+      @if (action.requiresConfirmation) {
+        <!-- L'azzeramento chiede conferma: la conferma porta il tentativo mostrato, che il server
+             verifica di nuovo prima di archiviarlo (§10.6). -->
+        <hlm-dialog>
+          <button
+            hlmBtn
+            type="button"
+            size="icon-xs"
+            variant="destructive"
+            hlmDialogTrigger
+            [hlmTooltip]="action.label"
+            [attr.aria-label]="labelFor(action)"
+            [disabled]="busy() || !action.enabled"
+          >
+            <ng-icon [name]="action.icon" aria-hidden="true" />
+          </button>
+          <hlm-dialog-content *hlmDialogPortal="let ctx">
+            <hlm-dialog-header>
+              <h2 hlmDialogTitle>Azzerare il lavoro di {{ participant().displayName }}?</h2>
+              <p hlmDialogDescription>{{ action.confirmText }}</p>
+            </hlm-dialog-header>
+            <hlm-dialog-footer>
+              <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+              <button
+                hlmBtn
+                type="button"
+                variant="destructive"
+                [disabled]="busy()"
+                (click)="run(action.key)"
+              >
+                Azzera
+              </button>
+            </hlm-dialog-footer>
+          </hlm-dialog-content>
+        </hlm-dialog>
+      } @else {
+        <button
+          hlmBtn
+          type="button"
+          size="icon-xs"
+          variant="outline"
+          [hlmTooltip]="action.label"
+          [attr.aria-label]="labelFor(action)"
+          [attr.aria-pressed]="action.toggle ? isSelected() : null"
+          [disabled]="busy() || !action.enabled"
+          (click)="run(action.key)"
+        >
+          <ng-icon [name]="action.icon" aria-hidden="true" />
+        </button>
+      }
+    }
+  </div>
+
+  @if (isSelected() && detail(); as open) {
+    <div class="detail">
+      <dl class="facts">
+        <div class="fact">
+          <dt>Esercizio</dt>
+          <dd>{{ open.assignment?.exerciseTitle ?? '—' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Ambito</dt>
+          <dd>{{ open.assignment?.scope ?? '—' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Tentativi</dt>
+          <dd>{{ open.attemptCount }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Progetto</dt>
+          <dd>rev. {{ open.attempt?.projectRevision ?? '—' }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Salvato</dt>
+          <dd>{{ instant(open.attempt?.lastSavedAtUtc ?? null) }}</dd>
+        </div>
+        <div class="fact">
+          <dt>Checkpoint</dt>
+          <dd>{{ open.attempt?.hasCheckpoint ? 'presente' : 'assente' }}</dd>
+        </div>
+      </dl>
+
+      <section class="preview" aria-label="Anteprima dei blocchi dell'alunno">
+        <h4 class="preview-title">Blocchi dell'alunno</h4>
+        @if (preview(); as anteprima) {
+          <p class="preview-when">
+            <span>rev. {{ anteprima.projectRevision }}</span>
+            <span>ricevuti {{ instant(anteprima.receivedAtUtc) }}</span>
+            @if (anteprima.partial) {
+              <span class="preview-partial">parziale: non ancora salvato</span>
+            } @else {
+              <span class="preview-saved">coerente col progetto salvato</span>
+            }
+          </p>
+          @if (previewLines().length === 0) {
+            <p class="preview-empty">Il progetto pubblicato non contiene blocchi.</p>
+          } @else {
+            <ol class="preview-blocks">
+              @for (line of previewLines(); track $index) {
+                <li [style.padding-left.rem]="line.depth * 1.25">{{ line.label }}</li>
+              }
+            </ol>
+          }
+        } @else {
+          <p class="preview-empty">
+            Nessuna anteprima ricevuta: arriva mentre l’alunno lavora collegato.
+          </p>
+        }
+        @if (previewProblem(); as problem) {
+          <p class="preview-problem" role="alert">{{ problem }}</p>
+        }
+      </section>
+    </div>
+  }
+
+  <!-- Chat con il singolo alunno (§8, §15.1): esiste solo fra il docente e questo bambino, e si
+       apre dalla sua card. Il thread vive in memoria e viene eliminato quando la lezione finisce.
+       Il testo si mostra come testo, mai come HTML. -->
+  @if (chatOpen()) {
+    <section class="chat" [attr.aria-label]="'Chat con ' + participant().displayName">
+      <h4 class="chat-title">Chat con {{ participant().displayName }}</h4>
+
+      <ol class="chat-thread" aria-live="polite">
+        @for (message of chat(); track message.messageId) {
+          <li class="chat-message" [class.from-teacher]="message.author === 'Teacher'">
+            <span class="chat-author">{{ authorLabel(message) }}</span>
+            <span class="chat-text">{{ message.text }}</span>
+            <span class="chat-when">{{ instant(message.writtenAtUtc) }}</span>
+          </li>
+        }
+        @if (chat().length === 0) {
+          <li class="chat-empty">Nessun messaggio: la chat è aperta ma ancora vuota.</li>
+        }
+      </ol>
+
+      @if (chatProblem(); as problem) {
+        <p class="chat-problem" role="alert">{{ problem }}</p>
+      }
+
+      <form [formRoot]="chatForm" class="chat-form">
+        <div hlmField>
+          <label hlmFieldLabel for="chat-text">Risposta per {{ participant().displayName }}</label>
+          <textarea
+            hlmTextarea
+            id="chat-text"
+            rows="3"
+            [formField]="chatForm.text"
+            placeholder="Scrivi un messaggio breve…"
+          ></textarea>
+          @if (chatForm.text().touched() && chatForm.text().invalid()) {
+            @for (error of chatForm.text().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+        <button hlmBtn type="submit" [disabled]="chatBusy()">Invia</button>
+      </form>
+    </section>
+  }
+</article>

@@ -1,0 +1,21 @@
+{
+  // I pacchetti ripristinati in `Codi/packages`, `bin` e `obj` contengono decine di
+  // migliaia di file: escluderli da ricerca e watcher tiene l'editor reattivo.
+  // La cartella resta su disco: il restore e le build non sono influenzati.
+  "files.watcherExclude": {
+    "**/packages/**": true,
+    "**/bin/**": true,
+    "**/obj/**": true
+  },
+  "search.exclude": {
+    "**/packages": true,
+    "**/bin": true,
+    "**/obj": true
+  },
+  "files.exclude": {
+    "**/packages": true,
+    "**/bin": true,
+    "**/obj": true
+  },
+  "chat.agent.maxRequests": 5000
+}

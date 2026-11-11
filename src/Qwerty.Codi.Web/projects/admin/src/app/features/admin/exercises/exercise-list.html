@@ -1,0 +1,224 @@
+<!-- Il dialogo avvolge la pagina perché i pulsanti che lo aprono stanno anche dentro le righe
+     della tabella: il clic dichiara il modo, il dialogo mostra il modulo corrispondente. -->
+<hlm-dialog>
+  <section class="admin-page">
+    <header class="page-header">
+      <h1 class="page-title">
+        <ng-icon name="lucideListChecks" aria-hidden="true" />
+        Esercizi
+      </h1>
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        hlmDialogTrigger
+        (click)="startCreate()"
+      >
+        <ng-icon name="lucidePlus" />
+        Nuovo esercizio
+      </button>
+    </header>
+
+    <p class="note">
+      Gli esercizi archiviati conservano lo storico e non compaiono in questo elenco: le lezioni che
+      li avevano associati li ricordano ancora, ma non si propongono più per nuove associazioni.
+    </p>
+
+    @if (error(); as failure) {
+      <p class="error" role="alert">
+        {{ failure.message }}
+        @if (failure.requiresSignIn) {
+          <a routerLink="/login">Accedi di nuovo</a>
+        }
+      </p>
+    }
+
+    @if (loading()) {
+      <p role="status">Caricamento dell’elenco in corso…</p>
+    } @else {
+      <app-data-table
+        [columns]="columns"
+        [rows]="exercises()"
+        label="Esercizi configurati"
+        emptyMessage="Non ci sono esercizi configurati."
+        [rowIdentity]="rowIdentity"
+      >
+        <ng-template appDataTableCell="description" let-exercise>
+          {{ exercise.description }}
+        </ng-template>
+        <ng-template appDataTableCell="exerciseType" let-exercise>
+          {{ typeLabel(exercise.exerciseType) }}
+        </ng-template>
+        <ng-template appDataTableCell="publicationStatus" let-exercise>
+          {{ publicationLabel(exercise) }}
+        </ng-template>
+
+        <ng-template appDataTableCell="actions" let-exercise>
+          @if (pendingArchiveId() === exercise.id) {
+            <div class="actions">
+              <span class="ask">Archiviare «{{ exercise.title }}»?</span>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Conferma archiviazione: ' + exercise.title"
+                [hlmTooltip]="'Conferma archiviazione'"
+                [disabled]="busy()"
+                (click)="confirmArchive(exercise)"
+              >
+                <ng-icon name="lucideCheck" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Annulla archiviazione: ' + exercise.title"
+                [hlmTooltip]="'Annulla'"
+                (click)="cancelArchive()"
+              >
+                <ng-icon name="lucideX" />
+              </button>
+            </div>
+          } @else {
+            <div class="actions">
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Modifica: ' + exercise.title"
+                [hlmTooltip]="'Modifica'"
+                [disabled]="busy()"
+                hlmDialogTrigger
+                (click)="startEdit(exercise)"
+              >
+                <ng-icon name="lucidePencil" />
+              </button>
+              <a
+                hlmBtn
+                size="icon-xs"
+                variant="outline"
+                [routerLink]="['/exercises', exercise.id, 'editor']"
+                [attr.aria-label]="'Modifica esercizio: ' + exercise.title"
+                [hlmTooltip]="'Modifica esercizio'"
+              >
+                <ng-icon name="lucidePencilRuler" />
+              </a>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Archivia: ' + exercise.title"
+                [hlmTooltip]="'Archivia'"
+                [disabled]="busy()"
+                (click)="askArchive(exercise)"
+              >
+                <ng-icon name="lucideArchive" />
+              </button>
+            </div>
+          }
+        </ng-template>
+      </app-data-table>
+    }
+  </section>
+
+  <hlm-dialog-content *hlmDialogPortal="let ctx">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>{{ dialogTitle() }}</h2>
+      <p hlmDialogDescription>
+        Il titolo distingue l’esercizio nell’elenco; la descrizione è facoltativa.
+      </p>
+    </hlm-dialog-header>
+
+    @if (mode() === 'create') {
+      <form [formRoot]="createForm" id="create-exercise-form" class="grid gap-6">
+        <!-- Il tipo si sceglie una volta sola: decide quali campi mostrerà l'editor e non si cambia
+             più, perché un esercizio già assegnato ha versioni che dichiarano il loro tipo. -->
+        <div hlmField>
+          <label hlmFieldLabel for="new-exercise-type">Tipo di esercizio</label>
+          <select hlmInput id="new-exercise-type" [formField]="createForm.exerciseType">
+            @for (type of exerciseTypes; track type.value) {
+              <option [value]="type.value">{{ type.label }}</option>
+            }
+          </select>
+          <p hlmFieldDescription>
+            Il tipo non si cambia dopo la creazione. «Percorso sulla griglia» fa comporre un
+            programma a blocchi; «Domanda con risposta» fa leggere una rappresentazione e scrivere
+            una risposta.
+          </p>
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="new-exercise-title">Titolo</label>
+          <input hlmInput id="new-exercise-title" type="text" [formField]="createForm.title" />
+          @if (createForm.title().touched() && createForm.title().invalid()) {
+            @for (error of createForm.title().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>Per esempio «Ciclo con i blocchi».</p>
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="new-exercise-description">Descrizione (facoltativa)</label>
+          <textarea
+            hlmTextarea
+            id="new-exercise-description"
+            rows="3"
+            [formField]="createForm.description"
+          ></textarea>
+          @if (createForm.description().touched() && createForm.description().invalid()) {
+            @for (error of createForm.description().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="create-exercise-form" [disabled]="busy()">
+          Crea esercizio
+        </button>
+      </hlm-dialog-footer>
+    } @else {
+      <form [formRoot]="editForm" id="edit-exercise-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="edit-exercise-title">Titolo</label>
+          <input hlmInput id="edit-exercise-title" type="text" [formField]="editForm.title" />
+          @if (editForm.title().touched() && editForm.title().invalid()) {
+            @for (error of editForm.title().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="edit-exercise-description">Descrizione (facoltativa)</label>
+          <textarea
+            hlmTextarea
+            id="edit-exercise-description"
+            rows="3"
+            [formField]="editForm.description"
+          ></textarea>
+          @if (editForm.description().touched() && editForm.description().invalid()) {
+            @for (error of editForm.description().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="edit-exercise-form" [disabled]="busy()">
+          Salva esercizio
+        </button>
+      </hlm-dialog-footer>
+    }
+  </hlm-dialog-content>
+</hlm-dialog>

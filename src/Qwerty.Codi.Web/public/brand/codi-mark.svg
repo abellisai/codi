@@ -1,0 +1,25 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="224"
+  height="224"
+  viewBox="0 0 224 224"
+  role="img"
+  aria-labelledby="codi-mark-title"
+>
+  <title id="codi-mark-title">Codì</title>
+  <g transform="translate(16 7)">
+    <path
+      fill="#17c99d"
+      d="M0 125h68v16h14v-4c0-15 12-27 27-27h31c15 0 28 12 28 27v4h5c11 0 19 8 19 19s-8 19-19 19h-5v4c0 15-13 27-28 27H66c-36 0-66-30-66-66z"
+    />
+    <path
+      fill="#ffbd00"
+      transform="scale(1 .76)"
+      d="M73 0h67c16 0 28 12 28 28v3h5c11 0 19 8 19 19s-8 19-19 19h-5v3c0 16-12 28-28 28H91c-13 0-23-10-23-23v-9H45V28C45 12 57 0 73 0z"
+    />
+    <path
+      fill="#079df1"
+      d="M48 31h26c16 0 28 12 28 28v11H88c-6 0-10 4-10 10v30h6c12 0 20 8 20 20v6c0 12-8 20-20 20h-6v2c0 14-10 24-24 24-30 0-54-24-54-54V85c0-30 22-54 48-54z"
+    />
+  </g>
+</svg>

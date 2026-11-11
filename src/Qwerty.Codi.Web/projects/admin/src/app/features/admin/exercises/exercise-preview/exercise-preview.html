@@ -1,0 +1,50 @@
+<div class="preview">
+  @if (trialDisabledReason(); as reason) {
+    <p class="hint">{{ reason }}</p>
+  } @else {
+    <div class="controls">
+      <button hlmBtn type="button" size="sm" [disabled]="running()" (click)="play()">
+        Avvia la prova
+      </button>
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        [disabled]="running() || !canStep()"
+        (click)="stepOnce()"
+      >
+        Passo avanti
+      </button>
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        [disabled]="!running()"
+        (click)="stop()"
+      >
+        Ferma
+      </button>
+      <button hlmBtn type="button" variant="outline" size="sm" (click)="reset()">Ricomincia</button>
+    </div>
+  }
+
+  @if (problem(); as text) {
+    <p class="problem" role="alert">{{ text }}</p>
+  }
+
+  <div class="board" role="group" [attr.aria-label]="boardLabel()">
+    @for (row of rows(); track $index) {
+      <div class="board-row">
+        @for (cell of row; track cell.y * 1000 + cell.x) {
+          <span [class]="cellClasses(cell)" [attr.aria-label]="cellLabel(cell)">
+            {{ cellSymbol(cell) }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <p class="outcome" role="status" aria-live="polite">{{ message() }}</p>
+</div>

@@ -1,0 +1,161 @@
+<section class="quiz-editor" aria-label="Definizione della domanda">
+  <div class="exercise-authoring-toolbar">
+    <ng-container [ngTemplateOutlet]="publication()?.toolbar() ?? null" />
+  </div>
+  <p class="note">
+    La risposta attesa non è nella definizione: si compone qui sotto, e resta riservata a te. Il
+    bambino vede solo la rappresentazione, la domanda e i due messaggi.
+  </p>
+
+  @if (isNewDraft()) {
+    <p class="note" role="status">
+      Non esiste ancora una bozza per questo esercizio: quello che vedi è una definizione iniziale
+      suggerita e il primo salvataggio la crea.
+    </p>
+  }
+
+  @if (error(); as failure) {
+    <p class="error" role="alert">
+      {{ failure.message }}
+      @if (failure.requiresSignIn) {
+        <a routerLink="/login">Accedi di nuovo</a>
+      }
+    </p>
+  }
+
+  @if (loading()) {
+    <p role="status">Caricamento della bozza in corso…</p>
+  } @else {
+    <form [formRoot]="editorForm" id="quiz-editor-form" class="editor">
+      <section class="editor-section" aria-labelledby="quiz-content-title">
+        <h2 id="quiz-content-title">Che cosa legge il bambino</h2>
+
+        <div hlmField>
+          <label hlmFieldLabel for="quiz-stimulus">Rappresentazione da leggere</label>
+          <textarea
+            hlmTextarea
+            id="quiz-stimulus"
+            rows="3"
+            [formField]="editorForm.stimulus"
+          ></textarea>
+          @if (editorForm.stimulus().touched() && editorForm.stimulus().invalid()) {
+            @for (validation of editorForm.stimulus().errors(); track validation) {
+              <hlm-field-error [validator]="validation.kind">{{
+                validation.message
+              }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>
+            Per esempio «0110», oppure «3 + 4 = ?». Non contiene la risposta.
+          </p>
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="quiz-prompt">Domanda</label>
+          <textarea
+            hlmTextarea
+            id="quiz-prompt"
+            rows="2"
+            [formField]="editorForm.prompt"
+          ></textarea>
+          @if (editorForm.prompt().touched() && editorForm.prompt().invalid()) {
+            @for (validation of editorForm.prompt().errors(); track validation) {
+              <hlm-field-error [validator]="validation.kind">{{
+                validation.message
+              }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>
+            È anche la consegna mostrata all’alunno. Per esempio «Quanto vale in decimale?».
+          </p>
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="quiz-match">Come si confronta la risposta</label>
+          <select hlmNativeSelect id="quiz-match" [formField]="editorForm.match">
+            @for (match of matches; track match) {
+              <option [value]="match">{{ matchLabels[match] }}</option>
+            }
+          </select>
+          <p hlmFieldDescription>
+            Il confronto lo fa il server: «Numero» accetta anche «007» per «7».
+          </p>
+        </div>
+      </section>
+
+      <section class="editor-section" aria-labelledby="quiz-feedback-title">
+        <h2 id="quiz-feedback-title">Che cosa dice il gioco</h2>
+
+        <div hlmField>
+          <label hlmFieldLabel for="quiz-success">Risposta corretta</label>
+          <input hlmInput id="quiz-success" type="text" [formField]="editorForm.successMessage" />
+          @if (editorForm.successMessage().touched() && editorForm.successMessage().invalid()) {
+            @for (validation of editorForm.successMessage().errors(); track validation) {
+              <hlm-field-error [validator]="validation.kind">{{
+                validation.message
+              }}</hlm-field-error>
+            }
+          }
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="quiz-wrong">Risposta sbagliata</label>
+          <input hlmInput id="quiz-wrong" type="text" [formField]="editorForm.wrongMessage" />
+          @if (editorForm.wrongMessage().touched() && editorForm.wrongMessage().invalid()) {
+            @for (validation of editorForm.wrongMessage().errors(); track validation) {
+              <hlm-field-error [validator]="validation.kind">{{
+                validation.message
+              }}</hlm-field-error>
+            }
+          }
+        </div>
+      </section>
+
+      <section class="editor-section" aria-labelledby="quiz-answer-title">
+        <h2 id="quiz-answer-title">Risposta attesa (riservata)</h2>
+        <div hlmField>
+          <label hlmFieldLabel for="quiz-answer">Quello che il bambino deve produrre</label>
+          <input hlmInput id="quiz-answer" type="text" [formField]="editorForm.answer" />
+          @if (editorForm.answer().touched() && editorForm.answer().invalid()) {
+            @for (error of editorForm.answer().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          @if (!hasAnswer()) {
+            <p class="note" role="status">
+              Puoi salvare la bozza senza risposta. Inserisci la risposta corretta prima di rendere
+              disponibile l’esercizio.
+            </p>
+          }
+          <p hlmFieldDescription>
+            Non esce mai verso gli alunni: vive nella soluzione privata della versione pubblicata.
+          </p>
+        </div>
+      </section>
+
+      @if (changed()) {
+        <p class="note" role="status">Ci sono modifiche non salvate.</p>
+      }
+    </form>
+
+    <section class="editor-section" aria-labelledby="quiz-publication-title">
+      <h2 id="quiz-publication-title">Pubblicazione</h2>
+      <p class="note">
+        «Rendi disponibile» salva le modifiche e prepara l’esercizio per le lezioni.
+      </p>
+      <app-exercise-publication
+        [exerciseId]="exerciseId()"
+        [definitionJson]="definitionJson()"
+        [workspaceJson]="workspaceJson"
+        [solutionJson]="solutionJson()"
+        [draftRowVersion]="savedRowVersion()"
+        [hasUnsavedChanges]="changed() || busy()"
+        [editorBusy]="busy()"
+        [editorError]="error()"
+        [prepareDraft]="prepareForPublication"
+        [issues]="publicationIssues()"
+        (draftReplaced)="onDraftReplaced()"
+      />
+    </section>
+  }
+</section>

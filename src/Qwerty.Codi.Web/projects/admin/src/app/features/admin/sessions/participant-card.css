@@ -1,0 +1,168 @@
+/* Stili propri della card di un partecipante: il contenitore della pagina e i messaggi d'errore
+   arrivano dai fogli globali dell'admin, come le azioni di riga. Qui la card selezionata, i fatti,
+   il dettaglio aperto e l'anteprima dei blocchi. */
+
+/* La card selezionata è quella di cui si legge il dettaglio: serve vederlo senza aprirla. */
+.selected {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* Il dettaglio appartiene a un solo alunno (§14.3, §15.5): vive nella card selezionata, non nella
+   riga di una tabella. Qui i fatti del tentativo e l'anteprima dei blocchi, con la freschezza
+   dichiarata: un'anteprima che non corrisponde al progetto salvato si dice parziale invece di
+   sembrare definitiva. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 2rem;
+  margin: 0;
+}
+
+.fact {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.fact dt {
+  color: var(--muted-foreground);
+}
+
+.fact dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.flag {
+  margin: 0.5rem 0 0;
+  color: var(--muted-foreground);
+  font-weight: 400;
+  font-size: 0.875rem;
+}
+
+.detail {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.preview {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+
+.preview-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+
+.preview-when {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.5rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.preview-partial {
+  color: var(--destructive);
+  font-weight: 600;
+}
+
+.preview-saved {
+  color: var(--primary);
+}
+
+.preview-empty,
+.preview-problem {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+.preview-problem {
+  margin-top: 0.5rem;
+  color: var(--destructive);
+}
+
+.preview-blocks {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.preview-blocks li {
+  padding-block: 0.125rem;
+}
+
+.preview-blocks li::before {
+  content: '▪';
+  margin-right: 0.5rem;
+  color: var(--muted-foreground);
+}
+
+/* Chat con il singolo alunno (§8, §15.1): il thread si legge nella card aperta. Il testo del
+   messaggio è testo semplice, non HTML, e il conteggio dei non letti è l'unico effetto osservabile
+   della lettura. */
+.unread {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.chat {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--border);
+}
+
+.chat-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted-foreground);
+}
+
+.chat-thread {
+  margin: 0 0 0.75rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.chat-message {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  padding-block: 0.25rem;
+}
+
+.chat-author {
+  font-weight: 600;
+}
+
+.chat-text {
+  flex: 1 1 100%;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.chat-when,
+.chat-empty {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.chat-problem {
+  margin: 0 0 0.5rem;
+  color: var(--destructive);
+}
+
+.chat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

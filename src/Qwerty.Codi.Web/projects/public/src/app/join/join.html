@@ -1,0 +1,104 @@
+<main class="join">
+  <h1>Entra nella lezione</h1>
+
+  <!-- La home sente se il maestro ha avviato la lezione: chiedere un codice quando nessuna lezione
+       è in corso sarebbe chiedere una cosa che non esiste. -->
+  <p class="presence" role="status" aria-live="polite">
+    @if (inPlay()) {
+      La lezione è iniziata! Chiedi il codice al maestro e scrivilo qui.
+    } @else if (presenceChecked()) {
+      Nessuna lezione in corso: aspetta che il maestro inizi la lezione.
+    } @else {
+      Un momento…
+    }
+  </p>
+
+  @if (error(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <p>
+    <label for="nome">Il tuo nome</label>
+    <input
+      id="nome"
+      type="text"
+      maxlength="30"
+      autocomplete="off"
+      [disabled]="busy()"
+      [value]="displayName()"
+      (input)="onName($event)"
+    />
+  </p>
+
+  <section class="code" aria-label="Codice della lezione">
+    <p>
+      <label for="codice">Codice della lezione</label>
+      <input
+        id="codice"
+        class="code-input"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
+        maxlength="8"
+        placeholder="12345678"
+        [disabled]="busy()"
+        [value]="code()"
+        (input)="onCode($event)"
+      />
+    </p>
+
+    <button type="button" [disabled]="!canJoinWithCode()" (click)="joinWithCode()">Entra</button>
+  </section>
+
+  <!-- Il percorso con scuola e classe resta, ma non è più la via ordinaria: si scopre solo se
+       l'alunno dichiara di non avere il codice. -->
+  <p class="fallback">
+    <button type="button" class="link" (click)="toggleChain()">
+      {{ showChain() ? 'Nascondi la scelta di scuola e classe' : 'Non ho il codice' }}
+    </button>
+  </p>
+
+  @if (showChain()) {
+    <section class="chain" aria-label="Scelta di scuola e classe">
+      <p>
+        <label for="scuola">Scuola</label>
+        <select id="scuola" [disabled]="busy()" (change)="chooseSchool($event)">
+          <option value="">— scegli la scuola —</option>
+          @for (school of schools(); track school.id) {
+            <option [value]="school.id">{{ school.name }}</option>
+          }
+        </select>
+      </p>
+
+      <p>
+        <label for="classe">Classe</label>
+        <select
+          id="classe"
+          [disabled]="busy() || schoolId() === ''"
+          (change)="chooseClassroom($event)"
+        >
+          <option value="">— scegli la classe —</option>
+          @for (classroom of classrooms(); track classroom.id) {
+            <option [value]="classroom.id">
+              {{ classroom.name }} ({{ classroom.schoolYear }})
+            </option>
+          }
+        </select>
+      </p>
+
+      @if (play(); as session) {
+        <p class="lesson" role="status">
+          Lezione in corso: <strong>{{ session.lessonTitle }}</strong> · {{ session.courseTitle }}
+        </p>
+      } @else if (classroomId() !== '') {
+        <p class="lesson" role="status">In questa classe non c’è una lezione in corso.</p>
+      }
+
+      <button type="button" [disabled]="!canJoinWithChain()" (click)="joinWithChain()">
+        Entra con scuola e classe
+      </button>
+    </section>
+  }
+
+  <p><a routerLink="/">Torna all’inizio</a></p>
+</main>

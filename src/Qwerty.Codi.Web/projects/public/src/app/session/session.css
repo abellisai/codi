@@ -1,0 +1,133 @@
+/* Pagina grezza dell'alunno: mostra i dati del contratto e i permessi, senza decidere l'aspetto
+   definitivo — quello arriva con il player e con i test in aula. Occupa tutta la larghezza: il
+   progetto e il programma si guardano insieme. */
+.session {
+  max-width: none;
+  margin: 0;
+  padding: 1.5rem;
+  font-size: 1.125rem;
+}
+
+/* Progetto a sinistra, programma a destra. Le colonne si adattano: quando lo schermo è stretto
+   tornano una sotto l'altra, e con un solo pannello — in attesa non c'è ancora un progetto — quello
+   presente occupa la riga invece di lasciare un vuoto a fianco. */
+.work-area {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(26rem, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+.work-area > section {
+  min-width: 0;
+}
+
+/* Percorso dell'alunno: scuola, classe, lezione, esercizio. Una riga di nomi, non di collegamenti:
+   il bambino non naviga, riconosce dove si trova. I separatori sono decorativi. */
+.breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 1.05rem;
+  color: #3d5a73;
+}
+
+.breadcrumb li {
+  display: flex;
+  align-items: center;
+}
+
+.breadcrumb li + li::before {
+  content: '/';
+  margin-right: 0.5rem;
+  color: #94a3b8;
+}
+
+.session h1 {
+  margin: 0.25rem 0 0.75rem;
+}
+
+/* Riquadri di stato in cima alla pagina: una riga che va a capo da sola su schermi stretti. */
+.status-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts {
+  color: #444;
+}
+
+.link {
+  color: #444;
+}
+
+.note {
+  color: #444;
+  font-style: italic;
+}
+
+pre {
+  padding: 0.75rem;
+  background: #f4f4f4;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.error {
+  padding: 0.5rem 0.75rem;
+  background: #fee;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.actions button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Griglia dell'esercizio: celle quadrate, con un simbolo che distingue lo stato anche senza colore. */
+.board {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+}
+
+.board td {
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid #99a;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 1.5rem;
+  background: #fff;
+}
+
+.board .cell-start {
+  background: #eef6ff;
+}
+
+.board .cell-goal {
+  background: #fff7e0;
+}
+
+.board .cell-obstacle {
+  background: #555;
+}
+
+.board .cell-character {
+  outline: 3px solid #1a7f37;
+  outline-offset: -3px;
+}

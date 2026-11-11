@@ -1,0 +1,15 @@
+/* Stili propri dell'elenco delle sessioni: il contenitore della pagina, le azioni di riga e i
+   messaggi d'errore arrivano già dai fogli globali dell'admin. Qui restano solo le poche regole
+   che riguardano questa pagina. */
+
+h1 {
+  font-size: 1.5rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
+  flex-wrap: nowrap;
+}

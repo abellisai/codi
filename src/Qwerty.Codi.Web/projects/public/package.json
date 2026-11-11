@@ -1,0 +1,8 @@
+{
+  "name": "codi-public",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "cd ../.. && ng serve web.frontend"
+  }
+}

@@ -1,0 +1,30 @@
+// Modello STRUTTURALE, non compilabile: sostituire tutti i segnaposto.
+// Non copiare tipi ausiliari già esistenti. Non inventare attributi o firme Mediator.
+// Nome pubblico dell'esempio di regia: Pause; policy: SessionController (§10.4).
+// BootstrapAdminAccount richiede invece un canale esclusivamente locale.
+
+namespace Qwerty.Codi.Application.Commands;
+
+// Inserire i metadati reali del progetto per nome pubblico e policy.
+// Usare il DTO/serializer effettivo: long in C#, stringa decimale nel JSON.
+{{PUBLIC_NAME_AND_POLICY_METADATA}}
+public sealed record Pause(
+    Guid SessionId,
+    long ExpectedSessionRevision,
+    CommandTarget Target) : {{MEDIATOR_COMMAND_CONTRACT}};
+
+public sealed class PauseHandler({{ACTUAL_DEPENDENCIES}})
+    : {{ACTUAL_MEDIATOR_HANDLER_CONTRACT}}
+{
+    {{ACTUAL_HANDLE_SIGNATURE}}
+    {
+        // Policy già verificata; proprietà e precondizioni verificate nel contesto affidabile.
+        // Coordinatore prima della transazione, un solo proprietario della unità di lavoro.
+        // Applicare §6.4 e salvare stato/comando/consegne/outbox in modo atomico.
+        // Nessun invio SignalR in transazione e nessun secondo mediator.Send.
+        {{IMPLEMENT_CASE_AND_RETURN_TYPED_RESULT}}
+    }
+}
+
+// Prima della consegna: nessun segnaposto, corpo vuoto o NotImplementedException;
+// registrazione, policy, canale, serializer e test devono corrispondere al codice reale.

@@ -1,0 +1,98 @@
+<!-- Guscio dell'area docente: menu delle sezioni a sinistra, pagina della route a destra.
+     Su schermo stretto il menu diventa un pannello laterale, aperto dal pulsante in alto. -->
+<div hlmSidebarWrapper>
+  <hlm-sidebar
+    collapsible="icon"
+    side="left"
+    srOnlySheetTitle="Sezioni dell’area docente"
+    srOnlySheetDescription="Scegli la sezione da configurare."
+  >
+    <div hlmSidebarHeader>
+      <!-- La pagina iniziale non è una sezione: si raggiunge dal nome dell'applicazione. -->
+      <a
+        class="flex flex-col gap-0.5 rounded-md px-2 py-1 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:px-0"
+        routerLink="/"
+        aria-label="Codì: pagina iniziale"
+      >
+        <img
+          class="h-auto w-36 max-w-full group-data-[collapsible=icon]:hidden dark:brightness-0 dark:invert"
+          src="brand/codi-logo.svg"
+          alt=""
+          width="728"
+          height="232"
+        />
+        <img
+          class="hidden size-8 group-data-[collapsible=icon]:block"
+          src="brand/codi-mark.svg"
+          alt=""
+          width="224"
+          height="224"
+        />
+        <span class="text-muted-foreground text-xs group-data-[collapsible=icon]:hidden">
+          Area docente
+        </span>
+      </a>
+    </div>
+
+    <div hlmSidebarContent>
+      @for (group of groups; track group.label) {
+        <div hlmSidebarGroup>
+          <div hlmSidebarGroupLabel>{{ group.label }}</div>
+          <div hlmSidebarGroupContent>
+            <ul hlmSidebarMenu>
+              @for (section of group.sections; track section.label) {
+                <li hlmSidebarMenuItem>
+                  <a
+                    hlmSidebarMenuButton
+                    [routerLink]="section.commands"
+                    [queryParams]="section.queryParams ?? null"
+                    [tooltip]="section.label"
+                    [isActive]="section.active()"
+                    [closeMobileSidebarOnClick]="true"
+                    [attr.aria-current]="section.active() ? 'page' : null"
+                  >
+                    <ng-icon [name]="section.icon" />
+                    <span>{{ section.label }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div hlmSidebarFooter>
+      <ul hlmSidebarMenu>
+        <li hlmSidebarMenuItem>
+          <button
+            hlmSidebarMenuButton
+            type="button"
+            tooltip="Esci"
+            [disabled]="signingOut()"
+            (click)="signOut()"
+          >
+            <ng-icon name="lucideLogOut" />
+            <span>{{ signingOut() ? 'Uscita in corso…' : 'Esci' }}</span>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </hlm-sidebar>
+
+  <main hlmSidebarInset>
+    <header class="flex items-center gap-2 border-b p-2">
+      <!-- Il pulsante del componente contiene già la propria icona, quindi non ha testo interno:
+           il nome accessibile lo dichiara questo attributo, in italiano. -->
+      <button hlmSidebarTrigger aria-label="Mostra o nascondi il menu delle sezioni"></button>
+      <span class="text-sm font-medium">{{ pageTitle() }}</span>
+    </header>
+
+    <router-outlet />
+  </main>
+</div>
+
+<!-- Gli avvisi dell'esito delle chiamate al server appartengono all'area docente: il contenitore
+     vive qui, in un modulo già caricato dopo l'accesso, e non nel bundle iniziale dell'app. -->
+<hlm-toaster />
+<app-global-spinner />

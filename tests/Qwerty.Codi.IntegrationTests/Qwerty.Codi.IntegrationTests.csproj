@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <!-- Mediator.Abstractions serve alle richieste di prova, che implementano IRequest<T>.
+         Il generatore non è referenziato qui: emette un tipo pubblico di registrazione per ogni
+         assembly che lo referenzia, e con il generatore anche in Application la chiamata
+         `AddMediator` diventerebbe ambigua in questo progetto (CS0121 misurato in build).
+         Il generatore vive in Application, dove stanno gli handler di §4.4. -->
+    <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <!-- Collector XPlat Code Coverage: senza di lui la raccolta della copertura produce un
+         avviso e nessun report, e il gate di §20.4 non avrebbe nulla da confrontare. -->
+    <PackageReference Include="coverlet.collector" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Qwerty.Codi.Application\Qwerty.Codi.Application.csproj" />
+    <ProjectReference Include="..\..\src\Qwerty.Codi.Infrastructure\Qwerty.Codi.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Qwerty.Codi.Api\Qwerty.Codi.Api.csproj" />
+  </ItemGroup>
+
+</Project>

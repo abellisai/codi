@@ -1,0 +1,26 @@
+<Project>
+
+  <!-- Gestione centralizzata delle versioni dei pacchetti (§3.2): la versione vive qui e i
+       csproj la ricevono senza attributo Version. Una dipendenza nuova si aggiunge in questo
+       file, così una sola voce decide la versione per tutti i progetti della soluzione.
+       Le versioni sono quelle già adottate e validate in T0, non scelte a mano: RepoDb e il suo
+       provider SQLite restano allineati (A-05) e Mediator è la 2.1.7 proposta in §3.2. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageVersion Include="Mediator.Abstractions" Version="2.1.7" />
+    <PackageVersion Include="Mediator.SourceGenerator" Version="2.1.7" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <!-- Collector di copertura per il gate di §20.4. Versione verificata su nuget.org il
+         2026-09-30 con `dotnet package search coverlet.collector` (più recente: 10.1.0). -->
+    <PackageVersion Include="coverlet.collector" Version="10.1.0" />
+    <PackageVersion Include="RepoDb" Version="1.14.0" />
+    <PackageVersion Include="RepoDb.Sqlite.Microsoft" Version="1.14.0" />
+    <PackageVersion Include="xunit" Version="2.9.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

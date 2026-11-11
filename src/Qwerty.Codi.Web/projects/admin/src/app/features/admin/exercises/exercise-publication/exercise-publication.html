@@ -1,0 +1,266 @@
+<ng-template #toolbar>
+  <div class="authoring-controls" aria-label="Azioni dell’esercizio">
+    <hlm-badge
+      class="authoring-state"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      [variant]="statusVariant()"
+      [attr.title]="statusHint()"
+    >
+      {{ labels[status()] }}
+    </hlm-badge>
+    <div class="toolbar-actions">
+      @if (prepareDraft() !== null) {
+        <button
+          hlmBtn
+          type="button"
+          variant="outline"
+          [disabled]="
+            busy() || editorBusy() || (!hasUnsavedChanges() && draftRowVersion() !== null)
+          "
+          (click)="saveOnly()"
+        >
+          Salva bozza
+        </button>
+      }
+      <button
+        hlmBtn
+        type="button"
+        data-action="make-available"
+        [disabled]="!canPublish()"
+        (click)="publish()"
+      >
+        {{ busy() || editorBusy() ? 'Operazione in corso…' : 'Rendi disponibile' }}
+      </button>
+    </div>
+  </div>
+  @if (issues().length > 0) {
+    <ul class="problems" role="alert" aria-label="Dati da completare">
+      @for (issue of issues(); track $index) {
+        <li>
+          <button type="button" class="issue-link" (click)="issue.focus()">
+            {{ issue.message }}
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  @if (problems(); as list) {
+    @if (list.length > 0) {
+      <ul class="problems" role="alert">
+        @for (problem of list; track problem) {
+          <li>
+            <button type="button" class="issue-link" (click)="focusProblem(problem)">
+              {{ problem }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+  @if (error() ?? editorError(); as failure) {
+    <p class="error" role="alert">{{ failure.message }}</p>
+  }
+  @if (notice(); as message) {
+    <p class="saved" role="status">{{ message }}</p>
+  }
+</ng-template>
+@if (prepareDraft() === null) {
+  <ng-container [ngTemplateOutlet]="toolbar" />
+}
+
+<div class="publication">
+  <div hlmField>
+    <label hlmFieldLabel for="publication-notes">Note dell’autore (facoltative)</label>
+    <textarea
+      hlmTextarea
+      id="publication-notes"
+      rows="3"
+      [formField]="notesForm.notes"
+      placeholder="Per esempio «alzato il limite dei passi: la strada più corta ne chiede dodici»"
+    ></textarea>
+    <p hlmFieldDescription>
+      Accompagnano la versione che stai pubblicando e restano visibili solo al docente: gli alunni
+      non le ricevono. Una versione non si aggiorna, quindi per cambiarle se ne pubblica una nuova.
+    </p>
+  </div>
+
+  <div class="actions">
+    <button
+      hlmBtn
+      type="button"
+      size="sm"
+      variant="outline"
+      [disabled]="busy()"
+      (click)="validate()"
+    >
+      Verifica la bozza
+    </button>
+  </div>
+
+  @if (hasUnsavedChanges()) {
+    <p class="hint" role="status">
+      Ci sono modifiche non salvate. «Rendi disponibile» salva le modifiche e prepara l’esercizio
+      per le lezioni.
+    </p>
+  } @else if (draftRowVersion() === null) {
+    <p class="hint" role="status">
+      La bozza non è ancora salvata. «Rendi disponibile» esegue anche il primo salvataggio.
+    </p>
+  }
+
+  <h3 id="published-versions-title">Versioni pubblicate</h3>
+  @if (versions().length === 0) {
+    <p class="hint" role="status">Nessuna versione pubblicata.</p>
+  } @else {
+    <div class="versions-scroll">
+      <table class="versions" aria-labelledby="published-versions-title">
+        <thead>
+          <tr>
+            <th scope="col">Versione</th>
+            <th scope="col">Pubblicata</th>
+            <th scope="col">Motore</th>
+            <th scope="col">Impronta</th>
+            <th scope="col">Note</th>
+            <th scope="col">Azioni</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (version of versions(); track version.id) {
+            <tr>
+              <th scope="row">{{ version.versionNumber }}</th>
+              <td>{{ publishedAt(version) }}</td>
+              <td>{{ version.engineVersion }}</td>
+              <td>
+                <code>{{ shortHash(version) }}</code>
+              </td>
+              <td class="notes">{{ version.authorNotes ?? '—' }}</td>
+              <td>
+                <!-- L'eliminazione è definitiva e riguarda solo la cronologia: si offre sulle
+                     versioni che non sono più la più recente e chiede conferma **sulla riga**, con
+                     lo stesso gesto dell'archiviazione degli elenchi. La conferma non dipende
+                     dalla bozza, quindi resta disponibile anche con modifiche non salvate: a
+                     differenza dell'ingresso, che si spegne mentre la pagina sta lavorando. -->
+                @if (pendingDeleteVersion() === version.id) {
+                  <div class="row-actions">
+                    <span class="ask">Eliminare la versione {{ version.versionNumber }}?</span>
+                    <button
+                      hlmBtn
+                      type="button"
+                      size="icon-xs"
+                      variant="outline"
+                      [attr.id]="confirmDeleteId(version)"
+                      [attr.aria-label]="
+                        'Conferma eliminazione della versione ' + version.versionNumber
+                      "
+                      [hlmTooltip]="'Conferma eliminazione'"
+                      [disabled]="busy()"
+                      (click)="deleteVersion(version)"
+                    >
+                      <ng-icon name="lucideCheck" aria-hidden="true" />
+                    </button>
+                    <button
+                      hlmBtn
+                      type="button"
+                      size="icon-xs"
+                      variant="outline"
+                      [attr.aria-label]="
+                        'Annulla eliminazione della versione ' + version.versionNumber
+                      "
+                      [hlmTooltip]="'Annulla'"
+                      (click)="cancelDelete()"
+                    >
+                      <ng-icon name="lucideX" aria-hidden="true" />
+                    </button>
+                  </div>
+                } @else {
+                  <div class="row-actions">
+                    <button
+                      hlmBtn
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      [attr.aria-expanded]="inspected()?.id === version.id"
+                      (click)="inspect(version)"
+                    >
+                      Guarda la versione
+                    </button>
+                    <button
+                      hlmBtn
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      [disabled]="!canAct()"
+                      (click)="copy(version)"
+                    >
+                      Copia nell’editor
+                    </button>
+                    @if (!isLatest(version)) {
+                      <button
+                        hlmBtn
+                        type="button"
+                        size="icon-xs"
+                        variant="outline"
+                        [disabled]="!canAct()"
+                        [attr.aria-label]="
+                          'Elimina la versione ' + version.versionNumber + ' dell’esercizio'
+                        "
+                        [hlmTooltip]="'Elimina la versione'"
+                        (click)="askDelete(version)"
+                      >
+                        <ng-icon name="lucideTrash2" aria-hidden="true" />
+                      </button>
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (inspected(); as version) {
+    <section class="version-preview" aria-labelledby="version-preview-title">
+      <h4 id="version-preview-title">Anteprima della versione {{ version.versionNumber }}</h4>
+      @if (inspectedQuiz(); as quiz) {
+        <h5>{{ quiz.title }}</h5>
+        <p>{{ quiz.quiz.stimulus }}</p>
+        <p>{{ quiz.quiz.prompt }}</p>
+      } @else if (inspectedValues(); as values) {
+        <h5>{{ values.title }}</h5>
+        <p>{{ values.instructions }}</p>
+        <p class="hint">Il programma iniziale della versione è in sola lettura.</p>
+        <app-value-program-program-editor
+          [allowedBlocks]="values.toolbox.allowedBlocks"
+          [workspaceJson]="version.workspaceJson"
+          [readOnly]="true"
+        />
+      } @else if (inspectedPreview(); as preview) {
+        <p class="hint" id="version-preview-help">
+          «{{ preview.title }}» viene eseguito qui come lo eseguirà un alunno, in stato isolato: non
+          modifica la bozza e non tocca il lavoro di nessuno. Per riprendere questa versione
+          nell’editor si usa «Copia nell’editor».
+        </p>
+        <app-exercise-preview
+          aria-describedby="version-preview-help"
+          [scene]="preview.scene"
+          [rules]="preview.rules"
+          [limits]="preview.limits"
+          [workspaceJson]="preview.workspaceJson"
+          [successMessage]="preview.successMessage"
+          [collisionMessage]="preview.collisionMessage"
+          [trialDisabledReason]="preview.trialDisabledReason"
+        />
+      } @else {
+        <p class="error" role="alert">
+          La definizione di questa versione non è leggibile: è stata pubblicata con una forma del
+          formato che questa pagina non conosce. La versione resta valida e si può copiare nella
+          bozza, ma non si può eseguire qui.
+        </p>
+      }
+    </section>
+  }
+</div>

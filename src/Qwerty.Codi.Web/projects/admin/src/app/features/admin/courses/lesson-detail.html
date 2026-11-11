@@ -1,0 +1,125 @@
+<section class="admin-page">
+  <app-detail-header
+    [crumbs]="crumbs()"
+    icon="lucideListChecks"
+    [title]="title()"
+    [subtitle]="subtitle()"
+  >
+    <button
+      hlmBtn
+      type="button"
+      variant="outline"
+      size="sm"
+      [disabled]="busy() || !changed()"
+      (click)="resetDraft()"
+    >
+      Annulla modifiche
+    </button>
+    <button
+      hlmBtn
+      type="button"
+      size="sm"
+      [disabled]="busy() || !changed()"
+      (click)="saveSequence()"
+    >
+      Salva sequenza
+    </button>
+  </app-detail-header>
+
+  <p class="note">
+    Le posizioni si numerano da 1 e vanno dall’esercizio associato per primo. Trascina una riga per
+    la sua maniglia per cambiarne l’ordine, oppure usa le frecce su e giù mentre la maniglia ha il
+    fuoco. La sostituzione si invia con la versione della lezione e ricarica la sequenza: svuotarla
+    è ammesso.
+  </p>
+
+  @if (error(); as failure) {
+    <p class="error" role="alert">
+      {{ failure.message }}
+      @if (failure.requiresSignIn) {
+        <a routerLink="/login">Accedi di nuovo</a>
+      }
+    </p>
+  }
+
+  @if (loading()) {
+    <p role="status">Caricamento della sequenza in corso…</p>
+  } @else {
+    @if (draft().length === 0) {
+      <app-empty-state title="La sequenza non ha ancora esercizi: aggiungi il primo qui sotto." />
+    } @else {
+      <ol class="sequence" cdkDropList (cdkDropListDropped)="drop($event)">
+        @for (row of draft(); track row.key; let i = $index) {
+          <li class="sequence-item" cdkDrag>
+            <!-- La maniglia è l'unico punto da cui parte il trascinamento: i pulsanti dentro la
+                 riga restano cliccabili e la riga non si muove per sbaglio. -->
+            <button
+              hlmBtn
+              type="button"
+              size="icon-xs"
+              variant="ghost"
+              class="sequence-handle"
+              cdkDragHandle
+              [disabled]="busy()"
+              [attr.aria-label]="
+                'Posizione ' +
+                (i + 1) +
+                ' di ' +
+                exerciseTitle(row.exerciseId) +
+                ': trascina oppure usa le frecce su e giù'
+              "
+              (keydown.arrowup)="moveWithKeyboard(i, -1, $event)"
+              (keydown.arrowdown)="moveWithKeyboard(i, 1, $event)"
+            >
+              <ng-icon name="lucideGripVertical" aria-hidden="true" />
+            </button>
+
+            <span class="position">{{ i + 1 }}</span>
+            <span class="sequence-name">{{ exerciseTitle(row.exerciseId) }}</span>
+
+            <button
+              hlmBtn
+              type="button"
+              size="icon-xs"
+              variant="outline"
+              [attr.aria-label]="'Rimuovi ' + exerciseTitle(row.exerciseId)"
+              [hlmTooltip]="'Rimuovi dalla sequenza'"
+              [disabled]="busy()"
+              (click)="removeRow(i)"
+            >
+              <ng-icon name="lucideArchive" />
+            </button>
+          </li>
+        }
+      </ol>
+    }
+
+    <!-- Il trascinamento non produce un annuncio da solo: chi usa un lettore di schermo sente
+         l'esito dello spostamento da qui. -->
+    <p class="sr-only" role="status">{{ moveNotice() }}</p>
+
+    <form [formRoot]="addForm" id="add-exercise-form" class="add-exercise">
+      <div hlmField>
+        <label hlmFieldLabel for="add-exercise">Aggiungi un esercizio</label>
+        <hlm-native-select selectId="add-exercise" [formField]="addForm.exerciseId">
+          <option hlmNativeSelectOption value="">Scegli un esercizio…</option>
+          @for (item of availableExercises(); track item.id) {
+            <option hlmNativeSelectOption [value]="item.id">{{ item.title }}</option>
+          }
+        </hlm-native-select>
+        @if (addForm.exerciseId().touched() && addForm.exerciseId().invalid()) {
+          @for (error of addForm.exerciseId().errors(); track error) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+        @if (nothingToAdd()) {
+          <p hlmFieldDescription>
+            Tutti gli esercizi dell’anagrafica sono già in questa lezione: togli una riga per
+            riaggiungerne uno, oppure crea un esercizio nuovo nella sezione «Esercizi».
+          </p>
+        }
+      </div>
+      <button hlmBtn type="submit" [disabled]="busy() || nothingToAdd()">Aggiungi</button>
+    </form>
+  }
+</section>

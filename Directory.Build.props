@@ -1,0 +1,19 @@
+<Project>
+
+  <!-- Ripristino dei pacchetti NuGet dentro la cartella della soluzione, non nel profilo
+       utente. RestorePackagesPath è il corrispettivo MSBuild di globalPackagesFolder in
+       NuGet.config: i due valori devono restare identici. Ha la precedenza sulla variabile
+       d'ambiente NUGET_PACKAGES, quindi la collocazione è deterministica da CLI e da IDE.
+       La cartella `packages/` viene creata al primo restore. -->
+  <PropertyGroup>
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)packages/</RestorePackagesPath>
+  </PropertyGroup>
+
+  <!-- Lockfile per progetto (§3.2): il restore genera `packages.lock.json` e le build
+       successive lo usano, così la stessa configurazione risolve sempre le stesse versioni.
+       L'esecuzione in modalità bloccata (`RestoreLockedMode`) appartiene alla pipeline, in T1. -->
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+</Project>

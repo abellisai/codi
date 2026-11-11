@@ -1,0 +1,189 @@
+<!-- Il dialogo avvolge la pagina perché il pulsante che lo apre sta nell'intestazione e quelli
+     delle righe nella tabella: il clic dichiara il modo, il dialogo mostra il modulo corrispondente. -->
+<hlm-dialog>
+  <section class="admin-page">
+    <app-detail-header
+      [crumbs]="crumbs()"
+      icon="lucideUsers"
+      [title]="title()"
+      [subtitle]="subtitle()"
+    >
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        hlmDialogTrigger
+        (click)="startCreate()"
+      >
+        <ng-icon name="lucidePlus" />
+        Nuova classe
+      </button>
+    </app-detail-header>
+
+    <p class="note">
+      Le classi archiviate non compaiono in questo elenco. Il nome di una classe è unico insieme
+      alla scuola e all’anno scolastico: due classi possono chiamarsi «2ª A» in anni diversi.
+    </p>
+
+    @if (error(); as failure) {
+      <p class="error" role="alert">
+        {{ failure.message }}
+        @if (failure.requiresSignIn) {
+          <a routerLink="/login">Accedi di nuovo</a>
+        }
+      </p>
+    }
+
+    @if (loading()) {
+      <p role="status">Caricamento delle classi in corso…</p>
+    } @else {
+      <app-data-table
+        [columns]="columns"
+        [rows]="classrooms()"
+        label="Classi della scuola"
+        emptyMessage="Questa scuola non ha ancora classi: crea la prima con «Nuova classe»."
+        [rowIdentity]="identity"
+      >
+        <ng-template appDataTableCell="actions" let-classroom>
+          @if (pendingArchiveId() === classroom.id) {
+            <div class="actions">
+              <span class="ask">Archiviare «{{ classroom.name }}»?</span>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Conferma archiviazione: ' + classroom.name"
+                [hlmTooltip]="'Conferma archiviazione'"
+                [disabled]="busy()"
+                (click)="confirmArchive(classroom)"
+              >
+                <ng-icon name="lucideCheck" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Annulla archiviazione: ' + classroom.name"
+                [hlmTooltip]="'Annulla'"
+                (click)="cancelArchive()"
+              >
+                <ng-icon name="lucideX" />
+              </button>
+            </div>
+          } @else {
+            <div class="actions">
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Modifica: ' + classroom.name"
+                [hlmTooltip]="'Modifica'"
+                [disabled]="busy()"
+                hlmDialogTrigger
+                (click)="startEdit(classroom)"
+              >
+                <ng-icon name="lucidePencil" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Archivia: ' + classroom.name"
+                [hlmTooltip]="'Archivia'"
+                [disabled]="busy()"
+                (click)="askArchive(classroom)"
+              >
+                <ng-icon name="lucideArchive" />
+              </button>
+            </div>
+          }
+        </ng-template>
+      </app-data-table>
+    }
+  </section>
+
+  <hlm-dialog-content *hlmDialogPortal="let ctx">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>{{ dialogTitle() }}</h2>
+      <p hlmDialogDescription>{{ dialogDescription() }}</p>
+    </hlm-dialog-header>
+
+    @if (mode() === 'create') {
+      <form [formRoot]="createForm" id="create-classroom-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="new-classroom-name">Nome della classe</label>
+          <input hlmInput id="new-classroom-name" type="text" [formField]="createForm.name" />
+          @if (createForm.name().touched() && createForm.name().invalid()) {
+            @for (error of createForm.name().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>Per esempio «2ª A».</p>
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="new-classroom-year">Anno scolastico</label>
+          <input
+            hlmInput
+            id="new-classroom-year"
+            type="text"
+            placeholder="2026/2027"
+            [formField]="createForm.schoolYear"
+          />
+          @if (createForm.schoolYear().touched() && createForm.schoolYear().invalid()) {
+            @for (error of createForm.schoolYear().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="create-classroom-form" [disabled]="busy()">
+          Crea classe
+        </button>
+      </hlm-dialog-footer>
+    } @else {
+      <form [formRoot]="editForm" id="edit-classroom-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="edit-classroom-name">Nome della classe</label>
+          <input hlmInput id="edit-classroom-name" type="text" [formField]="editForm.name" />
+          @if (editForm.name().touched() && editForm.name().invalid()) {
+            @for (error of editForm.name().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="edit-classroom-year">Anno scolastico</label>
+          <input
+            hlmInput
+            id="edit-classroom-year"
+            type="text"
+            placeholder="2026/2027"
+            [formField]="editForm.schoolYear"
+          />
+          @if (editForm.schoolYear().touched() && editForm.schoolYear().invalid()) {
+            @for (error of editForm.schoolYear().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="edit-classroom-form" [disabled]="busy()">
+          Salva classe
+        </button>
+      </hlm-dialog-footer>
+    }
+  </hlm-dialog-content>
+</hlm-dialog>

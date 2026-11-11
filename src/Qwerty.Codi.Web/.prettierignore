@@ -1,0 +1,12 @@
+# Artefatti di build, cache e dipendenze: non sono sorgenti da formattare.
+dist
+.angular
+coverage
+node_modules
+
+# File generati dal gestore di pacchetti.
+package-lock.json
+
+# Certificati di sviluppo e relative note: non sono sorgenti dell'applicazione, e Prettier non
+# deve riscrivere un file che descrive come generarli.
+ssl

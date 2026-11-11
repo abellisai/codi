@@ -1,0 +1,68 @@
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.board {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: start;
+  padding: 2px;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 0.5rem;
+  background: var(--border, #cbd5e1);
+}
+
+.board-row {
+  display: flex;
+  gap: 2px;
+}
+
+.cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  background: var(--background, #ffffff);
+  font-size: 1.25rem;
+}
+
+.cell-start {
+  background: #e6f2ff;
+}
+
+.cell-goal {
+  background: #fff6d8;
+}
+
+.cell-obstacle {
+  background: #4b5563;
+}
+
+.cell-character {
+  outline: 3px solid #1a4f9c;
+  outline-offset: -3px;
+  font-weight: 700;
+}
+
+.problem {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--destructive, #b3261e);
+  border-radius: 0.5rem;
+  background: var(--destructive-background, #fdecea);
+}
+
+.outcome {
+  margin: 0;
+  min-height: 1.5rem;
+}

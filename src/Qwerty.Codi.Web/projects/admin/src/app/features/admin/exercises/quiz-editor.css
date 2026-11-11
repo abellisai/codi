@@ -1,0 +1,40 @@
+/* Editor della domanda con risposta: una colonna di sezioni, come l'editor della griglia. */
+.quiz-editor {
+  display: grid;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.editor {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.editor-section {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.editor-section h2 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.note {
+  margin: 0;
+}
+
+.error {
+  font-weight: 600;
+}
+
+.saved {
+  font-weight: 600;
+}

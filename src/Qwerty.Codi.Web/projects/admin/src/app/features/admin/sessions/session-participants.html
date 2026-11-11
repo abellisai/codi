@@ -1,0 +1,85 @@
+<!-- Il corpo della pagina è la lista delle card: un alunno per card, con il colpo d'occhio su quello
+     che succede in classe. Il dettaglio e l'anteprima dei blocchi si mostrano solo per la card
+     selezionata (§14.3), perché l'anteprima si legge per un alunno alla volta. -->
+<section class="admin-page">
+  <app-detail-header
+    [crumbs]="crumbs()"
+    icon="lucideUsers"
+    [title]="title()"
+    [subtitle]="subtitle()"
+  >
+    <a
+      hlmBtn
+      type="button"
+      variant="outline"
+      size="sm"
+      [routerLink]="['/sessions', sessionId()]"
+      [attr.aria-label]="'Torna alla regia della sessione: ' + title()"
+    >
+      Regia
+    </a>
+  </app-detail-header>
+
+  @if (!online()) {
+    <p role="status">
+      Collegamento docente interrotto. I dati possono essere superati e i comandi sono sospesi.
+    </p>
+  }
+
+  @if (missingId()) {
+    <p class="error" role="alert">
+      L’indirizzo non indica una sessione: manca l’identificativo.
+      <a routerLink="/sessions">Torna all’elenco delle sessioni</a>
+    </p>
+  } @else if (error(); as failure) {
+    <p class="error" role="alert">
+      {{ failure.message }}
+      @if (failure.requiresSignIn) {
+        <a routerLink="/login">Accedi di nuovo</a>
+      } @else {
+        <a routerLink="/sessions">Torna all’elenco delle sessioni</a>
+      }
+    </p>
+  }
+
+  @if (loading()) {
+    <p role="status">Caricamento dei partecipanti in corso…</p>
+  } @else if (session(); as current) {
+    <p class="note">
+      Ogni card mostra l’alunno così come il server lo vede: presenza, stato desiderato, lavoro
+      corrente e stato confermato. Le azioni sono possibili solo quando lo stato le ammette; i
+      comandi di classe restano nella regia.
+    </p>
+
+    <p class="busy" role="status">{{ notice() }}</p>
+
+    @if (participants().length === 0) {
+      <app-empty-state
+        [title]="'Nessun alunno è ancora entrato: quando entreranno compariranno qui con la loro presenza e il loro stato.'"
+      />
+    } @else {
+      <ul class="cards" aria-label="Partecipanti della sessione">
+        @for (participant of participants(); track participant.participantId) {
+          <li>
+            <app-participant-card
+              [participant]="participant"
+              [actions]="actionsFor(participant)"
+              [isSelected]="isOpen(participant)"
+              [detail]="isOpen(participant) ? detail() : null"
+              [preview]="isOpen(participant) ? preview() : null"
+              [previewLines]="isOpen(participant) ? previewLines() : []"
+              [previewProblem]="isOpen(participant) ? previewProblem() : ''"
+              [chat]="chatThread()"
+              [chatOpen]="isChatOpen(participant)"
+              [chatProblem]="isChatOpen(participant) ? chatProblem() : ''"
+              [chatBusy]="isChatOpen(participant) && chatBusy()"
+              [busy]="busy()"
+              (action)="runAction($event)"
+              (chatSend)="sendChat($event)"
+            />
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

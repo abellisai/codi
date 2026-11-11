@@ -1,0 +1,220 @@
+<section class="value-program-editor" aria-label="Definizione delle variabili e dei casi di prova">
+  <div class="exercise-authoring-toolbar">
+    <ng-container [ngTemplateOutlet]="publication()?.toolbar() ?? null" />
+  </div>
+  <p class="note">
+    Definisci le variabili e i casi di prova. Puoi preparare un programma iniziale vuoto o da
+    completare. Salva la bozza prima di pubblicare la versione per gli alunni.
+  </p>
+
+  @if (error(); as failure) {
+    <p class="error" role="alert">
+      {{ failure.message }}
+      @if (failure.requiresSignIn) {
+        <a routerLink="/login">Accedi di nuovo</a>
+      }
+    </p>
+  }
+
+  @if (loading()) {
+    <p role="status">Caricamento della bozza in corso…</p>
+  } @else {
+    <form class="editor" [formRoot]="editorForm">
+      <section class="editor-section" aria-labelledby="value-instructions-title">
+        <h2 id="value-instructions-title">Che cosa deve fare il programma</h2>
+
+        <div hlmField>
+          <label hlmFieldLabel for="value-instructions">Consegna</label>
+          <textarea
+            hlmTextarea
+            id="value-instructions"
+            rows="3"
+            [formField]="editorForm.instructions"
+          ></textarea>
+          @if (editorForm.instructions().touched() && editorForm.instructions().invalid()) {
+            @for (error of editorForm.instructions().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>
+            È il testo che l'alunno legge prima di comporre il programma. Per esempio «Leggi un
+            numero, somma uno e mostra il risultato».
+          </p>
+        </div>
+      </section>
+
+      <section class="editor-section" aria-labelledby="value-variables-title">
+        <h2 id="value-variables-title">Le variabili</h2>
+
+        <div hlmField>
+          <label hlmFieldLabel for="value-variables">Una per riga, come «Punti = 0»</label>
+          <textarea
+            hlmTextarea
+            id="value-variables"
+            rows="4"
+            [formField]="editorForm.variablesText"
+          ></textarea>
+          @if (editorForm.variablesText().touched() && editorForm.variablesText().invalid()) {
+            @for (error of editorForm.variablesText().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>
+            Il valore dopo l'uguale è quello di partenza. Il programma può nominare
+            <strong>solo</strong>
+            queste variabili: un nome diverso è un programma da correggere, e la diagnosi lo dirà
+            all'alunno con l'elenco di quelle ammesse.
+          </p>
+        </div>
+      </section>
+
+      <section class="editor-section" aria-labelledby="value-cases-title">
+        <h2 id="value-cases-title">I casi di prova</h2>
+
+        <div hlmField>
+          <label hlmFieldLabel for="value-cases">Uno per riga, come «3, 8, 6 -&gt; 2»</label>
+          <textarea
+            hlmTextarea
+            id="value-cases"
+            rows="4"
+            [formField]="editorForm.testCasesText"
+          ></textarea>
+          @if (editorForm.testCasesText().touched() && editorForm.testCasesText().invalid()) {
+            @for (error of editorForm.testCasesText().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>
+            A sinistra i valori che il programma legge, a destra quello che deve mostrare. Più casi
+            distinguono un programma che funziona da uno che funziona per caso: è il motivo per cui
+            il server ne pretende almeno uno, e li esegue tutti.
+          </p>
+        </div>
+      </section>
+
+      <section
+        class="editor-section"
+        aria-labelledby="value-program-title"
+        [attr.inert]="busy() || publication()?.locking() ? '' : null"
+      >
+        <h2 id="value-program-title">Il programma a blocchi</h2>
+        <p class="note">
+          Componi il programma con gli stessi blocchi che trovano gli alunni. Quello che scrivi qui
+          è anche il <strong>punto di partenza</strong> del loro editor: lascialo vuoto per un
+          esercizio da fare da capo, oppure avviane una parte per un esercizio da completare.
+        </p>
+        <app-value-program-program-editor
+          [allowedBlocks]="allowedBlocks()"
+          [workspaceJson]="workspaceJson()"
+          [activeBlockId]="null"
+          (workspaceChanged)="onWorkspace($event)"
+        />
+      </section>
+
+      <section class="editor-section" aria-labelledby="value-preview-title">
+        <h2 id="value-preview-title">Anteprima</h2>
+        <p class="note">
+          Esegue il programma qui sopra su <strong>tutti</strong> i casi di prova, con lo stesso
+          motore degli alunni. Serve a verificare che i casi siano soddisfacibili: un caso che
+          nessun programma può superare si scoprirebbe altrimenti dagli alunni.
+        </p>
+        <div class="editor-actions">
+          <button
+            hlmBtn
+            type="button"
+            variant="outline"
+            [disabled]="workspaceJson().length === 0"
+            (click)="prova()"
+          >
+            Prova sui casi
+          </button>
+        </div>
+
+        @if (previewProblem(); as message) {
+          <p class="error" role="alert">{{ message }}</p>
+        }
+
+        @if (preview(); as righe) {
+          <table class="preview" aria-label="Esito dell’anteprima sui casi di prova">
+            <thead>
+              <tr>
+                <th scope="col">Valori letti</th>
+                <th scope="col">Deve mostrare</th>
+                <th scope="col">Mostra</th>
+                <th scope="col">Esito</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (riga of righe; track $index) {
+                <tr>
+                  <td>{{ riga.inputs }}</td>
+                  <td>{{ riga.expected }}</td>
+                  <td>{{ riga.shown }}</td>
+                  <td>
+                    @if (riga.passed) {
+                      <span class="ok">superato</span>
+                    } @else {
+                      <span class="no">da correggere</span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      </section>
+
+      @if (variables().length === 0 || testCases().length === 0) {
+        <p class="note" role="status">
+          Servono almeno una variabile e un caso di prova: senza, il server non saprebbe che cosa
+          correggere.
+        </p>
+      } @else {
+        <p class="note" role="status">
+          {{ variables().length }} variabili e {{ testCases().length }} casi di prova.
+        </p>
+      }
+
+      <section class="editor-section" aria-labelledby="value-feedback-title">
+        <h2 id="value-feedback-title">Che cosa dice il gioco</h2>
+
+        <div hlmField>
+          <label hlmFieldLabel for="value-success">Programma corretto</label>
+          <input hlmInput id="value-success" type="text" [formField]="editorForm.successMessage" />
+          @if (editorForm.successMessage().touched() && editorForm.successMessage().invalid()) {
+            @for (error of editorForm.successMessage().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="value-wrong">Programma da correggere</label>
+          <input hlmInput id="value-wrong" type="text" [formField]="editorForm.wrongMessage" />
+          @if (editorForm.wrongMessage().touched() && editorForm.wrongMessage().invalid()) {
+            @for (error of editorForm.wrongMessage().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </section>
+    </form>
+
+    <section class="editor-section" aria-labelledby="value-publication-title">
+      <h2 id="value-publication-title">Pubblicazione</h2>
+      <app-exercise-publication
+        [exerciseId]="exerciseId()"
+        [definitionJson]="definitionJson()"
+        [workspaceJson]="workspaceJson()"
+        [solutionJson]="solutionJson()"
+        [draftRowVersion]="savedRowVersion()"
+        [hasUnsavedChanges]="publicationBlocked()"
+        [editorBusy]="busy() || !ready()"
+        [editorError]="error()"
+        [prepareDraft]="prepareForPublication"
+        [issues]="publicationIssues()"
+        (draftReplaced)="onDraftReplaced()"
+      />
+    </section>
+  }
+</section>

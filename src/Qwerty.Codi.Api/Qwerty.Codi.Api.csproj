@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qwerty.Codi.Application\Qwerty.Codi.Application.csproj" />
+    <ProjectReference Include="..\Qwerty.Codi.Infrastructure\Qwerty.Codi.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Gli adattatori di trasporto (gestore delle eccezioni, controllo di salute) restano
+         interni all'API e non diventano contratto pubblico: i test di integrazione li verificano
+         senza costringere ad aprirli a tutti. -->
+    <InternalsVisibleTo Include="Qwerty.Codi.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

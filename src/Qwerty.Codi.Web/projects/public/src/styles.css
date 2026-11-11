@@ -1,0 +1,27 @@
+/* Base provvisoria della vista alunni; il design sarà definito separatamente dall'admin. */
+:root {
+  font-family: system-ui, sans-serif;
+  color: #17334b;
+  background: #f5f8fc;
+}
+
+body {
+  margin: 0;
+}
+
+/* La pagina dell'alunno usa tutta la larghezza: progetto e programma stanno affiancati. La colonna
+   stretta resta alle pagine che la vogliono per sé — l'ingresso — con una regola propria. */
+main {
+  max-width: none;
+  margin: 0;
+  padding: 1.5rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+}
+
+p {
+  font-size: 1.25rem;
+  line-height: 1.6;
+}

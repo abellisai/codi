@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Application ospita richieste e handler di §4.4, quindi è qui che gira il generatore di
+         Mediator, ed è qui che si chiama l'API di registrazione che genera: chiamarla dal
+         progetto API dipenderebbe da come il generatore decide di esporla.
+         `IServiceCollection` arriva dalle astrazioni di iniezione, dipendenza transitiva di
+         Mediator.Abstractions: se un giorno quella catena cambia, la compilazione lo segnala. -->
+    <PackageReference Include="Mediator.Abstractions" />
+    <PackageReference Include="Mediator.SourceGenerator" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Qwerty.Codi.Domain\Qwerty.Codi.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

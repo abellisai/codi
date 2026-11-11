@@ -1,0 +1,200 @@
+<!-- Il dialogo avvolge la pagina perché il pulsante che lo apre sta nell'intestazione e quelli
+     delle righe nella tabella: il clic dichiara il modo, il dialogo mostra il modulo corrispondente. -->
+<hlm-dialog>
+  <section class="admin-page">
+    <app-detail-header
+      [crumbs]="crumbs()"
+      icon="lucideBookOpen"
+      [title]="title()"
+      [subtitle]="subtitle()"
+    >
+      <button
+        hlmBtn
+        type="button"
+        variant="outline"
+        size="sm"
+        hlmDialogTrigger
+        (click)="startCreate()"
+      >
+        <ng-icon name="lucidePlus" />
+        Nuova lezione
+      </button>
+    </app-detail-header>
+
+    <p class="note">
+      Le lezioni archiviate non compaiono in questo elenco. Il titolo della lezione apre la sua
+      sequenza di esercizi: le posizioni si numerano da 1 e l’ordine salvato è quello che la lezione
+      userà.
+    </p>
+
+    @if (error(); as failure) {
+      <p class="error" role="alert">
+        {{ failure.message }}
+        @if (failure.requiresSignIn) {
+          <a routerLink="/login">Accedi di nuovo</a>
+        }
+      </p>
+    }
+
+    @if (loading()) {
+      <p role="status">Caricamento delle lezioni in corso…</p>
+    } @else {
+      <app-data-table
+        [columns]="columns"
+        [rows]="lessons()"
+        label="Lezioni del corso"
+        emptyMessage="Questo corso non ha ancora lezioni: crea la prima con «Nuova lezione»."
+        [rowIdentity]="identity"
+      >
+        <ng-template appDataTableCell="actions" let-lesson>
+          @if (pendingArchiveId() === lesson.id) {
+            <div class="actions">
+              <span class="ask">Archiviare «{{ lesson.title }}»?</span>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Conferma archiviazione: ' + lesson.title"
+                [hlmTooltip]="'Conferma archiviazione'"
+                [disabled]="busy()"
+                (click)="confirmArchive(lesson)"
+              >
+                <ng-icon name="lucideCheck" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Annulla archiviazione: ' + lesson.title"
+                [hlmTooltip]="'Annulla'"
+                (click)="cancelArchive()"
+              >
+                <ng-icon name="lucideX" />
+              </button>
+            </div>
+          } @else {
+            <div class="actions">
+              <!-- Il livello successivo si raggiunge da un pulsante che lo nomina: il nome del
+                   collegamento sul titolo della cella non si vedeva. -->
+              <a
+                hlmBtn
+                size="xs"
+                variant="outline"
+                [routerLink]="['/courses', courseId(), 'lessons', lesson.id]"
+                [attr.aria-label]="'Esercizi di ' + lesson.title"
+              >
+                <ng-icon name="lucideListChecks" />
+                Esercizi
+              </a>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Modifica: ' + lesson.title"
+                [hlmTooltip]="'Modifica'"
+                [disabled]="busy()"
+                hlmDialogTrigger
+                (click)="startEdit(lesson)"
+              >
+                <ng-icon name="lucidePencil" />
+              </button>
+              <button
+                hlmBtn
+                type="button"
+                size="icon-xs"
+                variant="outline"
+                [attr.aria-label]="'Archivia: ' + lesson.title"
+                [hlmTooltip]="'Archivia'"
+                [disabled]="busy()"
+                (click)="askArchive(lesson)"
+              >
+                <ng-icon name="lucideArchive" />
+              </button>
+            </div>
+          }
+        </ng-template>
+      </app-data-table>
+    }
+  </section>
+
+  <hlm-dialog-content *hlmDialogPortal="let ctx">
+    <hlm-dialog-header>
+      <h2 hlmDialogTitle>{{ dialogTitle() }}</h2>
+      <p hlmDialogDescription>{{ dialogDescription() }}</p>
+    </hlm-dialog-header>
+
+    @if (mode() === 'create') {
+      <form [formRoot]="createForm" id="create-lesson-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="new-lesson-title">Titolo</label>
+          <input hlmInput id="new-lesson-title" type="text" [formField]="createForm.title" />
+          @if (createForm.title().touched() && createForm.title().invalid()) {
+            @for (error of createForm.title().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+          <p hlmFieldDescription>Per esempio «Primi passi con i blocchi».</p>
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="new-lesson-description">Descrizione (facoltativa)</label>
+          <textarea
+            hlmTextarea
+            id="new-lesson-description"
+            rows="3"
+            [formField]="createForm.description"
+          ></textarea>
+          @if (createForm.description().touched() && createForm.description().invalid()) {
+            @for (error of createForm.description().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="create-lesson-form" [disabled]="busy()">
+          Crea lezione
+        </button>
+      </hlm-dialog-footer>
+    } @else {
+      <form [formRoot]="editForm" id="edit-lesson-form" class="grid gap-6">
+        <div hlmField>
+          <label hlmFieldLabel for="edit-lesson-title">Titolo</label>
+          <input hlmInput id="edit-lesson-title" type="text" [formField]="editForm.title" />
+          @if (editForm.title().touched() && editForm.title().invalid()) {
+            @for (error of editForm.title().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+
+        <div hlmField>
+          <label hlmFieldLabel for="edit-lesson-description">Descrizione (facoltativa)</label>
+          <textarea
+            hlmTextarea
+            id="edit-lesson-description"
+            rows="3"
+            [formField]="editForm.description"
+          ></textarea>
+          @if (editForm.description().touched() && editForm.description().invalid()) {
+            @for (error of editForm.description().errors(); track error) {
+              <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+            }
+          }
+        </div>
+      </form>
+
+      <hlm-dialog-footer>
+        <button hlmBtn type="button" variant="outline" hlmDialogClose>Annulla</button>
+        <button hlmBtn type="submit" form="edit-lesson-form" [disabled]="busy()">
+          Salva lezione
+        </button>
+      </hlm-dialog-footer>
+    }
+  </hlm-dialog-content>
+</hlm-dialog>

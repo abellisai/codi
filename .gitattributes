@@ -1,0 +1,32 @@
+# Fine riga, decisi dal repository e non dalla macchina.
+#
+# Riprende la regola di `.editorconfig`: i file di testo stanno in LF (`[*] end_of_line = lf`) e
+# gli script di Windows in CRLF (`[*.bat] end_of_line = crlf`). Un `.gitattributes` serve perché
+# `core.autocrlf` è una preferenza della singola macchina: senza questo file un clone su Windows
+# riceve i file in CRLF e uno su Linux in LF, e le differenze di soli fine riga sporcano i diff e
+# fanno fallire `dotnet format whitespace --verify-no-changes`.
+#
+# Con `eol=lf` il file di lavoro è in LF anche su Windows, quindi la regola dell'editorconfig è
+# rispettata davvero e non solo nel momento del salvataggio.
+
+* text=auto eol=lf
+
+# Script di Windows: cmd.exe li esegue con i fine riga di Windows.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binari: nessuna conversione, nemmeno se contengono byte simili a un fine riga.
+*.db      binary
+*.sqlite  binary
+*.db-wal  binary
+*.db-shm  binary
+*.png     binary
+*.jpg     binary
+*.jpeg    binary
+*.gif     binary
+*.ico     binary
+*.woff    binary
+*.woff2   binary
+*.ttf     binary
+*.otf     binary
+*.pfx     binary
