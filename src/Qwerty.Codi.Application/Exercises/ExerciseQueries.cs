@@ -32,12 +32,16 @@ public sealed record GetExerciseDraftQuery(Guid ExerciseId) : ICodiQuery<Exercis
 }
 
 /// <summary>
-/// Soluzione di riferimento della bozza (§10.5): il progetto che risolve l'esercizio, riservato al
-/// docente e mai incluso nei DTO degli alunni (§13.1). Come per la bozza, l'assenza della bozza è
-/// un <c>404</c> — non c'è una soluzione di un esercizio che non ha ancora una bozza — mentre una
-/// bozza senza soluzione risponde con un valore nullo.
+/// Soluzione di riferimento (§10.5): il progetto che risolve l'esercizio, riservato al docente e
+/// mai incluso nei DTO degli alunni (§13.1). Senza <c>VersionNumber</c> legge la bozza — l'assenza
+/// della bozza è un <c>404</c>, una bozza senza soluzione risponde con un valore nullo. Con
+/// <c>VersionNumber</c> legge la snapshot congelata nella versione pubblicata (0013): una versione
+/// restituisce la propria soluzione, non quella corrente della bozza; l'assenza della versione è
+/// un <c>404</c>, una versione senza soluzione risponde con un valore nullo.
 /// </summary>
-public sealed record GetReferenceSolutionQuery(Guid ExerciseId) : ICodiQuery<ExerciseReferenceSolutionDto>
+public sealed record GetReferenceSolutionQuery(
+    Guid ExerciseId,
+    long? VersionNumber = null) : ICodiQuery<ExerciseReferenceSolutionDto>
 {
     public static string RequestName => "GetReferenceSolution";
 

@@ -418,7 +418,10 @@ export function leggiCasi(testo: string): EsitoLettura<CasoVoce> {
       }
     }
 
-    const expectedOutput = uscitaTesto.length === 0 ? [] : uscitaTesto.split(/[,\s]+/).filter((pezzo) => pezzo.length > 0);
+    const expectedOutput =
+      uscitaTesto.length === 0
+        ? []
+        : uscitaTesto.split(/[,\s]+/).filter((pezzo) => pezzo.length > 0);
 
     if (expectedOutput.length === 0) {
       return { voci: [], errore: `Riga ${String(indice + 1)}: manca l'uscita attesa.` };

@@ -98,6 +98,7 @@ describe('Editor della domanda con risposta', () => {
                   engineVersion: QUIZ_ENGINE_VERSION,
                   schemaVersion: '1',
                   contentHash: '12345678',
+                  referenceHash: null,
                   createdAt: '2026-10-16T10:00:00Z',
                   authorNotes: null,
                 };

@@ -35,6 +35,11 @@
     @if (participant().admissionStatus !== 'Admitted') {
       <p class="flag">escluso</p>
     }
+    @if (participant().recoveryBlocked) {
+      <!-- Il blocco di recupero (§12.3) deve vedersi a colpo d'occhio: l'alunno non può agire, il
+           lavoro resta com'è, e la card dice che è la regia a dover decidere la ripresa. -->
+      <p class="flag recovery">blocco di recupero: controlli chiusi, lavoro conservato</p>
+    }
   </div>
 
   <div hlmCardFooter class="actions">

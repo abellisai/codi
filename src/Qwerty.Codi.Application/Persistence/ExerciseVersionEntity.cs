@@ -25,6 +25,12 @@ public sealed class ExerciseVersionEntity : IPersistedEntity<string>
     public string EngineVersion { get; set; } = string.Empty;
     public string SchemaVersion { get; set; } = string.Empty;
     public string ContentHash { get; set; } = string.Empty;
+    /// <summary>
+    /// Impronta della soluzione di riferimento congelata nella riga compagna privata (0013).
+    /// <see langword="null"/> per le versioni pubblicate prima della migrazione, che non la
+    /// registrarono mai.
+    /// </summary>
+    public string? ReferenceHash { get; set; }
     public string PublishedByAdminId { get; set; } = string.Empty;
     public long CreatedAtUtcMs { get; set; }
 

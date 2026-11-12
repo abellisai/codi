@@ -34,6 +34,14 @@ public sealed class ExercisePublicationTests : IAsyncLifetime
     private const string OtherWorkspace =
         """{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_start","id":"start-2","next":{"block":{"type":"aula_turn","id":"turn-1","fields":{"TURN":"Right"}}}}]}}""";
 
+    /// <summary>Seconda soluzione: risolve l'esercizio, ma è un altro documento.</summary>
+    private const string OtherSolution =
+        """{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_start","id":"solution-b","next":{"block":{"type":"aula_turn","id":"turn-b","fields":{"TURN":"Right"}}}}]}}""";
+
+    /// <summary>Terza soluzione: un altro documento ancora, per la terza versione.</summary>
+    private const string ThirdSolution =
+        """{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_start","id":"solution-c","next":{"block":{"type":"aula_move","id":"move-c","next":{"block":{"type":"aula_turn","id":"turn-c","fields":{"TURN":"Right"}}}}}}]}}""";
+
     private CodiUseCaseHost _host = null!;
     private Guid _adminId;
 
@@ -371,6 +379,99 @@ public sealed class ExercisePublicationTests : IAsyncLifetime
 
         // Assert: senza bozza non c'è una soluzione da leggere, e il 404 lo dice.
         Assert.Equal(CodiErrorCodes.ResourceNotFound, failure.Code);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task ExecuteAsync_PublishDopoSoloModificaDellaSoluzione_NuovaVersioneConImprontaDiversa()
+    {
+        // Arrange: contenuto identico, cambia solo la soluzione di riferimento.
+        var exercise = await CreateExerciseAsync();
+        var draft = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, Solution);
+        var first = await PublishAsync(exercise.Id, draft.RowVersion);
+
+        var changed = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, OtherSolution, draft.RowVersion);
+        await AssertStatusAsync(exercise.Id, "UnpublishedChanges");
+
+        // Act
+        var second = await PublishAsync(exercise.Id, changed.RowVersion);
+
+        // Assert: l'impronta del contenuto non cambia — il contenuto non è cambiato — e l'impronta
+        // di riferimento sì. Il contenuto è immutato, la pubblicazione nuova.
+        Assert.NotEqual(first.Id, second.Id);
+        Assert.Equal(2, second.VersionNumber);
+        Assert.Equal(first.ContentHash, second.ContentHash);
+        Assert.NotNull(first.ReferenceHash);
+        Assert.NotNull(second.ReferenceHash);
+        Assert.NotEqual(first.ReferenceHash, second.ReferenceHash);
+        Assert.Equal(2, (await ListVersionsAsync(exercise.Id)).Count);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task QueryAsync_GetReferenceSolutionPerNumero_RestituisceLaSnapshotDellaVersione()
+    {
+        // Arrange: tre pubblicazioni con la stessa definizione e tre soluzioni diverse, come le
+        // versioni GP02 della verifica QA: lo stesso contenuto, soluzioni diverse.
+        var exercise = await CreateExerciseAsync();
+        var draft = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, Solution);
+        var first = await PublishAsync(exercise.Id, draft.RowVersion);
+        var secondDraft = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, OtherSolution, draft.RowVersion);
+        var second = await PublishAsync(exercise.Id, secondDraft.RowVersion);
+        var thirdDraft = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, ThirdSolution, secondDraft.RowVersion);
+        await PublishAsync(exercise.Id, thirdDraft.RowVersion);
+
+        // Act
+        var firstSolution = await _host.QueryOneAsync<ExerciseReferenceSolutionDto>(
+            GetReferenceSolutionQuery.RequestName, new { exerciseId = exercise.Id, versionNumber = "1" });
+        var secondSolution = await _host.QueryOneAsync<ExerciseReferenceSolutionDto>(
+            GetReferenceSolutionQuery.RequestName, new { exerciseId = exercise.Id, versionNumber = "2" });
+        var thirdSolution = await _host.QueryOneAsync<ExerciseReferenceSolutionDto>(
+            GetReferenceSolutionQuery.RequestName, new { exerciseId = exercise.Id, versionNumber = "3" });
+        var draftSolution = await _host.QueryOneAsync<ExerciseReferenceSolutionDto>(
+            GetReferenceSolutionQuery.RequestName, new { exerciseId = exercise.Id });
+
+        // Assert: ogni versione restituisce la propria soluzione, non l'ultima scritta. La lettura
+        // senza numero resta quella della bozza, come prima della migrazione.
+        Assert.Equal(Solution, firstSolution.WorkspaceJson);
+        Assert.Equal(OtherSolution, secondSolution.WorkspaceJson);
+        Assert.Equal(ThirdSolution, thirdSolution.WorkspaceJson);
+        Assert.Equal(ThirdSolution, draftSolution.WorkspaceJson);
+        Assert.NotEqual(first.ReferenceHash, second.ReferenceHash);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task QueryAsync_GetReferenceSolutionSuVersioneInesistente_RifiutaConRisorsaAssente()
+    {
+        var exercise = await CreateExerciseAsync();
+        var draft = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, Solution);
+        await PublishAsync(exercise.Id, draft.RowVersion);
+
+        // Act
+        var failure = await _host.ExpectQueryFailureAsync(
+            GetReferenceSolutionQuery.RequestName, new { exerciseId = exercise.Id, versionNumber = "99" });
+
+        // Assert: non c'è la soluzione di una versione che non esiste.
+        Assert.Equal(CodiErrorCodes.ResourceNotFound, failure.Code);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task ExecuteAsync_PublishExerciseVersion_LImprontaDiRiferimentoCorrispondeAllaSoluzione()
+    {
+        var exercise = await CreateExerciseAsync();
+        var draft = await SaveAsync(exercise.Id, DefinitionJson(), Workspace, Solution);
+
+        // Act
+        var version = await PublishAsync(exercise.Id, draft.RowVersion);
+
+        // Assert: l'impronta esposta è quella SHA-256 del documento canonico della soluzione, in
+        // esadecimale minuscola, e la snapshot privata resta il documento completo (§13.1).
+        var expected = Convert.ToHexStringLower(
+            System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(Solution)));
+        Assert.Equal(expected, version.ReferenceHash);
+        Assert.Equal(Solution, (await ReadPrivateAsync(version.Id))?.ReferenceSolutionJson);
     }
 
     [Fact]

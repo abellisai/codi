@@ -90,11 +90,10 @@ export const MAX_INSTRUCTIONS_LENGTH = 2000;
 export const MAX_MESSAGE_LENGTH = 500;
 
 /**
- * Progetto a blocchi di una bozza che non ne ha ancora uno. In questa porzione l'editor configura
- * la definizione didattica e non compone il progetto iniziale: il campo va comunque inviato, perché
- * la bozza ha un progetto — quello vuoto — e non un progetto mancante.
- *
- * Quando l'editor composerà i blocchi, al suo posto andrà la serializzazione di Blockly.
+ * Progetto a blocchi di una bozza che non ne ha ancora uno: è il valore iniziale e di riserva del
+ * campo `workspaceJson` della bozza — il **programma iniziale** che l'alunno trova all'ingresso,
+ * non un campo mancante. L'editor dei blocchi lo sostituisce con la serializzazione di Blockly
+ * quando il docente compone il programma.
  */
 export const EMPTY_INITIAL_WORKSPACE = '{}';
 

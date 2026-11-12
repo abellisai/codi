@@ -16,6 +16,11 @@ namespace Qwerty.Codi.Application.Dto;
 /// <see cref="ExerciseType"/> non ha una colonna propria: vive dentro il documento della
 /// definizione, che è l'unica fonte del tipo, e si legge da lì. È esposto perché chi riproduce
 /// l'anteprima di una versione pubblicata deve usare **il suo** motore e non quello corrente.
+///
+/// <see cref="ReferenceHash"/> è l'impronta della soluzione di riferimento congelata nella
+/// versione (0013): riconosce una pubblicazione che ha cambiato solo la soluzione. È nulla per le
+/// versioni pubblicate prima della migrazione, che non la registrarono, e non rivela la soluzione
+/// (§13.1).
 /// </summary>
 public sealed record ExerciseVersionDto(
     Guid Id,
@@ -27,6 +32,7 @@ public sealed record ExerciseVersionDto(
     string EngineVersion,
     string SchemaVersion,
     string ContentHash,
+    string? ReferenceHash,
     DateTimeOffset CreatedAt,
     string? AuthorNotes)
 {
@@ -46,6 +52,7 @@ public sealed record ExerciseVersionDto(
             entity.EngineVersion,
             entity.SchemaVersion,
             entity.ContentHash,
+            entity.ReferenceHash,
             DateTimeOffset.FromUnixTimeMilliseconds(entity.CreatedAtUtcMs),
             authorNotes);
 

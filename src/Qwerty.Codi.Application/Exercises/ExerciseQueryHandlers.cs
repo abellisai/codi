@@ -90,9 +90,11 @@ public sealed class GetExerciseDraftHandler(IUnitOfWorkContext unitOfWorkContext
 }
 
 /// <summary>
-/// Soluzione di riferimento della bozza (§10.5). È una lettura pura e separata dalla bozza: chi
-/// carica l'esercizio per comporlo non riceve la risposta insieme al resto, e chi la vuole la
-/// chiede, con la stessa policy.
+/// Soluzione di riferimento della bozza o di una versione pubblicata (§10.5). È una lettura pura e
+/// separata dalla bozza: chi carica l'esercizio per comporlo non riceve la risposta insieme al
+/// resto, e chi la vuole la chiede, con la stessa policy. Con <c>VersionNumber</c> esce la snapshot
+/// congelata nella versione (0013), non la soluzione corrente della bozza: «guardare una versione»
+/// significa leggere **la sua** soluzione, non l'ultima scritta.
 /// </summary>
 public sealed class GetReferenceSolutionHandler(IUnitOfWorkContext unitOfWorkContext)
     : IRequestHandler<GetReferenceSolutionQuery, ExerciseReferenceSolutionDto>
@@ -107,8 +109,32 @@ public sealed class GetReferenceSolutionHandler(IUnitOfWorkContext unitOfWorkCon
             .CreateAsync(cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
+        var exerciseId = request.ExerciseId.ToString("D");
+
+        if (request.VersionNumber is { } versionNumber)
+        {
+            // Lettura della versione: la snapshot vive nella riga compagna privata, che la tabella
+            // delle versioni non espone. Una versione inesistente è un 404 come un esercizio senza
+            // bozza: non c'è la soluzione di una versione che non esiste.
+            var version = (await work.Repo<IExerciseVersionRepository>()
+                    .QueryAsync(
+                        row => row.ExerciseId == exerciseId && row.VersionNumber == versionNumber,
+                        cancellationToken)
+                    .ConfigureAwait(false))
+                .SingleOrDefault()
+                ?? throw CodiRequestException.ResourceNotFound();
+
+            var privateRow = await work.Repo<IExerciseVersionPrivateRepository>()
+                .GetAsync(version.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+            return new ExerciseReferenceSolutionDto(
+                Guid.Parse(version.ExerciseId),
+                privateRow?.ReferenceSolutionJson);
+        }
+
         var draft = await work.Repo<IExerciseDraftRepository>()
-            .GetAsync(request.ExerciseId.ToString("D"), cancellationToken)
+            .GetAsync(exerciseId, cancellationToken)
             .ConfigureAwait(false)
             ?? throw CodiRequestException.ResourceNotFound();
 

@@ -176,6 +176,7 @@ public static class RepoDbSqliteBootstrap
             .Column(entity => entity.EngineVersion, "engine_version")
             .Column(entity => entity.SchemaVersion, "schema_version")
             .Column(entity => entity.ContentHash, "content_hash")
+            .Column(entity => entity.ReferenceHash!, "reference_hash")
             .Column(entity => entity.PublishedByAdminId, "published_by_admin_id")
             .Column(entity => entity.CreatedAtUtcMs, "created_at_utc_ms");
 

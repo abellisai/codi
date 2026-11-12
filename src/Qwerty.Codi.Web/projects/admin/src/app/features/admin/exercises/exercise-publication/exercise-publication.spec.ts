@@ -23,6 +23,7 @@ const version: ExerciseVersion = {
   engineVersion: 'gridpath-1',
   schemaVersion: '1',
   contentHash: 'c'.repeat(64),
+  referenceHash: null,
   createdAt: '2026-10-02T11:00:00Z',
   authorNotes: null,
 };
@@ -261,9 +262,9 @@ describe('ExercisePublication', () => {
     expect(preview(fixture)).toBeNull();
   });
 
-  it('non offre la prova di una versione che parte da un progetto vuoto', async () => {
-    // Il programma iniziale lo compone l'alunno: chiedere di eseguirlo mostrerebbe un errore
-    // invece di una spiegazione.
+  it('non offre la prova di una versione che parte da un programma iniziale vuoto', async () => {
+    // Una versione pubblicata senza programma iniziale non ha nulla da eseguire: chiedere la prova
+    // mostrerebbe un errore invece di una spiegazione.
     api.versions = [{ ...version, definitionJson }];
     const fixture = await render();
 
@@ -271,7 +272,7 @@ describe('ExercisePublication', () => {
     await settle(fixture);
 
     expect(preview(fixture)).not.toBeNull();
-    expect(text(fixture)).toContain('progetto vuoto');
+    expect(text(fixture)).toContain('programma iniziale vuoto');
     expect(buttonLabels(fixture)).not.toContain('Avvia la prova');
   });
 

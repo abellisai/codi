@@ -238,6 +238,40 @@ describe('SessionParticipants', () => {
     ]);
   });
 
+  it('sulla pausa di recupero offre lo sblocco non distruttivo e mostra il blocco sulla card', async () => {
+    api.participants = [participant({ recoveryBlocked: true, interactionEnabled: false })];
+
+    await mount();
+
+    // §12.3: dopo il reload il blocco deve vedersi sulla card, non solo nel testo dello stato.
+    expect(pageText()).toContain('blocco di recupero: controlli chiusi, lavoro conservato');
+
+    const unlock = actionButton('Sblocca il recupero (conserva il lavoro)');
+    expect(unlock.disabled).toBe(false);
+    // L'abilitazione dei controlli non è un'alternativa allo sblocco: sul blocco è spenta.
+    expect(actionButton('Abilita i controlli').disabled).toBe(true);
+
+    unlock.click();
+    await flush();
+
+    // Lo sblocco è la Resume per alunno: nessun tentativo dichiarato, nessun ResetWork (§10.6).
+    expect(api.commands).toEqual([
+      {
+        name: 'Resume',
+        payload: { sessionId: 's1', expectedSessionRevision: '7', participantId: 'p1' },
+      },
+    ]);
+  });
+
+  it('senza blocco di recupero l’azione dedicata non compare al posto della ripresa abituale', async () => {
+    api.participants = [participant()];
+
+    await mount();
+
+    expect(pageText()).not.toContain('Sblocca il recupero');
+    expect(actionButton('Riprendi l’alunno').disabled).toBe(true);
+  });
+
   it('azzera il lavoro solo dopo la conferma, dichiarando il tentativo mostrato', async () => {
     api.participants = [participant()];
 

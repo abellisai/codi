@@ -467,12 +467,15 @@ export class SessionRegiaService {
     () => this.online() && this.session()?.status === 'Active' && this.participants().length > 0,
   );
 
-  /** Abilitabile: ha un esercizio caricato, non è in pausa docente e guarda l'esercizio. */
+  /** Abilitabile: ha un esercizio caricato, non è in pausa docente né di recupero, guarda l'esercizio. */
   canEnable(participant: SessionParticipantOverview): boolean {
     return (
       this.canEnd() &&
       participant.attemptId !== null &&
       !participant.teacherPaused &&
+      // Sulla pausa di recupero l'unica via è la ripresa: "Abilita i controlli" riaprirebbe
+      // l'interazione lasciando il blocco aperto, uno sblocco a metà che la regia non deve offrire.
+      !participant.recoveryBlocked &&
       participant.view === 'Exercise'
     );
   }

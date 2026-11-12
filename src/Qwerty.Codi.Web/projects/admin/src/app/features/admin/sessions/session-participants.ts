@@ -181,7 +181,11 @@ export class SessionParticipants implements OnInit {
       },
       {
         key: 'resume',
-        label: 'Riprendi l’alunno',
+        // Sulla pausa di recupero l'azione ha il nome della sua funzione: sbloccare senza
+        // toccare il lavoro (§12.3). La ripresa da pausa docente resta l'azione abituale.
+        label: participant.recoveryBlocked
+          ? 'Sblocca il recupero (conserva il lavoro)'
+          : 'Riprendi l’alunno',
         icon: 'lucideCirclePlay',
         enabled: this.regia.canResumeParticipant(participant),
       },

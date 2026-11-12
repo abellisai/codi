@@ -26,6 +26,7 @@ import {
   ApiError,
   ApiService,
   ExerciseDraftValidation,
+  ExerciseReferenceSolution,
   ExerciseVersion,
   ExerciseVersionDeleted,
   Exercise,
@@ -214,6 +215,30 @@ export class ExercisePublication implements OnInit {
   protected readonly pendingDeleteVersion = signal<string | null>(null);
 
   /**
+   * Soluzione di riferimento della versione guardata, letta con `GetReferenceSolution` e il suo
+   * numero (0013): la lettura arriva dopo l'apertura, perché una pagina che apre l'anteprima non
+   * deve pagare una query in più. `null` quando non è ancora stata letta.
+   */
+  protected readonly versionSolution = signal<ExerciseReferenceSolution | null>(null);
+
+  /** Se la soluzione della versione guardata è visibile; si apre solo su richiesta. */
+  protected readonly showVersionSolution = signal(false);
+
+  /**
+   * Anteprima della **soluzione** della versione guardata, con lo stesso motore della versione.
+   * Serve a verificare che la fotografia congelata risolve davvero l'esercizio di quella versione.
+   */
+  protected readonly versionSolutionPreview = computed<VersionPreview | null>(() => {
+    const base = this.inspectedPreview();
+    const solution = this.versionSolution();
+    if (base === null || solution === null || solution.workspaceJson === null) {
+      return null;
+    }
+
+    return { ...base, workspaceJson: solution.workspaceJson, trialDisabledReason: null };
+  });
+
+  /**
    * Numero della versione più recente. Si guarda il massimo e non la prima riga: l'ordine
    * dell'elenco è una scelta del server e non deve decidere che cosa si può eliminare.
    */
@@ -268,7 +293,7 @@ export class ExercisePublication implements OnInit {
       title: definition.title,
       trialDisabledReason: hasBlocks(version.workspaceJson)
         ? null
-        : 'Questa versione parte da un progetto vuoto, che compone l’alunno: non c’è un programma da eseguire qui. Per provare l’esercizio si usa la soluzione di riferimento nell’editor.',
+        : 'Questa versione parte da un programma iniziale vuoto: non c’è un programma da eseguire qui. Componi il programma iniziale nella sezione «Programma iniziale» dell’editor.',
     };
   });
 
@@ -362,8 +387,48 @@ export class ExercisePublication implements OnInit {
 
   /** Apre l'anteprima di una versione, o la richiude se è già quella aperta. */
   protected inspect(version: ExerciseVersion): void {
+    // Chiudendo si scarta anche la soluzione letta: una versione non mostra la soluzione di
+    // un'altra, nemmeno per il tempo di un clic.
+    this.versionSolution.set(null);
+    this.showVersionSolution.set(false);
     this.inspected.set(this.inspected()?.id === version.id ? null : version);
   }
+
+  /**
+   * Mostra o nasconde la soluzione di riferimento **della versione guardata** (0013). La prima
+   * apertura la legge dal server con il numero della versione: la risposta è la snapshot congelata
+   * alla pubblicazione, non la soluzione corrente della bozza.
+   */
+  protected async toggleVersionSolution(): Promise<void> {
+    const version = this.inspected();
+    if (version === null) {
+      return;
+    }
+
+    if (this.showVersionSolution()) {
+      this.showVersionSolution.set(false);
+      return;
+    }
+
+    if (this.versionSolution() !== null) {
+      this.showVersionSolution.set(true);
+      return;
+    }
+
+    await this.run(async () => {
+      const solution = await this.api.executeQuery<ExerciseReferenceSolution>(
+        'GetReferenceSolution',
+        { exerciseId: this.exerciseId(), versionNumber: version.versionNumber },
+      );
+      this.versionSolution.set(solution);
+      this.showVersionSolution.set(true);
+    });
+  }
+
+  /** La soluzione della versione guardata, dopo la lettura; `null` finché non è letta. */
+  protected readonly versionSolutionJson = computed(
+    () => this.versionSolution()?.workspaceJson ?? null,
+  );
 
   /** L'ultima versione non si elimina: è quella che le prossime lezioni userebbero (§13.8). */
   protected isLatest(version: ExerciseVersion): boolean {
@@ -419,6 +484,14 @@ export class ExercisePublication implements OnInit {
   /** Impronta abbreviata: basta a riconoscere due versioni a colpo d'occhio. */
   protected shortHash(version: ExerciseVersion): string {
     return version.contentHash.slice(0, 8);
+  }
+
+  /**
+   * Impronta abbreviata della soluzione della versione. `null` sulle versioni pubblicate prima
+   * della migrazione: prima non veniva registrata, e la tabella non deve far credere il contrario.
+   */
+  protected shortReferenceHash(version: ExerciseVersion): string | null {
+    return version.referenceHash === null ? null : version.referenceHash.slice(0, 8);
   }
 
   private async refresh(): Promise<void> {

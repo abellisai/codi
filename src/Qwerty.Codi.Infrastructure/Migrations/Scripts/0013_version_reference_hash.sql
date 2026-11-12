@@ -1,0 +1,31 @@
+-- Migrazione 0013: impronta della soluzione di riferimento nella versione pubblicata (QA/B3).
+--
+-- Tredicesima versione dello schema, aggiunta senza modificare le precedenti già rilasciate (§8.3).
+-- La pubblicazione già conserva la fotografia della soluzione di riferimento nella riga compagna
+-- privata `exercise_version_private` (0004): ciò che mancava era l'impronta sulla versione, così
+-- che una modifica alla sola soluzione producesse un'impronta riconoscibile e confrontabile.
+--
+-- La scelta è un hash SEPARATO, non l'inclusione della soluzione nel `content_hash`:
+--   1. `content_hash` è l'impronta del contenuto studente; il tentativo la cita (§7.3, §15.2) e
+--      le versioni già pubblicate la portano. Cambiare la formula invaliderebbe il confronto con
+--      le righe esistenti, che questo task vieta di toccare.
+--   2. La soluzione completa non viene duplicata su `exercise_version`: la snapshot esiste già in
+--      `exercise_version_private` e resta riservata al docente (§13.1). Sulla versione esce solo
+--      l'impronta, che non rivela la soluzione.
+--   3. Un'alterazione della sola soluzione diventa visibile: l'impronta di riferimento cambia e la
+--      pubblicazione successiva produce una nuova versione.
+--
+-- La colonna è `TEXT NULL`: le versioni pubblicate prima di questa migrazione non hanno mai
+-- registrato l'impronta e nessuna regola di ripentitura può pretenderla da loro. Non si scrive
+-- alcun dato storico: il trigger di immutabilità `trg_exercise_version_immutable` (0004) resta
+-- in vigore, quindi le righe esistenti non sono aggiornabili nemmeno da questo script. Il valore
+-- nullo nelle righe storiche è la verità: l'impronta di quelle pubblicazioni non esiste.
+--
+-- La forma esadecimale minuscola a 64 cifre coincide con quella prodotta da
+-- `ExerciseContentHash.ComputeReference` e con le altre impronte dello schema (§7.1).
+
+-- Stessa regola delle impronte esistenti in 0004: NULL oppure testo non vuoto. SQLite non ha
+-- una verifica esadecimale, quindi la forma a 64 cifre minuscole è garantita dal codice che la
+-- calcola (`ExerciseContentHash.ComputeReference`), come per le altre impronte dello schema.
+ALTER TABLE exercise_version
+ADD COLUMN reference_hash TEXT NULL CHECK (reference_hash IS NULL OR length(trim(reference_hash)) > 0);

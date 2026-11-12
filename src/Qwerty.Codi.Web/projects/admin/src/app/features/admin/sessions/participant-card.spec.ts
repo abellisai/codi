@@ -63,6 +63,24 @@ describe('ParticipantCard', () => {
     expect(fixture.nativeElement.textContent as string).toContain('escluso');
   });
 
+  it('mostra il blocco di recupero quando l’alunno è bloccato dopo il reload', () => {
+    const fixture = render({
+      participant: participant({ recoveryBlocked: true, interactionEnabled: false }),
+    });
+
+    // §12.3: il blocco deve vedersi a colpo d'occhio e dire che il lavoro è conservato.
+    expect(fixture.nativeElement.textContent as string).toContain(
+      'blocco di recupero: controlli chiusi, lavoro conservato',
+    );
+    expect((fixture.nativeElement as HTMLElement).querySelector('.flag.recovery')).not.toBeNull();
+  });
+
+  it('non mostra il blocco di recupero quando l’alunno non è bloccato', () => {
+    const fixture = render({ participant: participant() });
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.flag.recovery')).toBeNull();
+  });
+
   it('rende le azioni come pulsanti con etichetta accessibile e le disabilita quando non ammesse', () => {
     const fixture = render({
       participant: participant(),

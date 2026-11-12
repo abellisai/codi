@@ -40,6 +40,13 @@
   font-size: 0.875rem;
 }
 
+/* Il blocco di recupero non è uno stato d'uso normale: va letto subito, con il colore che il
+   tema riserva alle condizioni da gestire (§12.3). */
+.flag.recovery {
+  color: var(--destructive);
+  font-weight: 600;
+}
+
 .detail {
   margin-top: 1rem;
   padding: 0.75rem 1rem;

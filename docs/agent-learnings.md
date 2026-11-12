@@ -21,4 +21,5 @@ File condiviso dal ciclo Dream-RSI. Gli agenti worker appendono fatti tecnici ve
 
 ## Lezioni dai task
 
-- (nessuna ancora)
+- [2026-11-12] [t_eb7c674d] La Resume per alunno (participantId) è lo sblocco non distruttivo della pausa di recupero: conserva AttemptId e workspace_json, azzera RecoveryBlockedFlag, e riapre InteractionEnabledFlag solo quando ResumeContextJson è presente. (evidenza: RecoveryUnblockTests 4/4 verdi, assert su DB)
+- [2026-11-12] [t_eb7c674d] RunProgram è rifiutato con SessionStateConflict durante il blocco di recupero; il workspace salvato resta intatto. SaveAttemptWorkspace invece resta ammesso sul blocco. (evidenza: test 'EsecuzioneDuranteIlBloccoDiRecupero' verde)

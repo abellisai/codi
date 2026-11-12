@@ -134,6 +134,16 @@
               <td>{{ version.engineVersion }}</td>
               <td>
                 <code>{{ shortHash(version) }}</code>
+                <!-- L'impronta della soluzione distingue due versioni con lo stesso contenuto e
+                     soluzioni diverse, come quelle scoperte in QA. Una soluzione assente non ha
+                     impronta, e una versione storica non l'ha mai avuta. -->
+                @if (shortReferenceHash(version) !== null) {
+                  <div class="hint">
+                    <code>{{ shortReferenceHash(version) }}</code>
+                  </div>
+                } @else {
+                  <div class="hint">soluzione non improntata</div>
+                }
               </td>
               <td class="notes">{{ version.authorNotes ?? '—' }}</td>
               <td>
@@ -260,6 +270,56 @@
           formato che questa pagina non conosce. La versione resta valida e si può copiare nella
           bozza, ma non si può eseguire qui.
         </p>
+      }
+
+      <!-- La soluzione di riferimento della versione è una lettura a parte, chiesta con il suo
+           numero (0013): è la snapshot congelata alla pubblicazione, non quella della bozza. Si
+           apre solo su richiesta, come la soluzione nell'editor (§13.1). -->
+      <div class="row-actions">
+        <button
+          hlmBtn
+          type="button"
+          variant="outline"
+          size="sm"
+          [attr.aria-expanded]="showVersionSolution()"
+          (click)="toggleVersionSolution()"
+        >
+          {{ showVersionSolution() ? 'Nascondi la soluzione' : 'Mostra la soluzione' }}
+        </button>
+      </div>
+      @if (showVersionSolution()) {
+        @if (versionSolutionJson() !== null) {
+          <p class="hint">
+            Soluzione di riferimento congelata nella versione {{ version.versionNumber }}:
+            @if (shortReferenceHash(version) !== null) {
+              impronta {{ shortReferenceHash(version) }},
+            } @else {
+              versione storica senza impronta di riferimento,
+            }
+            eseguita con il motore {{ version.engineVersion }}.
+          </p>
+          @if (inspectedValues(); as values) {
+            <app-value-program-program-editor
+              [allowedBlocks]="values.toolbox.allowedBlocks"
+              [workspaceJson]="versionSolutionJson()!"
+              [readOnly]="true"
+            />
+          } @else if (versionSolutionPreview(); as preview) {
+            <app-exercise-preview
+              [scene]="preview.scene"
+              [rules]="preview.rules"
+              [limits]="preview.limits"
+              [workspaceJson]="preview.workspaceJson"
+              [successMessage]="preview.successMessage"
+              [collisionMessage]="preview.collisionMessage"
+              [trialDisabledReason]="preview.trialDisabledReason"
+            />
+          } @else {
+            <pre class="solution-json">{{ versionSolutionJson() }}</pre>
+          }
+        } @else if (versionSolution() !== null) {
+          <p class="hint">Questa versione è stata pubblicata senza una soluzione di riferimento.</p>
+        }
       }
     </section>
   }

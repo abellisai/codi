@@ -451,12 +451,24 @@ public sealed class PublishExerciseVersionHandler(
             draft.WorkspaceJson,
             definition.EngineVersion,
             definition.SchemaVersion.ToString(CultureInfo.InvariantCulture));
+        // L'impronta della soluzione è separata da quella del contenuto (0013): una modifica alla
+        // sola soluzione deve produrre un'impronta diversa, senza toccare l'impronta studente che
+        // i tentativi già pubblicati portano con sé.
+        var referenceHash = ExerciseContentHash.ComputeReference(draft.ReferenceSolutionJson);
 
         var privateRows = work.Repo<IExerciseVersionPrivateRepository>();
         // Solo l'ultima versione rappresenta il contenuto disponibile per le prossime assegnazioni.
         foreach (var candidate in published.OrderByDescending(row => row.VersionNumber).Take(1))
         {
             if (!string.Equals(candidate.ContentHash, contentHash, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            // Le versioni storiche anteriori alla migrazione 0013 non hanno impronta di riferimento:
+            // per loro il confronto resta sul documento privato, come prima della migrazione.
+            if (candidate.ReferenceHash is not null
+                && !string.Equals(candidate.ReferenceHash, referenceHash, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -480,6 +492,7 @@ public sealed class PublishExerciseVersionHandler(
             EngineVersion = definition.EngineVersion,
             SchemaVersion = definition.SchemaVersion.ToString(CultureInfo.InvariantCulture),
             ContentHash = contentHash,
+            ReferenceHash = referenceHash,
             PublishedByAdminId = publishedBy.ToString("D"),
             CreatedAtUtcMs = timeProvider.GetUtcNow().ToUnixTimeMilliseconds(),
         };

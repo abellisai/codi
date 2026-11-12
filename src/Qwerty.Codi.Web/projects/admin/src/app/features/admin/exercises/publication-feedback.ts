@@ -1,5 +1,9 @@
 import type { FieldTree } from '@angular/forms/signals';
 import type { ExerciseDraft } from '@codi/api';
+/**
+ * Bozza pronta per la verifica o la pubblicazione: i documenti correnti dell'editor sostituiscono
+ * quelli dell'ultima risposta del server, così la prova riguarda ciò che il docente ha a schermo.
+ */
 export type PreparedExerciseDraft = ExerciseDraft & {
   readonly referenceSolutionJson: string | null;
 };
@@ -48,4 +52,28 @@ export function focusPublicationProblem(type: string, message: string): void {
   if (!element.matches('input, textarea, select, button, a'))
     element.setAttribute('tabindex', '-1');
   element.focus();
+}
+
+/**
+ * Normalizza la sola formattazione di un documento Blockly, senza toccare i blocchi. Il confronto
+ * «modifiche non salvate» usa questa forma: Blockly può riscrivere l'ordine o il formato del vuoto
+ * (`{}` contro `{ blocks: { languageVersion: 0, blocks: [] } }`) senza che il programma sia cambiato,
+ * e un confronto letterale segnalerebbe modifiche che non esistono.
+ */
+export function canonicalWorkspace(json: string): string {
+  try {
+    const parsed: unknown = JSON.parse(json);
+    const blocks = (parsed as { blocks?: { blocks?: unknown } })?.blocks?.blocks;
+    if (Array.isArray(blocks) && blocks.length === 0) {
+      return '{}';
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return json;
+  }
+}
+
+/** Vero quando il documento Blockly non contiene blocchi: è il progetto vuoto del programma iniziale. */
+export function isCanonicalEmptyWorkspace(json: string): boolean {
+  return canonicalWorkspace(json) === '{}';
 }

@@ -84,8 +84,11 @@ export interface ExerciseDraft {
 /**
  * Versione pubblicata di un esercizio, da `ListExerciseVersions`, `GetExerciseVersion` e
  * `PublishExerciseVersion` (§10.4, §10.5). È immutabile: i due documenti escono come sono stati
- * pubblicati, e `contentHash` è l'impronta che identifica il contenuto pubblicato. `versionNumber`
- * viaggia come stringa decimale, come gli altri contatori (§10.2). La soluzione privata non c'è:
+ * pubblicati, e `contentHash` è l'impronta che identifica il contenuto pubblicato. `referenceHash`
+ * è l'impronta della soluzione congelata nella versione: riconosce una pubblicazione che ha
+ * cambiato solo la soluzione e non la rivela (§13.1); è nulla sulle versioni pubblicate prima di
+ * quella migrazione. `versionNumber` viaggia come stringa decimale, come gli altri contatori (§10.2).
+ * La soluzione privata non c'è:
  * il catalogo la riserva a `GetReferenceSolution` (§13.1); `authorNotes` invece arriva dalla riga
  * compagna ed è il promemoria del docente sulla versione, visibile solo nell'area admin.
  */
@@ -100,6 +103,8 @@ export interface ExerciseVersion {
   readonly engineVersion: string;
   readonly schemaVersion: string;
   readonly contentHash: string;
+  /** Impronta della soluzione di riferimento della versione; nulla sulle versioni storiche. */
+  readonly referenceHash: string | null;
   readonly createdAt: string;
   readonly authorNotes: string | null;
 }

@@ -104,6 +104,7 @@ class ApiStub {
         engineVersion: 'valueprogram-1',
         schemaVersion: '1',
         contentHash: '12345678',
+        referenceHash: null,
         createdAt: '2026-10-16T12:00:00Z',
         authorNotes: null,
       };
