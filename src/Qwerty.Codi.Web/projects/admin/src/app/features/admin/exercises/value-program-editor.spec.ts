@@ -90,6 +90,16 @@ describe('Casi di prova scritti dall’autore', () => {
     expect(esito.voci).toEqual([{ inputs: [3, 8, 6], expectedOutput: ['2'] }]);
   });
 
+  it('AccettaUsciteMultipleSeparateDaVirgoleOdaSpazi', () => {
+    const esito = leggiCasi('3, 8, 6 -> 0, 1, 2\n5, 2, 9 -> 0 0 1');
+
+    expect(esito.errore).toBeNull();
+    expect(esito.voci).toEqual([
+      { inputs: [3, 8, 6], expectedOutput: ['0', '1', '2'] },
+      { inputs: [5, 2, 9], expectedOutput: ['0', '0', '1'] },
+    ]);
+  });
+
   it('UnCasoCheNonLeggeNulla_SiScriveSenzaValori', () => {
     const esito = leggiCasi('-> 12');
 

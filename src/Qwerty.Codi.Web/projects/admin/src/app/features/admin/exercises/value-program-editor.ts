@@ -385,9 +385,8 @@ export function leggiVariabili(testo: string): EsitoLettura<VariabileVoce> {
 }
 
 /**
- * Legge i casi di prova da righe del tipo `3, 8, 6 -> 2`. I valori si separano con virgole, l'uscita
- * attesa con spazi: sono due cose diverse — valori letti e righe mostrate — e scriverle allo stesso
- * modo renderebbe ambiguo un caso che mostra due numeri.
+ * Legge i casi di prova da righe del tipo `3, 8, 6 -> 2`. I valori letti si separano con virgole.
+ * L'uscita attesa si separa con spazi o con virgole: le due notazioni sono equivalenti.
  */
 export function leggiCasi(testo: string): EsitoLettura<CasoVoce> {
   const voci: CasoVoce[] = [];
@@ -419,7 +418,7 @@ export function leggiCasi(testo: string): EsitoLettura<CasoVoce> {
       }
     }
 
-    const expectedOutput = uscitaTesto.length === 0 ? [] : uscitaTesto.split(/\s+/);
+    const expectedOutput = uscitaTesto.length === 0 ? [] : uscitaTesto.split(/[,\s]+/).filter((pezzo) => pezzo.length > 0);
 
     if (expectedOutput.length === 0) {
       return { voci: [], errore: `Riga ${String(indice + 1)}: manca l'uscita attesa.` };
