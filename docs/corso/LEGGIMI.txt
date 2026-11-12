@@ -1,0 +1,42 @@
+CORSO DI INFORMATICA CON CODÌ
+Edizione del 10 novembre 2026
+
+CONTENUTO
+- Sei presentazioni con note del docente, per 63 diapositive.
+- Proposta del corso, 12 pagine.
+- Guida docente con Codì, 12 pagine.
+
+USO
+Leggere prima la guida docente. Creare gli esercizi descritti nella propria installazione di Codì.
+Il pacchetto non crea né pubblica esercizi nel database della piattaforma.
+Il docente avvia la sessione. Ogni coppia entra con il codice di otto cifre e il nome concordato.
+
+ATTIVITÀ DEGLI ALUNNI
+- VP01: esecuzione della somma completa, con due valori forniti uno alla volta.
+- VP02: esecuzione del programma completo per una carta.
+- GP01: costruzione del ciclo su una griglia.
+- GP02: correzione della prima svolta su una griglia.
+- Q01-Q08: Quiz con risposte testuali o numeriche prestabilite.
+
+DIMOSTRAZIONI DEL DOCENTE
+VP03, VP04 e VP05 si usano soltanto nell’anteprima, con tutti gli ingressi del caso già indicati.
+La pagina alunni attuale non mostra un editor per i programmi numerici.
+La richiesta interattiva dentro un ciclo presenta un difetto di ripresa.
+Le attività degli alunni evitano questi due limiti. I percorsi hanno un editor modificabile.
+
+PRIMA LEZIONE
+Quattro gruppi da sei. Quattro bambini rappresentano i bit della RAM, uno la CPU e uno l’SSD.
+CPU e SSD scambiano ruolo dopo ogni numero. La guida contiene la rotazione dei tre turni.
+
+SESTA LEZIONE
+Oggetti, esempi e Quiz introducono classificazione e verifica delle affermazioni.
+Codì confronta risposte predisposte dal docente. Questa attività non addestra un modello.
+
+VERIFICA
+Il compilatore e gli interpreti di Codì hanno eseguito 19 verifiche sui programmi e sui percorsi.
+Le due prove numeriche interattive previste per gli alunni sono riuscite.
+Sono superati 36 test applicativi pertinenti. La guida specifica esiti e limiti.
+Resta da verificare il laboratorio con dodici computer nella rete scolastica.
+
+Le presentazioni sono modificabili. Le risposte degli esercizi sono nelle note e nella guida docente.
+Le versioni e gli archivi precedenti restano materiale storico.
