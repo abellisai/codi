@@ -1,6 +1,5 @@
 /** Trasporto HTTP, errori e contratti comuni alle due applicazioni. */
 export { ApiError } from './api-error';
-export { SignalRAntiforgeryClient } from './signalr-antiforgery';
 export { API_AREA, ADMIN_API_PREFIX, PUBLIC_API_PREFIX } from './api-area';
 export { ApiService, toApiError } from './api-service';
 export { EXPECTED_NOT_FOUND, SILENT_SUCCESS, type RequestOptions } from './api-service';

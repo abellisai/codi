@@ -210,6 +210,7 @@ export class ParticipantSession implements OnInit {
       recoveryBlocked: state?.recoveryBlocked ?? false,
       runtimeStatus: this.runtime.status(),
       trialRunning: this.trial.running(),
+      showsProgram: this.exercise()?.exerciseType !== 'Quiz',
     });
   });
 

@@ -90,10 +90,8 @@ export const MAX_INSTRUCTIONS_LENGTH = 2000;
 export const MAX_MESSAGE_LENGTH = 500;
 
 /**
- * Progetto a blocchi di una bozza che non ne ha ancora uno: è il valore iniziale e di riserva del
- * campo `workspaceJson` della bozza — il **programma iniziale** che l'alunno trova all'ingresso,
- * non un campo mancante. L'editor dei blocchi lo sostituisce con la serializzazione di Blockly
- * quando il docente compone il programma.
+ * Progetto iniziale vuoto, come richiede la specifica funzionale §9.2.
+ * La soluzione privata usa un documento separato e non modifica questo valore.
  */
 export const EMPTY_INITIAL_WORKSPACE = '{}';
 

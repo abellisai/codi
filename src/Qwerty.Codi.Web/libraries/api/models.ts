@@ -246,6 +246,7 @@ export type ParticipantPresence = 'Fresh' | 'Degraded' | 'NotOperational' | 'Dis
  * docente ha visto. I contatori a 64 bit viaggiano come stringhe decimali (§10.2).
  */
 export interface SessionParticipantOverview {
+  readonly rowVersion?: string;
   readonly observedState?: ParticipantObservation | null;
   readonly participantId: string;
   readonly displayName: string;

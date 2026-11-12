@@ -196,24 +196,14 @@ export class ExerciseEditor implements OnInit {
 
   protected readonly savedRowVersion = signal<string | null>(null);
 
-  /**
-   * Progetto iniziale degli alunni: un campo dell'editor compose il programma che l'alunno trova
-   * già pronto all'ingresso (§13.1). È il `workspaceJson` della bozza e diventa
-   * `initial_workspace_json` della versione pubblicata. La pagina lo passa anche al pannello di
-   * pubblicazione, che lo verifica insieme alla definizione.
-   */
-  protected readonly initialWorkspace = signal(EMPTY_INITIAL_WORKSPACE);
-
-  /** Programma iniziale dell'ultima bozza salvata: termine di confronto di «modifiche non salvate». */
-  private readonly savedInitialWorkspace = signal(EMPTY_INITIAL_WORKSPACE);
+  /** Il progetto iniziale degli alunni resta vuoto, come richiede la specifica funzionale. */
+  protected readonly initialWorkspace = () => EMPTY_INITIAL_WORKSPACE;
 
   /**
    * Soluzione di riferimento: un progetto a blocchi riservato al docente (§13.1). È vuota quando il
    * docente non ne ha composta una, e non è mai inviata agli alunni.
    *
-   * Il **programma iniziale** è l'altro campo a blocchi della pagina: l'alunno parte da quello,
-   * non dal vuoto. Le due cose restano documenti distinti — la soluzione non entra mai nel DTO
-   * dell'alunno — e confonderle pubblicherebbe la risposta al posto del punto di partenza.
+   * Il progetto iniziale resta vuoto. La soluzione resta privata.
    */
   protected readonly solutionJson = signal(EMPTY_INITIAL_WORKSPACE);
   private readonly savedSolutionJson = signal(EMPTY_INITIAL_WORKSPACE);
@@ -327,9 +317,7 @@ export class ExerciseEditor implements OnInit {
     return (
       saved === null ||
       JSON.stringify(saved) !== JSON.stringify(this.definition()) ||
-      canonicalWorkspace(this.solutionJson()) !== canonicalWorkspace(this.savedSolutionJson()) ||
-      canonicalWorkspace(this.initialWorkspace()) !==
-        canonicalWorkspace(this.savedInitialWorkspace())
+      canonicalWorkspace(this.solutionJson()) !== canonicalWorkspace(this.savedSolutionJson())
     );
   });
 
@@ -432,7 +420,6 @@ export class ExerciseEditor implements OnInit {
 
       this.savedRowVersion.set(draft.rowVersion);
       this.isNewDraft.set(false);
-      this.applyInitialWorkspace(draft.workspaceJson);
       await this.loadReferenceSolution();
       if (parsed !== null) {
         this.resetWith(toEditorModel(parsed));
@@ -456,7 +443,6 @@ export class ExerciseEditor implements OnInit {
       // sarà una creazione, senza `baseRowVersion`.
       this.savedRowVersion.set(null);
       this.applySolution(EMPTY_INITIAL_WORKSPACE);
-      this.applyInitialWorkspace(EMPTY_INITIAL_WORKSPACE);
       this.isNewDraft.set(true);
       this.resetWith(suggestedEditorModel());
     }
@@ -490,12 +476,6 @@ export class ExerciseEditor implements OnInit {
     this.savedSolutionJson.set(json);
   }
 
-  /** Allinea il programma iniziale mostrato e quello salvato: stesso documento finché non cambia. */
-  private applyInitialWorkspace(json: string): void {
-    this.initialWorkspace.set(json);
-    this.savedInitialWorkspace.set(json);
-  }
-
   /** Applica una definizione al modulo azzerando lo stato d'interazione e riallineando il confronto. */
   private resetWith(model: ExerciseEditorModel): void {
     this.model.set(model);
@@ -508,11 +488,6 @@ export class ExerciseEditor implements OnInit {
   /** La soluzione composta nell'editor dei blocchi: resta privata e viaggia con la bozza. */
   protected onSolutionChanged(solutionJson: string): void {
     this.solutionJson.set(solutionJson);
-  }
-
-  /** Il docente ha modificato il programma iniziale mostrato dall'editor Blockly. */
-  protected onInitialWorkspaceChanged(workspaceJson: string): void {
-    this.initialWorkspace.set(workspaceJson);
   }
 
   /** Dopo una copia di versione la bozza è cambiata sul server: la pagina la rilegge. */
@@ -533,7 +508,6 @@ export class ExerciseEditor implements OnInit {
     }
 
     this.solutionJson.set(this.savedSolutionJson());
-    this.initialWorkspace.set(this.savedInitialWorkspace());
     this.resetWith(toEditorModel(saved));
   }
 
@@ -709,8 +683,7 @@ export class ExerciseEditor implements OnInit {
     const payload: Record<string, unknown> = {
       exerciseId: this.exerciseId(),
       definitionJson: this.definitionJson(),
-      // Il programma iniziale dell'alunno: il campo «Programma iniziale» dell'editor. Il server lo
-      // valida con il catalogo e i limiti della versione e lo pubblica come initial workspace.
+      // Il progetto iniziale resta vuoto. La soluzione privata viaggia separatamente.
       workspaceJson: this.initialWorkspace(),
       referenceSolutionJson: this.referenceSolution(),
     };
@@ -729,7 +702,6 @@ export class ExerciseEditor implements OnInit {
 
       this.savedRowVersion.set(draft.rowVersion);
       this.savedSolutionJson.set(this.solutionJson());
-      this.savedInitialWorkspace.set(this.initialWorkspace());
       this.isNewDraft.set(false);
       if (parsed !== null) {
         this.resetWith(toEditorModel(parsed));

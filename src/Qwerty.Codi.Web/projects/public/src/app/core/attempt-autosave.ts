@@ -12,6 +12,7 @@ interface SaveState {
   changes: Promise<void>;
   dirty: boolean;
   conflict: boolean;
+  rejectedRevision: string | null;
   finalizing: boolean;
   firstChangeAt: number;
   timer: ReturnType<typeof setTimeout> | null;
@@ -66,6 +67,7 @@ export class AttemptAutosave {
       dirty: stored !== null && !confirmed,
       conflict:
         stored !== null && !confirmed && copy.baseRowVersion !== (attempt.rowVersion ?? '1'),
+      rejectedRevision: null,
       finalizing: false,
       firstChangeAt: 0,
       timer: null,
@@ -123,6 +125,7 @@ export class AttemptAutosave {
         workspaceHash: state.copy.workspaceHash,
         projectRevision: state.copy.projectRevision,
       };
+      state.rejectedRevision = null;
       state.dirty = true;
       await this.keepLocal(state.copy);
       this.schedule(state, true);
@@ -151,12 +154,14 @@ export class AttemptAutosave {
   private async flushState(state: SaveState): Promise<void> {
     if (state.busy !== null) return state.busy;
     if (!state.dirty || state.conflict || state.finalizing || !this.operative) return;
+    if (state.rejectedRevision === state.copy.projectRevision) return;
     state.busy = this.send(state).finally(() => {
       state.busy = null;
     });
     await state.busy;
     if (
       state.copy.pending === null &&
+      state.rejectedRevision !== state.copy.projectRevision &&
       state.dirty &&
       !state.conflict &&
       this.operative &&
@@ -231,16 +236,34 @@ export class AttemptAutosave {
         error.status === 412 ||
         error.status === 401 ||
         error.status === 403;
+      // Un rifiuto definitivo conferma che il corpo non è stato applicato. Una correzione
+      // deve creare un nuovo salvataggio; soltanto gli esiti incerti riusano saveId e corpo.
+      const rejected =
+        error.status >= 400 &&
+        error.status < 500 &&
+        !state.conflict &&
+        error.status !== 408 &&
+        error.status !== 429;
+      if (rejected) {
+        state.rejectedRevision = String(
+          pending.body['clientProjectRevision'] ?? copy.projectRevision,
+        );
+        copy.pending = null;
+        state.firstChangeAt = 0;
+        await this.keepLocal(copy);
+      }
       if (this.current === state) {
         this.conflict.set(state.conflict);
         this.status.set(
           state.conflict
             ? 'Salvataggio sospeso. La copia locale resta disponibile per il docente.'
-            : 'Connessione interrotta. La copia locale conserva il lavoro.',
+            : rejected
+              ? `Salvataggio rifiutato: ${error.message}`
+              : 'Connessione interrotta. La copia locale conserva il lavoro.',
         );
       }
       // Il prossimo rinnovo operativo o un tentativo esplicito ritenta lo stesso corpo.
-      if (!state.conflict && this.operative && !state.finalizing) {
+      if (!rejected && !state.conflict && this.operative && !state.finalizing) {
         state.timer = setTimeout(() => {
           state.timer = null;
           void this.flushState(state);

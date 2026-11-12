@@ -1,7 +1,7 @@
 # Codì: specifica tecnica della piattaforma didattica
 
-Versione: 0.58 — Progetto tecnico iniziale approfondito
-Data: 16 ottobre 2026
+Versione: 0.59 — Progetto tecnico iniziale approfondito
+Data: 12 novembre 2026
 Stato: proposta implementativa, non software già realizzato
 Documento funzionale di riferimento: [Specifiche della piattaforma didattica](./SPECIFICHE_PIATTAFORMA_DIDATTICA.md)
 
@@ -919,7 +919,7 @@ La tabella dichiara la policy per riga, come le tabelle a policy mista di §10.4
 |---|---|---|
 | `GetSession`, `GetSessionOverview` | `SessionController` | Stato della sessione e fotografia completa per la dashboard; i nomi degli eventi hub restano `SessionSnapshot` e `TeacherSnapshot` (§11.3). |
 | `ListSessions` | `Admin` | Elenco delle sessioni dalla più recente, con stato, ingressi, revisione, istanti di avvio e fine, titolo della lezione e del corso, nome della classe e della scuola; non espone la versione di riga. Serve all'elenco della pagina admin delle sessioni (§14.1). |
-| `ListSessionParticipants`, `GetParticipantDetail` | `SessionController` | Partecipanti con ultimo stato osservato e dettaglio del singolo alunno. |
+| `ListSessionParticipants`, `GetParticipantDetail` | `SessionController` | Partecipanti con ultimo stato osservato e dettaglio del singolo alunno. La riga di `ListSessionParticipants` include `rowVersion`, stringa decimale per `UpdateParticipant` ed `ExcludeParticipant`. |
 | `GetCommandStatus` | `SessionController` | **Implementata**: stato delle consegne per destinatario, con il riepilogo di §10.6 e il rifiuto indistinguibile per un comando inesistente, di un'altra sessione o di un altro amministratore. |
 | `ListParticipantAttempts` | `SessionController` | Storico dei tentativi del destinatario. |
 | `GetParticipantPreview` | `SessionController` | Ultima anteprima pubblicata, con revisione, hash e freschezza (§15.5). |
@@ -1653,6 +1653,12 @@ Le sottoscrizioni, i worker e i workspace devono essere smaltiti alla distruzion
 
 ### 14.3 Dashboard docente
 
+La regia offre apertura e chiusura degli ingressi nelle sessioni attive o in pausa.
+La card offre rinomina ed esclusione degli alunni ammessi.
+La rinomina usa la versione riletta dal server e conserva il testo dopo un rifiuto.
+L'esclusione richiede conferma e conserva il lavoro nello storico.
+I comandi individuali restano disabilitati per gli alunni esclusi.
+
 La griglia mostra 12 riquadri con nome, postazione, presenza, attività, stato richiesto, stato confermato e ultimo salvataggio. La selezione individuale rimane evidente nella barra dei comandi.
 
 Nell'implementazione corrente la griglia è la pagina `/admin/sessions/:id/participants`, resa come lista
@@ -1678,6 +1684,8 @@ colori deve capire lo stesso — e il testo evita le parole del contratto: «Puo
 guarda il maestro», «Stiamo recuperando il tuo lavoro», «Collegato alla lezione». La precedenza è
 dichiarata e verificata: una lezione conclusa non torna indietro, il recupero spiega perché il lavoro è
 fermo, la pausa del maestro viene prima dei controlli chiusi.
+
+Il Quiz mostra soltanto collegamento e permessi, perché non esegue un programma Blockly.
 
 Sotto la scena stanno i comandi della **prova** (0.38): «Prova», «Un passo», «Da capo» e «Ferma» mentre
 scorre. Sono abilitati solo quando i controlli sono attivi, e una frase dice che la prova è dell'alunno
@@ -1722,6 +1730,12 @@ telemetria, non aggiorna l'anteprima del docente e non scrive nulla. Chi la osse
 proprio schermo.
 
 ### 15.2 Salvataggio del progetto
+
+Un rifiuto definitivo, come `400 ValidationFailed`, interrompe i tentativi automatici della stessa revisione.
+Il client conserva il progetto locale e mostra il rifiuto.
+Una modifica corretta genera un nuovo corpo con un nuovo `saveId`, senza richiedere una ricarica.
+Un esito di rete incerto conserva invece corpo e `saveId` per la ripetizione idempotente.
+I conflitti `409` e `412` richiedono riconciliazione e non autorizzano sovrascritture.
 
 Il client mantiene una sola richiesta di salvataggio in corso per tentativo. Le nuove modifiche sostituiscono la copia in attesa; non accodano ogni singolo evento Blockly.
 
@@ -2340,6 +2354,7 @@ Fonti primarie consultate per la baseline del 30 settembre 2026. I riferimenti s
 
 | Versione | Data | Modifiche |
 |---|---|---|
+| 0.59 | 2026-11-12 | La lista dei partecipanti espone `rowVersion` come stringa decimale. La regia usa i comandi esistenti per rinomina, esclusione e ingressi. Il client distingue i rifiuti definitivi dei salvataggi dagli esiti di rete incerti. Nessuna migrazione o nuova rotta. |
 | 0.58 | 2026-10-22 | **Eliminazione di una versione pubblicata**, su richiesta dell'utente del 22 ottobre 2026 («lasciamo la possibilità di eliminare una versione, purché non sia pubblicata»), precisata con la scelta dell'utente: una versione **pubblicata** si elimina purché **non sia la più recente**. La versione si elimina dalla tabella delle versioni con conferma nella riga, e con lei la riga compagna privata. L'ultima versione è rifiutata con `409 LatestExerciseVersion` e una versione già assegnata con `409 ExerciseVersionInUse`; numero o esercizio inesistenti rispondono `404`. Nuovo comando `DeleteExerciseVersion` (policy `Admin`) nel catalogo di §10.4: il catalogo passa a **51 comandi e 32 query**. Nessuna migrazione: le due eliminazioni usano un predicato sull'identificativo, perché `exercise_version` è immutabile e senza `row_version`. Descritto in §13.8 e nella riga di `CopyExerciseVersionToDraft`; verificato con build, **1.397 test .NET** (398 dominio, 991 integrazione, 8 protocollo) e **389 test Angular** admin. La revisione del 23 ottobre 2026 non ha trovato difetti funzionali e ha allineato §7.3 e `docs/API-ENDPOINTS.md`: nessun cambiamento di contratto. |
 | 0.57 | 2026-10-22 | **Esito della verifica della bozza**, su richiesta dell'utente del 22 ottobre 2026: «Verifica la bozza» mostra il risultato con un **avviso** — «La bozza è pubblicabile.» o «La bozza non è ancora pubblicabile.» — invece di una riga nella barra; l'elenco dei problemi resta in pagina, cliccabile, perché è quello che serve per correggere. La pubblicazione mantiene il proprio esito composto nella pagina. Nessuna modifica a backend, catalogo o schema. Annotato in §14.1. |
 | 0.56 | 2026-10-22 | **Prova di una versione senza programma**, segnalata dall'utente del 22 ottobre 2026: l'anteprima di una versione pubblicata offre «Avvia la prova» solo se il progetto iniziale contiene blocchi; altrimenti mostra la scena e spiega che il programma lo compone l'alunno. Evita che un progetto vuoto — normale dopo la 0.54 — si presenti come un errore di compilazione. Nessuna modifica a backend, catalogo o schema; annotato in §14.1. |

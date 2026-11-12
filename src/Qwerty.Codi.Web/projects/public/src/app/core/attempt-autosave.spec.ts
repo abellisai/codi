@@ -118,6 +118,45 @@ describe('AttemptAutosave', () => {
     expect(save.saved()?.projectRevision).toBe('2');
     expect(store.rows.size).toBe(0);
   });
+
+  it('non ritenta una revisione rifiutata e salva la correzione senza ricaricare', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(transport, 'save').mockImplementationOnce(async (id, kind, body) => {
+      transport.calls.push({ id, kind, body: structuredClone(body) });
+      throw new ApiError('ValidationFailed', 400, 'Due punti di ingresso.');
+    });
+    save.change('{"invalid":true}');
+    await save.flush();
+    expect(save.status()).toContain('Due punti di ingresso.');
+    expect(save.status()).not.toContain('Connessione interrotta');
+    expect(store.rows.size).toBe(1);
+    await vi.advanceTimersByTimeAsync(6000);
+    await save.flush();
+    expect(transport.calls).toHaveLength(1);
+    save.change('{"corrected":true}');
+    await save.flush();
+    expect(transport.calls).toHaveLength(2);
+    expect(transport.calls[1].body['workspaceJson']).toBe('{"corrected":true}');
+    expect(transport.calls[1].body['saveId']).not.toBe(transport.calls[0].body['saveId']);
+    expect(transport.calls[1].body['baseRowVersion']).toBe('1');
+    expect(save.status()).toBe('Lavoro salvato.');
+    expect(store.rows.size).toBe(0);
+  });
+
+  it('conserva lo stesso corpo dopo un esito di rete incerto anche con modifiche nuove', async () => {
+    vi.spyOn(transport, 'save').mockImplementationOnce(async (id, kind, body) => {
+      transport.calls.push({ id, kind, body: structuredClone(body) });
+      throw new ApiError('NetworkUnavailable', 0, 'Rete assente.');
+    });
+    save.change('{"a":1}');
+    await save.flush();
+    save.change('{"a":2}');
+    await save.flush();
+    expect(transport.calls[1].body).toEqual(transport.calls[0].body);
+    await save.flush();
+    expect(transport.calls.at(-1)?.body['workspaceJson']).toBe('{"a":2}');
+    expect(save.saved()?.projectRevision).toBe('2');
+  });
   it('non salva o modifica senza operatività', async () => {
     save.setOperative(false);
     save.change('{"a":1}');

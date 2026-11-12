@@ -374,6 +374,12 @@ aggiornarlo in silenzio: il ripristino locale usa le versioni bloccate.
 
 Con la copertura (§20.4):
 
+Il collector modifica le copie degli assembly nelle cartelle dei test.
+Il processo deve avere accesso in scrittura a tali file.
+Un ambiente ristretto può eseguire tutti i test e produrre comunque un rapporto vuoto.
+In questo caso controlla i log del collector e ripeti la raccolta con i permessi necessari.
+Il verificatore rifiuta esplicitamente un rapporto vuoto, anche insieme a rapporti validi.
+
 ```powershell
 $coverageRun = Join-Path .\TestResults ([Guid]::NewGuid().ToString('N'))
 dotnet test .\Qwerty.Codi.slnx --configuration Release --no-build `
@@ -409,13 +415,23 @@ npm run format:check
 npm run test:admin -- --watch=false
 npm run test:frontend -- --watch=false
 npm run build
+npm run audit
 npm run audit:runtime
 ```
 
 `npm ci` installa dalle versioni bloccate del lockfile e richiede che
 `package-lock.json` sia allineato a `package.json`; se non lo è, usare `npm install` come descritto
 nel [README del frontend](src/Qwerty.Codi.Web/README.md). `npm run lint` invoca ESLint (flat
-config) e `npm run audit:runtime` controlla le sole dipendenze di produzione.
+config). `npm run audit` include gli strumenti di sviluppo.
+`npm run audit:runtime` controlla le sole dipendenze di produzione.
+
+Gli override di Minimatch e Zod correggono vulnerabilità transitive degli strumenti.
+Minimatch usa la versione 11.0.8; il generatore Spartan usa Zod 4.6.6.
+Prima di rimuovere gli override, verifica audit, lint e generatori Spartan in modalità `--dry-run`.
+
+L'admin carica il trasporto SignalR dal percorso `@codi/api/signalr-antiforgery` soltanto nelle funzionalità che lo usano.
+Il provider globale Spartan usa `@spartan-ng/helm/utils/providers`, separato dagli helper grafici.
+Questi percorsi preservano il caricamento differito senza aumentare il budget del bundle.
 
 ### Esito di queste verifiche
 

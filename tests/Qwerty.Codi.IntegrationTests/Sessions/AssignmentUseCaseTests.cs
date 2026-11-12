@@ -1179,6 +1179,7 @@ public sealed class AssignmentUseCaseTests
 
         Assert.Equal(new[] { "Luca", "Sara" }, grid.Select(row => row.DisplayName));
         Assert.All(grid, row => Assert.Equal("Admitted", row.AdmissionStatus));
+        Assert.All(grid, row => Assert.True(row.RowVersion > 0));
         Assert.All(grid, row => Assert.Equal(ParticipantPresence.Disconnected, row.Presence));
         Assert.All(grid, row => Assert.Equal("Exercise", row.View));
         Assert.All(grid, row => Assert.True(row.InteractionEnabled));

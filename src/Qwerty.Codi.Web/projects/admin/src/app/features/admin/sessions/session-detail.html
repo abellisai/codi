@@ -87,6 +87,15 @@
           hlmBtn
           type="button"
           variant="outline"
+          [disabled]="busy() || !canChangeAdmissions()"
+          (click)="changeAdmissions()"
+        >
+          {{ current.admissionsOpen ? 'Chiudi gli ingressi' : 'Apri gli ingressi' }}
+        </button>
+        <button
+          hlmBtn
+          type="button"
+          variant="outline"
           [disabled]="busy() || !canStart()"
           (click)="start()"
         >

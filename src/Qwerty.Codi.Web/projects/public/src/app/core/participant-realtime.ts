@@ -6,10 +6,10 @@ import {
   ExecutionLease,
   ParticipantMessage,
   ParticipantSnapshot,
-  SignalRAntiforgeryClient,
   WorkspacePreview,
   toApiError,
 } from '@codi/api';
+import { SignalRAntiforgeryClient } from '@codi/api/signalr-antiforgery';
 import {
   HubConnection,
   HubConnectionBuilder,
@@ -111,8 +111,9 @@ export class ParticipantRealtime {
     try {
       await connection.invoke('WorkspacePreviewUpdated', preview);
       return true;
-    } catch (failure) {
-      this.notice.set(`Anteprima non inviata: ${toApiError(failure).message}`);
+    } catch {
+      // Il publisher prova HTTP e possiede l'esito finale dell'anteprima.
+      // Un tentativo hub rifiutato non deve lasciare un avviso globale persistente.
       return false;
     }
   }

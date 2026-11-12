@@ -19,6 +19,8 @@ import {
   lucidePlay,
   lucideRotateCcw,
   lucideUsers,
+  lucidePencil,
+  lucideUserX,
 } from '@ng-icons/lucide';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { SessionParticipantOverview } from '@core/api';
@@ -29,6 +31,7 @@ import {
   type ParticipantCardAction,
   type ParticipantCardActionEvent,
   type ParticipantChatSendEvent,
+  type ParticipantRenameEvent,
 } from './participant-card';
 import { describeWork, type PreviewLine } from './preview-lines';
 import { SessionRegiaService } from './session-regia-service';
@@ -66,6 +69,8 @@ import { formatInstant } from './session-format';
       lucidePlay,
       lucideRotateCcw,
       lucideUsers,
+      lucidePencil,
+      lucideUserX,
     }),
   ],
   selector: 'app-session-participants',
@@ -149,12 +154,33 @@ export class SessionParticipants implements OnInit {
     await this.chat.send(event.participant.participantId, event.text);
   }
 
+  protected async renameParticipant(event: ParticipantRenameEvent): Promise<void> {
+    await this.regia.updateParticipant(event.participant, event.displayName);
+  }
+
   /**
    * Azioni offerte per un alunno, come pulsanti icona con tooltip. Sono derivate dallo stato letto
    * dal server, non da un contatore locale: una sessione riletta come conclusa non riabilita niente.
    */
   protected actionsFor(participant: SessionParticipantOverview): readonly ParticipantCardAction[] {
     return [
+      {
+        key: 'rename',
+        label: 'Rinomina l’alunno',
+        icon: 'lucidePencil',
+        enabled: this.regia.canManageParticipant(participant),
+      },
+      {
+        key: 'exclude',
+        label: 'Escludi l’alunno',
+        icon: 'lucideUserX',
+        enabled: this.regia.canManageParticipant(participant),
+        requiresConfirmation: true,
+        confirmTitle: `Escludere ${participant.displayName}?`,
+        confirmLabel: 'Escludi',
+        confirmText:
+          'L’alunno non può più accedere a questa sessione. Il suo lavoro resta nello storico.',
+      },
       {
         key: 'enable',
         label: 'Abilita i controlli',
@@ -230,6 +256,9 @@ export class SessionParticipants implements OnInit {
     const participant = event.participant;
 
     switch (event.key) {
+      case 'exclude':
+        await this.regia.updateParticipant(participant);
+        return;
       case 'enable':
         await this.regia.enableParticipant(participant);
         return;

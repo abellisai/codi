@@ -149,7 +149,12 @@ export class SessionRegiaService {
       this.loading.set(false);
     }
 
-    if (sessionId !== '' && sessionId !== this.observedSessionId) {
+    if (
+      this.registeredPages > 0 &&
+      this.sessionId() === sessionId &&
+      sessionId !== '' &&
+      sessionId !== this.observedSessionId
+    ) {
       this.observedSessionId = sessionId;
       void this.realtime.observe(sessionId);
     }
@@ -190,7 +195,11 @@ export class SessionRegiaService {
       if (this.sessionId() !== id) return;
       const latest = this.realtime.snapshot();
       this.participants.set(
-        latest !== null && latest.session.id === id ? latest.participants : participants,
+        latest !== null &&
+          latest.session.id === id &&
+          BigInt(latest.session.sessionRevision) > BigInt(session.sessionRevision)
+          ? latest.participants
+          : participants,
       );
 
       // Il dettaglio aperto è dello stesso istante della griglia: un comando può cambiare il
@@ -251,6 +260,44 @@ export class SessionRegiaService {
   /** Conclude la sessione: è un'azione definitiva, chiesta con conferma dalla pagina. */
   async end(): Promise<void> {
     await this.runCommand('EndSession');
+  }
+
+  async changeAdmissions(): Promise<void> {
+    if (!['Active', 'Paused'].includes(this.session()?.status ?? '')) return;
+    await this.runCommand(this.session()?.admissionsOpen ? 'CloseAdmissions' : 'OpenAdmissions');
+  }
+
+  canManageParticipant(participant: SessionParticipantOverview): boolean {
+    return (
+      this.canEnd() &&
+      participant.admissionStatus === 'Admitted' &&
+      participant.rowVersion !== undefined
+    );
+  }
+
+  async updateParticipant(
+    participant: SessionParticipantOverview,
+    displayName?: string,
+  ): Promise<void> {
+    if (!this.canManageParticipant(participant) || this.busy()) return;
+    this.busy.set(true);
+    this.error.set(null);
+    try {
+      await this.api.executeCommand(
+        displayName === undefined ? 'ExcludeParticipant' : 'UpdateParticipant',
+        {
+          sessionId: this.sessionId(),
+          participantId: participant.participantId,
+          baseRowVersion: participant.rowVersion,
+          ...(displayName === undefined ? {} : { displayName, stationId: participant.stationId }),
+        },
+      );
+    } catch (failure) {
+      this.error.set(toApiError(failure));
+    } finally {
+      await this.refresh();
+      this.busy.set(false);
+    }
   }
 
   /** Pausa di un solo alunno: l'eccezione individuale resta distinta da quella della classe. */
@@ -471,6 +518,7 @@ export class SessionRegiaService {
   canEnable(participant: SessionParticipantOverview): boolean {
     return (
       this.canEnd() &&
+      participant.admissionStatus === 'Admitted' &&
       participant.attemptId !== null &&
       !participant.teacherPaused &&
       // Sulla pausa di recupero l'unica via è la ripresa: "Abilita i controlli" riaprirebbe
@@ -490,19 +538,25 @@ export class SessionRegiaService {
   /** Azzerabile: c'è un tentativo e la pagina ne dichiara la versione da confermare. */
   canReset(participant: SessionParticipantOverview): boolean {
     return (
-      this.canEnd() && participant.attemptId !== null && participant.attemptRowVersion !== null
+      this.canEnd() &&
+      participant.admissionStatus === 'Admitted' &&
+      participant.attemptId !== null &&
+      participant.attemptRowVersion !== null
     );
   }
 
   /** Pausabile: un alunno già in pausa docente non viene messo in pausa una seconda volta. */
   canPauseParticipant(participant: SessionParticipantOverview): boolean {
-    return this.canEnd() && !participant.teacherPaused;
+    return (
+      this.canEnd() && participant.admissionStatus === 'Admitted' && !participant.teacherPaused
+    );
   }
 
   /** Riprendibile: l'alunno è in pausa docente, di recupero, o in attesa. */
   canResumeParticipant(participant: SessionParticipantOverview): boolean {
     return (
       this.canEnd() &&
+      participant.admissionStatus === 'Admitted' &&
       (participant.teacherPaused || participant.recoveryBlocked || participant.view === 'Waiting')
     );
   }

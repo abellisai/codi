@@ -79,20 +79,26 @@ $lines = @{}
 foreach ($report in $reports) {
     [xml] $document = Get-Content -LiteralPath $report.FullName -Raw
 
-    foreach ($package in @($document.coverage.packages.package)) {
+    $packages = @($document.SelectNodes('/coverage/packages/package'))
+    if ($packages.Count -eq 0) {
+        Write-Error "Report Cobertura vuoto: $($report.FullName). Controllare i log del collector e l'accesso in scrittura agli assembly prima di ripetere la raccolta."
+        exit 1
+    }
+
+    foreach ($package in $packages) {
         $name = [string] $package.name
 
         if (-not $lines.ContainsKey($name)) {
             $lines[$name] = @{}
         }
 
-        foreach ($class in @($package.classes.class)) {
+        foreach ($class in @($package.SelectNodes('./classes/class'))) {
             $fileName = ([string] $class.filename).Replace('\', '/')
             if ([string]::IsNullOrWhiteSpace($fileName)) {
                 Write-Error "Report senza nome del file sorgente: $($report.FullName). Impossibile identificare le righe."
                 exit 1
             }
-            foreach ($line in @($class.lines.line)) {
+            foreach ($line in @($class.SelectNodes('./lines/line'))) {
                 $number = $fileName + ':' + [string] $line.number
                 $hits = [int] $line.hits
 

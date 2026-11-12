@@ -62,7 +62,11 @@
           </button>
           <hlm-dialog-content *hlmDialogPortal="let ctx">
             <hlm-dialog-header>
-              <h2 hlmDialogTitle>Azzerare il lavoro di {{ participant().displayName }}?</h2>
+              <h2 hlmDialogTitle>
+                {{
+                  action.confirmTitle ?? 'Azzerare il lavoro di ' + participant().displayName + '?'
+                }}
+              </h2>
               <p hlmDialogDescription>{{ action.confirmText }}</p>
             </hlm-dialog-header>
             <hlm-dialog-footer>
@@ -72,9 +76,10 @@
                 type="button"
                 variant="destructive"
                 [disabled]="busy()"
+                hlmDialogClose
                 (click)="run(action.key)"
               >
-                Azzera
+                {{ action.confirmLabel ?? 'Azzera' }}
               </button>
             </hlm-dialog-footer>
           </hlm-dialog-content>
@@ -87,7 +92,9 @@
           variant="outline"
           [hlmTooltip]="action.label"
           [attr.aria-label]="labelFor(action)"
-          [attr.aria-pressed]="action.toggle ? isSelected() : null"
+          [attr.aria-pressed]="
+            action.toggle ? (action.key === 'chat' ? chatOpen() : isSelected()) : null
+          "
           [disabled]="busy() || !action.enabled"
           (click)="run(action.key)"
         >
@@ -96,6 +103,30 @@
       }
     }
   </div>
+
+  @if (editingName()) {
+    <form [formRoot]="nameForm" hlmCardContent>
+      <div hlmField>
+        <label hlmFieldLabel [for]="'participant-name-' + participant().participantId"
+          >Nome dell’alunno</label
+        >
+        <input
+          hlmInput
+          [id]="'participant-name-' + participant().participantId"
+          [formField]="nameForm.name"
+        />
+        @if (nameForm.name().touched() && nameForm.name().invalid()) {
+          @for (error of nameForm.name().errors(); track error.kind) {
+            <hlm-field-error [validator]="error.kind">{{ error.message }}</hlm-field-error>
+          }
+        }
+      </div>
+      <button hlmBtn type="submit" variant="outline" [disabled]="busy()">Salva nome</button>
+      <button hlmBtn type="button" variant="outline" [disabled]="busy()" (click)="cancelRename()">
+        Annulla
+      </button>
+    </form>
+  }
 
   @if (isSelected() && detail(); as open) {
     <div class="detail">

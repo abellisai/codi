@@ -6,15 +6,15 @@ import {
   input,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
 import { NgIcon } from '@ng-icons/core';
 import { disabled, form, FormField, FormRoot, validate } from '@angular/forms/signals';
 import { HlmButtonImports } from '@spartan-ng/helm/button';
 import { HlmCardImports } from '@spartan-ng/helm/card';
-import { HlmDialog, HlmDialogImports } from '@spartan-ng/helm/dialog';
+import { HlmDialogImports } from '@spartan-ng/helm/dialog';
 import { HlmFieldImports } from '@spartan-ng/helm/field';
 import { HlmTextareaImports } from '@spartan-ng/helm/textarea';
+import { HlmInputImports } from '@spartan-ng/helm/input';
 import { HlmTooltipImports } from '@spartan-ng/helm/tooltip';
 import {
   ParticipantMessage,
@@ -65,6 +65,7 @@ function graphemeCount(text: string): number {
     HlmButtonImports,
     HlmFieldImports,
     HlmTextareaImports,
+    HlmInputImports,
     HlmTooltipImports,
     HlmDialogImports,
     FormField,
@@ -116,6 +117,43 @@ export class ParticipantCard {
 
   /** Messaggio scritto dal docente: la pagina lo invia al server, la card non decide i permessi. */
   readonly chatSend = output<ParticipantChatSendEvent>();
+  readonly rename = output<ParticipantRenameEvent>();
+  protected readonly editingName = signal(false);
+  private readonly nameModel = signal({ name: '' });
+  private readonly pendingName = signal<string | null>(null);
+  protected readonly nameForm = form(
+    this.nameModel,
+    (path) => {
+      disabled(path, () => this.busy());
+      validate(path.name, ({ value }) => {
+        const name = value().trim();
+        return name === '' || graphemeCount(name) > 30 || /\p{Cc}/u.test(name)
+          ? {
+              kind: 'name',
+              message: 'Inserisci un nome da 1 a 30 caratteri, senza caratteri di controllo.',
+            }
+          : undefined;
+      });
+    },
+    {
+      submission: {
+        action: async () => {
+          const displayName = this.nameModel().name.trim();
+          this.pendingName.set(displayName);
+          this.rename.emit({ participant: this.participant(), displayName });
+        },
+        ignoreValidators: 'none',
+        onInvalid: (field) => field().errorSummary()[0]?.fieldTree().focusBoundControl(),
+      },
+    },
+  );
+
+  protected cancelRename(): void {
+    this.editingName.set(false);
+    this.pendingName.set(null);
+    this.nameModel.set({ name: '' });
+    this.nameForm().reset();
+  }
 
   protected readonly presence = presenceLabel;
   protected readonly instant = formatInstant;
@@ -215,6 +253,12 @@ export class ParticipantCard {
 
   constructor() {
     effect(() => {
+      const pending = this.pendingName();
+      if (pending !== null && this.participant().displayName === pending && !this.busy()) {
+        this.cancelRename();
+      }
+    });
+    effect(() => {
       const text = this.pending();
       if (text === '') return;
       const confirmed = this.chat().some(
@@ -236,16 +280,16 @@ export class ParticipantCard {
   /** Numero di messaggi non letti dal docente, come la riga del server lo dichiara. */
   protected readonly unreadLabel = computed(() => this.participant().unreadMessages);
 
-  /** Dialogo della conferma: vive in un portale e si chiude quando la conferma è stata data. */
-  private readonly confirmDialog = viewChild(HlmDialog);
-
   /** Esegue l'azione sulla pagina, che sa come inviarla al server. */
-  protected async run(key: string): Promise<void> {
-    const action = this.actions().find((candidate) => candidate.key === key);
-    this.action.emit({ participant: this.participant(), key });
-    if (action?.requiresConfirmation === true) {
-      await this.confirmDialog()?.close();
+  protected run(key: string): void {
+    if (key === 'rename') {
+      this.nameModel.set({ name: this.participant().displayName });
+      this.nameForm().reset();
+      this.editingName.set(true);
+      setTimeout(() => this.nameForm.name().focusBoundControl());
+      return;
     }
+    this.action.emit({ participant: this.participant(), key });
   }
 }
 
@@ -263,8 +307,15 @@ export interface ParticipantCardAction {
   readonly requiresConfirmation?: boolean;
   /** Testo della conferma: la pagina lo scrive, la card lo rende nel dialogo. */
   readonly confirmText?: string;
+  readonly confirmTitle?: string;
+  readonly confirmLabel?: string;
   /** true quando l'azione apre o chiude il dettaglio: si dichiara con `aria-pressed`. */
   readonly toggle?: boolean;
+}
+
+export interface ParticipantRenameEvent {
+  readonly participant: SessionParticipantOverview;
+  readonly displayName: string;
 }
 
 /** Evento richiesto dalla card: l'azione e l'alunno a cui si riferisce. */

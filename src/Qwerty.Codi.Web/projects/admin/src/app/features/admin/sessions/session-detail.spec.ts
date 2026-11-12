@@ -212,6 +212,26 @@ describe('SessionDetail', () => {
     expect(commandButton('Pausa').disabled).toBe(false);
   });
 
+  it('chiude e riapre gli ingressi con la revisione riletta', async () => {
+    await mount('Active');
+    api.session = summary('Active', false, '8');
+    commandButton('Chiudi gli ingressi').click();
+    await flush();
+    expect(api.commands.at(-1)).toEqual({
+      name: 'CloseAdmissions',
+      payload: { sessionId: 's1', expectedSessionRevision: '7' },
+    });
+    expect(pageText()).toContain('Chiusi');
+    api.session = summary('Active', true, '9');
+    commandButton('Apri gli ingressi').click();
+    await flush();
+    expect(api.commands.at(-1)).toEqual({
+      name: 'OpenAdmissions',
+      payload: { sessionId: 's1', expectedSessionRevision: '8' },
+    });
+    expect(pageText()).toContain('Aperti');
+  });
+
   it('mette in pausa e riprende con la revisione dello stato letto', async () => {
     await mount('Active');
 

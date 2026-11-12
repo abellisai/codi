@@ -21,6 +21,8 @@ export interface SessionStatusInput {
   readonly runtimeStatus: string;
   /** Vero mentre l'alunno sta provando il proprio programma in locale. */
   readonly trialRunning: boolean;
+  /** Le domande non hanno un programma da eseguire. */
+  readonly showsProgram?: boolean;
 }
 
 /**
@@ -32,7 +34,11 @@ export interface SessionStatusInput {
  * maestro, recupero, controlli chiusi — si verificano senza montare la pagina.
  */
 export function sessionStatusBadges(input: SessionStatusInput): readonly StatusBadgeSpec[] {
-  return [connectionBadge(input.connection), workBadge(input), programBadge(input)];
+  return [
+    connectionBadge(input.connection),
+    workBadge(input),
+    ...(input.showsProgram === false ? [] : [programBadge(input)]),
+  ];
 }
 
 /** Collegamento al server: il trasporto aperto non basta, conta l'operatività (§11.6). */

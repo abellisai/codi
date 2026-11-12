@@ -66,6 +66,13 @@ public sealed class SessionParticipantRegiaTests : IAsyncLifetime
         Assert.Equal("Admitted", updated.AdmissionStatus);
         Assert.Equal(2, updated.RowVersion);
 
+        var overview = Assert.IsAssignableFrom<IReadOnlyList<SessionParticipantOverviewDto>>(
+            await _host.ExecuteAsAsync(CodiRequestKind.Query, ListSessionParticipantsQuery.RequestName,
+                new { sessionId = fixture.SessionId }, RegiaContext()));
+        var reread = Assert.Single(overview, participant => participant.ParticipantId == luca.Joined.ParticipantId);
+        Assert.Equal(updated.RowVersion, reread.RowVersion);
+        Assert.Equal(updated.DisplayName, reread.DisplayName);
+
         var row = await ColumnsAsync(
             "SELECT display_name, station_id, row_version FROM session_participant WHERE id = $id;",
             luca.Joined.ParticipantId);

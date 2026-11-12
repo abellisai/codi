@@ -1,11 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import { HubConnection, HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
-import {
-  ParticipantMessage,
-  SignalRAntiforgeryClient,
-  TeacherSnapshot,
-  WorkspacePreviewReceipt,
-} from '@codi/api';
+import { ParticipantMessage, TeacherSnapshot, WorkspacePreviewReceipt } from '@codi/api';
+import { SignalRAntiforgeryClient } from '@codi/api/signalr-antiforgery';
 
 @Injectable({ providedIn: 'root' })
 export class TeacherRealtime {
@@ -45,6 +41,16 @@ export class TeacherRealtime {
       .configureLogging(LogLevel.Warning)
       .build();
     this.connection = connection;
+    // Il server invia gli eventi granulari insieme allo snapshot completo.
+    // Lo snapshot resta l'unica sorgente dello stato della regia.
+    for (const event of [
+      'ParticipantJoined',
+      'ParticipantPresenceChanged',
+      'ParticipantStateUpdated',
+      'CommandStatusChanged',
+    ]) {
+      connection.on(event, () => undefined);
+    }
     connection.on('TeacherSnapshot', (snapshot: TeacherSnapshot) => {
       if (
         generation !== this.generation ||
