@@ -42,6 +42,14 @@ public sealed class ExercisePublicationTests : IAsyncLifetime
     private const string ThirdSolution =
         """{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_start","id":"solution-c","next":{"block":{"type":"aula_move","id":"move-c","next":{"block":{"type":"aula_turn","id":"turn-c","fields":{"TURN":"Right"}}}}}}]}}""";
 
+    /// <summary>
+    /// Programma iniziale con il difetto del caso GP02 della verifica QA: parte, gira a destra,
+    /// ripete due passi, gira di nuovo a destra. Non risolve l'esercizio: è il punto di partenza
+    /// che l'alunno deve correggere.
+    /// </summary>
+    private const string DefectiveWorkspace =
+        """{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_start","id":"start-gp02","next":{"block":{"type":"aula_move","id":"move-gp02-1","next":{"block":{"type":"aula_turn","id":"turn-gp02-1","fields":{"TURN":"Right"},"next":{"block":{"type":"aula_repeat","id":"repeat-gp02","fields":{"COUNT":2},"inputs":{"DO":{"block":{"type":"aula_move","id":"move-gp02-2"}}},"next":{"block":{"type":"aula_turn","id":"turn-gp02-2","fields":{"TURN":"Right"}}}}}}}}}}]}}""";
+
     private CodiUseCaseHost _host = null!;
     private Guid _adminId;
 
@@ -619,6 +627,33 @@ public sealed class ExercisePublicationTests : IAsyncLifetime
 
         // Assert
         Assert.Equal(CodiErrorCodes.EntityVersionRequired, failure.Code);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task ExecuteAsync_PublishExerciseVersionConProgrammaInizialeDifettoso_PubblicaIlProgrammaENonLaSoluzione()
+    {
+        // Arrange: il caso GP02 della verifica QA. Il programma iniziale ha il difetto voluto
+        // (gira a destra due volte) ed è un documento valido per catalogo e limiti; la soluzione
+        // di riferimento è un altro documento, completo.
+        var exercise = await CreateExerciseAsync();
+        var draft = await SaveAsync(exercise.Id, DefinitionJson(), DefectiveWorkspace, Solution);
+
+        // Act
+        var validation = await ValidateAsync(exercise.Id, DefinitionJson(), DefectiveWorkspace, Solution);
+        var version = await PublishAsync(exercise.Id, draft.RowVersion);
+
+        // Assert: la verifica accetta il programma iniziale difettoso — non deve risolvere.
+        Assert.True(validation.IsValid);
+        // La versione fotografa il programma iniziale della bozza, non la soluzione.
+        Assert.Equal(DefectiveWorkspace, version.WorkspaceJson);
+        Assert.DoesNotContain("solution-", version.WorkspaceJson, StringComparison.Ordinal);
+        Assert.NotNull(version.ReferenceHash);
+        // La soluzione resta privata: vive nella riga compagna e arriva solo con la sua lettura.
+        Assert.Equal(Solution, (await ReadPrivateAsync(version.Id))?.ReferenceSolutionJson);
+        var reference = await _host.QueryOneAsync<ExerciseReferenceSolutionDto>(
+            GetReferenceSolutionQuery.RequestName, new { exerciseId = exercise.Id, versionNumber = "1" });
+        Assert.Equal(Solution, reference.WorkspaceJson);
     }
 
     private Task<ExerciseDraftValidationDto> ValidateAsync(

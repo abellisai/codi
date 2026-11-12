@@ -11,7 +11,8 @@ File condiviso dal ciclo Dream-RSI. Gli agenti worker appendono fatti tecnici ve
 ## Lezioni attive
 
 - [2026-11-12] [setup] `dotnet` nel PATH fallisce al caricamento: usare ~/.dotnet/dotnet con DOTNET_ROOT=/home/ale/.dotnet. global.json richiede SDK 10.0.401, presente in ~/.dotnet. (evidenza: build Release exit 0 del 2026-11-12)
-- [2026-11-12] [setup] Build .NET verificata: restore --locked-mode, build Release, test dalla radice con ./Qwerty.Codi.slnx. 1397 test verdi: 398 Domain.Tests, 8 ProtocolTests, 991 IntegrationTests. (evidenza: output dotnet test exit 0)
+- [2026-11-12] [setup] Build .NET verificata: restore --locked-mode, build Release, test dalla radice con ./Qwerty.Codi.slnx. 1410 test verdi: 398 Domain.Tests, 8 ProtocolTests, 1004 IntegrationTests. (evidenza: output dotnet test exit 0, gate 2026-11-12)
+- [2026-11-12] [t_d0e2dfbf] L'impronta studente `content_hash` non include la soluzione. L'impronta della soluzione è la colonna separata `exercise_version.reference_hash` (migrazione 0013), calcolata da `ExerciseContentHash.ComputeReference`. La snapshot della soluzione vive in `exercise_version_private.reference_solution_json`. — perché `content_hash` è citata dai tentativi già pubblicati e cambiarne la formula invaliderebbe il confronto con le righe esistenti (evidenza: src/Qwerty.Codi.Infrastructure/Migrations/Scripts/0013_version_reference_hash.sql, test verdi)
 - [2026-11-12] [setup] Node v26 disponibile solo via nvm (`source ~/.nvm/nvm.sh`). (evidenza: nvm.sh presente, node --version ok)
 - [2026-11-12] [setup] pwsh assente su questa macchina: scripts/test-coverage-gate.ps1 non eseguibile. Gate copertura DA VALIDARE finché non c'è alternativa Linux. (evidenza: which pwsh vuoto)
 
