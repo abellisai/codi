@@ -15,6 +15,7 @@
       "@core/*": ["./projects/admin/src/app/core/*"],
       "@shared/*": ["./projects/admin/src/app/shared/*"],
       "@codi/api": ["./libraries/api/index.ts"],
+      "@codi/api/signalr-antiforgery": ["./libraries/api/signalr-antiforgery.ts"],
       "@exercise-engine/*": ["./libraries/exercise-engine/*"],
       "@spartan-ng/helm/button": ["./projects/admin/src/app/ui/button/src/index.ts"],
       "@spartan-ng/helm/breadcrumb": ["./projects/admin/src/app/ui/breadcrumb/src/index.ts"],
@@ -39,7 +40,10 @@
       "@spartan-ng/helm/dialog": ["./projects/admin/src/app/ui/dialog/src/index.ts"],
       "@spartan-ng/helm/alert-dialog": ["./projects/admin/src/app/ui/alert-dialog/src/index.ts"],
       "@spartan-ng/helm/sonner": ["./projects/admin/src/app/ui/sonner/src/index.ts"],
-      "@spartan-ng/helm/badge": ["./projects/admin/src/app/ui/badge/src/index.ts"]
+      "@spartan-ng/helm/badge": ["./projects/admin/src/app/ui/badge/src/index.ts"],
+      "@spartan-ng/helm/utils/providers": [
+        "./projects/admin/src/app/ui/utils/src/lib/provide-spartan-hlm.ts"
+      ]
     }
   },
   "angularCompilerOptions": {

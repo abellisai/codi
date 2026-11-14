@@ -251,6 +251,7 @@ internal static class SessionGridReader
             attempt?.LastSavedAtUtcMs is { } saved ? DateTimeOffset.FromUnixTimeMilliseconds(saved) : null,
             messages?.UnreadByTeacher(participantId) ?? 0)
         {
+            RowVersion = participant.RowVersion,
             ObservedState = CurrentObservation(observations?.Get(participantId), state, participant.ConnectionEpoch),
         };
     }

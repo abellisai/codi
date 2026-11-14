@@ -87,35 +87,17 @@
     </section>
   }
 
-  <!-- Progetto a sinistra, programma a destra: si compone da una parte e si vede il risultato
+  <!-- Progetto a sinistra, risultato a destra: si compone da una parte e si vede il risultato
        dall'altra, senza scorrere. Su schermi stretti le due colonne tornano una sotto l'altra.
-       Un esercizio dichiarativo non ha due pannelli: legge, risponde e riceve un esito, quindi
-       occupa una riga sola. -->
-  <div class="work-area" [class.one-panel]="!usesGrid()">
+       Entrambi gli esercizi a blocchi hanno il progetto; la griglia aggiunge la scena e la prova,
+       l'esercizio che conserva valori aggiunge variabili e uscita. Un esercizio dichiarativo non
+       compone nulla: legge, risponde e riceve un esito, quindi occupa una riga sola. -->
+  <div class="work-area" [class.one-panel]="!usesBlocks()">
     @if (attempt(); as work) {
-      <!-- Un esercizio che conserva valori compone un progetto a blocchi come il percorso, ma non ha
-           una griglia: il suo pannello mostra le variabili, l'uscita e il campo del valore. Il ramo
-           viene **prima** di quello del progetto a blocchi, perché quella bandiera è vera per
-           entrambi i motori — ed è il difetto che il collaudo nel browser ha trovato. -->
-      @if (usesValues()) {
-        <section aria-label="Le variabili e l’uscita">
-          <h2>Le variabili e l’uscita</h2>
-          <p class="facts">
-            Tentativo {{ work.attemptNumber }} · {{ work.status }} · revisione del progetto
-            {{ work.projectRevision }}
-          </p>
-          @if (exercise()?.definitionJson; as definition) {
-            <app-value-program-panel
-              [definitionJson]="definition"
-              [attempt]="work"
-              [connectionEpoch]="snapshot()?.connectionEpoch ?? ''"
-              [workspaceJson]="autosave.workspace() ?? work.workspaceJson"
-              [enabled]="editingEnabled()"
-              (confirmed)="answerConfirmed()"
-            />
-          }
-        </section>
-      } @else if (usesBlocks()) {
+      <!-- Il progetto a blocchi è il posto in cui il bambino compone, e serve sia al percorso sia
+           all'esercizio che conserva valori. Incorporarlo nel solo ramo della griglia lasciava
+           l'esercizio di valori senza editor: il difetto che il collaudo nel browser ha trovato. -->
+      @if (usesBlocks()) {
         <section aria-label="Il mio progetto">
           <h2>Il mio progetto</h2>
           <p class="facts">
@@ -141,6 +123,25 @@
             <pre>{{ work.workspaceJson }}</pre>
           </details>
           <p class="note">Il progetto conserva i tuoi blocchi.</p>
+        </section>
+      }
+      @if (usesValues()) {
+        <section aria-label="Le variabili e l’uscita">
+          <h2>Le variabili e l’uscita</h2>
+          <p class="facts">
+            Tentativo {{ work.attemptNumber }} · {{ work.status }} · revisione del progetto
+            {{ work.projectRevision }}
+          </p>
+          @if (exercise()?.definitionJson; as definition) {
+            <app-value-program-panel
+              [definitionJson]="definition"
+              [attempt]="work"
+              [connectionEpoch]="snapshot()?.connectionEpoch ?? ''"
+              [workspaceJson]="autosave.workspace() ?? work.workspaceJson"
+              [enabled]="editingEnabled()"
+              (confirmed)="answerConfirmed()"
+            />
+          }
         </section>
       } @else if (showsQuiz()) {
         <section aria-label="La mia risposta">

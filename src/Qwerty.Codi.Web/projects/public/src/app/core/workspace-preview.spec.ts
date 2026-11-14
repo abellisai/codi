@@ -129,4 +129,16 @@ describe('WorkspacePreviewPublisher', () => {
 
     expect(realtime.sendWorkspacePreview).toHaveBeenCalledTimes(2);
   });
+  it('sostituisce il rifiuto con la conferma quando il progetto viene corretto', async () => {
+    publisher.attach('t', '1');
+    publisher.setOperative(true);
+    realtime.sendWorkspacePreview.mockResolvedValue(false);
+    transport.preview.mockRejectedValueOnce(new Error('Progetto non valido'));
+    publisher.change('{"invalid":true}');
+    await settle();
+    expect(publisher.status()).toContain('Anteprima non inviata');
+    publisher.change('{"valid":true}');
+    await settle();
+    expect(publisher.status()).toBe('Anteprima inviata dal collegamento HTTP.');
+  });
 });

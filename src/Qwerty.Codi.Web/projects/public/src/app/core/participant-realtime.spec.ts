@@ -1,5 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { ApiService, CommandIssuedEnvelope, DesiredState, ParticipantSnapshot } from '@codi/api';
+import {
+  ApiService,
+  CommandIssuedEnvelope,
+  DesiredState,
+  ParticipantSnapshot,
+  WorkspacePreview,
+} from '@codi/api';
 import { vi } from 'vitest';
 import { ParticipantRealtime } from './participant-realtime';
 
@@ -127,6 +133,27 @@ describe('ParticipantRealtime', () => {
     await flush();
     return transport.current;
   }
+  it('affida al publisher il ripiego dell’anteprima senza lasciare un avviso globale', async () => {
+    const connection = await connect();
+    const preview: WorkspacePreview = {
+      protocolVersion: 1,
+      attemptId: 't',
+      connectionEpoch: '1',
+      executionGeneration: '0',
+      projectRevision: '1',
+      workspaceHash: 'h',
+      workspaceJson: '{}',
+    };
+    const invoke = vi.spyOn(
+      connection as unknown as { invoke: (method: string, data: unknown) => Promise<void> },
+      'invoke',
+    );
+    invoke.mockRejectedValueOnce(new Error('Anteprima rifiutata'));
+    expect(await service.sendWorkspacePreview(preview)).toBe(false);
+    expect(service.notice()).toBe('');
+    expect(await service.sendWorkspacePreview(preview)).toBe(true);
+    expect(service.notice()).toBe('');
+  });
   it('attende il caricamento prima di SnapshotApplied e richiede la prima autorizzazione', async () => {
     let complete!: () => void;
     service.setStateApplier(

@@ -32,7 +32,15 @@ Admin usa `__Host-CodiAntiforgery`. Public usa `__Host-CodiPublicAntiforgery`.
 I due client inviano il proprio token corrente in `X-Codi-Antiforgery`, anche per negoziazione e polling SignalR.
 `BootstrapAdminAccount` è escluso da entrambe le aree HTTP.
 
+Il trasporto comune HTTP e i contratti restano esportati da `@codi/api`.
+Il client SignalR usa invece `@codi/api/signalr-antiforgery`, per evitare il caricamento anticipato della libreria.
+Questa separazione riguarda i moduli Web e non modifica endpoint, credenziali o protocollo.
+
 ## Rotte disponibili nel sorgente
+
+Dal 12 novembre 2026 `ListSessionParticipants` include `rowVersion` come stringa decimale.
+La rinomina e l'esclusione inviano tale valore in `baseRowVersion`.
+I comandi restano `UpdateParticipant` ed `ExcludeParticipant`, nel gruppo admin esistente.
 
 Le query admin `GetExercise` e `ListExercises` includono `publicationStatus`.
 I valori sono `Draft`, `Available` e `UnpublishedChanges`.

@@ -1,7 +1,121 @@
 # Stato di sviluppo Codì
 
-Aggiornato: 22 ottobre 2026. Baseline documentale: specifica tecnica 0.58 e funzionale 0.17.
+Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.59 e funzionale 0.17.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
+
+## ValueProgram: editor del progetto nella pagina dell'alunno: 14 novembre 2026
+
+**DIFETTO CORRETTO E VALIDATO NEL BROWSER.** Il collaudo del completamento degli esercizi ha mostrato
+che la pagina dell'alunno non montava l'editor Blockly per un esercizio `ValueProgram`: rendeva solo il
+pannello «Le variabili e l'uscita». Con il progetto iniziale vuoto — l'admin non ne fornisce più uno dal
+22 ottobre — il bambino non poteva comporre il programma e «Fai correggere» rispondeva «Riprova.» con
+«Manca il blocco «quando si avvia»: senza, il programma non parte.». Motore e correzione del server
+funzionavano già: salvando un programma nel tentativo la correzione restituiva «Bravo!».
+
+La correzione rende il progetto a blocchi per entrambi i motori a blocchi (`session.html`): due pannelli
+per griglia e valori, uno solo per il Quiz. Il player resta inerte per le definizioni che non esegue
+(`exercise-runtime.ts`) e la pagina non mostra il riquadro del programma del worker per un esercizio di
+valori (`session.ts`). Le specifiche non cambiano: il comportamento previsto da §13.9 e §14.4 era già
+descritto.
+
+- Test: 4 nuovi casi (`session.spec.ts`, `exercise-runtime.spec.ts`); l'app pubblica passa 140 test.
+- Verifiche eseguite: ESLint, Prettier e build `web.frontend`, tutte con uscita 0.
+- Collaudo browser (Chrome headless, database pulito): 12 alunni completano **GridPath 12/12, Quiz 12/12,
+  ValueProgram 12/12**; harness API 52/52 e UI 11/11.
+- Evidenze: `TestResults/e2e-collaudo-20261114/completamento-esecuzioni/20261114-120006/`,
+  `TestResults/e2e-collaudo-20261114/ui-esecuzioni/20261114-120121/`,
+  `TestResults/e2e-collaudo-20261114/RIEPILOGO.md`.
+
+## Dipendenze di sviluppo, bundle e copertura: 13 novembre 2026
+
+**CORREZIONI VALIDATE LOCALMENTE.** L'audit completo rileva zero vulnerabilità, inclusi gli strumenti di sviluppo.
+Gli override fissano Minimatch 11.0.8 e Zod 4.6.6 per il generatore Spartan.
+Il lockfile deriva da npm; `npm ci --ignore-scripts` completa l'installazione riproducibile.
+La verifica comprende lint, generatori in modalità rapporto e la compatibilità delle API Zod usate da Spartan.
+Il generatore `accordion` completa la simulazione senza scrivere componenti.
+
+Il bundle iniziale admin passa da 558,79 a 470,91 kB.
+Il budget resta 500 kB e la build non produce avvisi sul budget.
+Il bundle alunni passa da 319,28 a 260,72 kB.
+Il trasporto SignalR usa un ingresso dedicato, escluso dal barrel comune delle API.
+Il provider globale Spartan usa un ingresso separato dagli helper grafici.
+La verifica nel browser usa la configurazione di produzione: accesso, navigazione differita e dialogo funzionano.
+La console non contiene avvisi o errori durante tale verifica.
+Il database attivo resta vuoto e le app restano avviate.
+
+La diagnosi del collector mostra `Access denied` sulle copie degli assembly nelle cartelle dei test.
+Con l'accesso in scrittura necessario, il collector produce report Cobertura con file e righe misurate.
+Il verificatore riconosce ora esplicitamente un rapporto vuoto, anche accanto a rapporti validi.
+Passano tutte le sei regressioni del verificatore.
+
+| Assembly | Copertura misurata | Baseline invariata | Esito |
+|---|---|---|---|
+| Api | 86,24% | 86,17% | Superata |
+| Application | 96,25% | 97,33% | Sotto soglia |
+| Domain | 94,23% | 96,47% | Sotto soglia |
+| Infrastructure | 98,07% | 97,69% | Superata |
+
+Le due soglie non raggiunte erano già documentate il 16 ottobre 2026.
+Il confronto termina correttamente con uscita 1; il rapporto vuoto è risolto.
+Le soglie non sono state abbassate e nessun sorgente aggiuntivo è escluso dalla misura.
+
+Controlli eseguiti dall'agente il 13 novembre 2026:
+
+- Restore bloccato, build .NET Release e verifica della formattazione: uscita 0, build senza avvisi.
+- Test .NET con copertura: 1.409 superati, nessun test fallito.
+- Test Angular admin: 396 superati; test alunni: 136 superati.
+- ESLint, Prettier e build delle due app: uscita 0.
+- Audit completo e audit delle dipendenze di esecuzione: uscita 0, zero vulnerabilità.
+- Healthcheck Spartan e generazione simulata: uscita 0, nessuna migrazione applicata.
+
+Log e report locali: `TestResults/quality-fixes`.
+Le evidenze del collaudo precedente restano nella sezione del 12 novembre.
+
+## Correzioni dopo il collaudo admin: 12 novembre 2026
+
+**COMPORTAMENTI VALIDATI LOCALMENTE.** L'agente ha corretto i difetti del collaudo admin.
+
+- Il salvataggio interrompe i tentativi della revisione rifiutata e accetta una correzione senza ricarica.
+- Gli esiti di rete incerti conservano corpo e identificativo del salvataggio.
+- GridPath salva il progetto iniziale vuoto e conserva la soluzione privata separata.
+- La regia offre rinomina, esclusione, apertura e chiusura degli ingressi.
+- La lista dei partecipanti espone la versione necessaria per rinomina ed esclusione.
+- I comandi individuali restano disabilitati dopo l'esclusione.
+- Il Quiz non mostra l'indicatore del programma Blockly.
+- Un rifiuto dell'anteprima non lascia un avviso globale dopo il recupero.
+- Il docente gestisce gli eventi granulari senza avvisi SignalR per gestori assenti.
+
+Angular passa alla serie 22.2.6; il lockfile risolve gli strumenti di build a 22.2.7.
+L'aggiornamento elimina le cinque vulnerabilità delle dipendenze di esecuzione rilevate nel collaudo.
+Il lockfile deriva da npm, senza forzature delle dipendenze peer.
+
+| Controllo | Esito reale |
+|---|---|
+| Restore bloccato e build .NET Release | Uscita 0; build senza errori e avvisi |
+| Test .NET, anche con raccolta di copertura | 1.409 superati: 398 dominio, 1.003 integrazione, 8 protocollo |
+| Test Angular admin | 396 superati in 38 file |
+| Test Angular alunni | 136 superati in 14 file |
+| ESLint e Prettier del workspace Web | Uscita 0 |
+| `dotnet format --verify-no-changes --no-restore` | Uscita 0; avviso di caricamento del workspace nell'ultima esecuzione |
+| Build delle due app | Uscita 0; avviso admin 558,79 kB contro 500 kB |
+| `npm run audit:runtime` | Uscita 0; zero vulnerabilità |
+| Audit completo, inclusi strumenti di sviluppo | Restano 20 vulnerabilità: 18 moderate e 2 alte |
+| Test del verificatore di copertura | 4/4 superati |
+| Soglie di copertura | Non verificabili: il collector produce documenti Cobertura vuoti; il verificatore termina con uscita 1 |
+
+Il browser verifica rinomina, nome vuoto rifiutato, esclusione con conferma e ingressi aperti/chiusi.
+Un ingresso dopo la chiusura riceve `409` dal server.
+Il progetto con due blocchi iniziali mostra il rifiuto di validazione.
+La correzione salva senza ricarica e l'anteprima docente coincide con il progetto salvato.
+Il programma raggiunge il traguardo e il Quiz conferma la risposta corretta senza l'avviso Blockly.
+L'editor mostra soltanto il workspace della soluzione privata.
+
+Il collaudo usa dati sintetici in `TestResults/admin-fixes-20261112/browser-data`.
+Al termine l'API usa nuovamente il database originale vuoto, verificato con 12 controlli HTTP superati.
+Le app restano avviate sulle porte 4200 e 4300; l'API usa la porta 5200.
+Evidenze, log e schermate: `TestResults/admin-fixes-20261112`.
+Il rapporto precedente resta in `TestResults/admin-check-20261112`.
+La verifica su 12 PC fisici resta fuori dal collaudo locale.
 
 ## Eliminazione di una versione pubblicata non più recente: 22 ottobre 2026
 

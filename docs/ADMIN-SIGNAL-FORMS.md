@@ -12,6 +12,12 @@ sono collegate da AGENTS, istruzioni Angular e profilo frontend.
 
 ## Inventario corrente — 1 ottobre 2026
 
+Aggiornamento del 12 novembre 2026: la card del partecipante offre la rinomina con Signal Forms e Spartan Field.
+Il nome ammette da 1 a 30 grafemi e rifiuta i caratteri di controllo.
+La form conserva il testo dopo un rifiuto del server.
+La conferma del nuovo nome deriva dalla rilettura, insieme alla nuova `rowVersion`.
+L'editor GridPath salva sempre il progetto iniziale vuoto, separato dalla soluzione privata.
+
 | Pagina | Modelli e operazioni |
 |---|---|
 | Accesso | Nome/password, invio asincrono, errori accessibili, password esatta e reset dopo successo |

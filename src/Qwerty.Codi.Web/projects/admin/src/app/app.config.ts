@@ -4,7 +4,7 @@ import { provideRouter } from '@angular/router';
 import { antiforgeryInterceptor } from '@core/api';
 import { loadingInterceptor, notificationInterceptor } from '@core/http';
 import { API_AREA } from '@codi/api';
-import { provideSpartanHlm } from '@spartan-ng/helm/utils';
+import { provideSpartanHlm } from '@spartan-ng/helm/utils/providers';
 import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {

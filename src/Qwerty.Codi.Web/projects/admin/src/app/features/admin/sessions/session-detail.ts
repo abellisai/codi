@@ -162,6 +162,13 @@ export class SessionDetail implements OnInit {
   protected readonly canPause = this.regia.canPause;
   protected readonly canResume = this.regia.canResume;
   protected readonly canEnd = this.regia.canEnd;
+  protected readonly canChangeAdmissions = computed(
+    () => this.online() && ['Active', 'Paused'].includes(this.session()?.status ?? ''),
+  );
+
+  protected async changeAdmissions(): Promise<void> {
+    await this.regia.changeAdmissions();
+  }
 
   /**
    * Comandi sul contenuto della sessione: si offrono quando la classe è in corso e c'è qualcuno a

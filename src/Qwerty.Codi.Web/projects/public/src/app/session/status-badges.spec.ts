@@ -22,6 +22,14 @@ function badges(overrides: Partial<SessionStatusInput> = {}) {
 }
 
 describe('Riquadri di stato dell’alunno', () => {
+  it('non mostra lo stato Blockly per una domanda, anche dopo un errore del motore', () => {
+    const result = badges({ showsProgram: false, runtimeStatus: 'Error' });
+    expect(result).toHaveLength(2);
+    expect(result.map((badge) => badge.label)).toEqual([
+      'Collegato alla lezione',
+      'Puoi lavorare!',
+    ]);
+  });
   it('collegato e al lavoro: verde e blu, con il programma pronto', () => {
     expect(badges()).toEqual([
       { tone: 'ok', icon: 'link', label: 'Collegato alla lezione' },

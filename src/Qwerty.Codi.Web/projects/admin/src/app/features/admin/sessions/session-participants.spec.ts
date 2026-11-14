@@ -62,6 +62,20 @@ class ApiStub {
       throw this.commandFailure;
     }
 
+    if (name === 'UpdateParticipant' || name === 'ExcludeParticipant') {
+      this.participants = this.participants.map((participant) =>
+        participant.participantId !== payload['participantId']
+          ? participant
+          : {
+              ...participant,
+              rowVersion: String(BigInt(participant.rowVersion!) + 1n),
+              ...(name === 'UpdateParticipant'
+                ? { displayName: String(payload['displayName']) }
+                : { admissionStatus: 'Excluded' }),
+            },
+      );
+    }
+
     return {
       commandId: 'c1',
       sessionId: 's1',
@@ -147,6 +161,61 @@ describe('SessionParticipants', () => {
 
     expect(page().querySelector('app-participant-card')).toBeNull();
     expect(pageText()).toContain('Nessun alunno è ancora entrato');
+  });
+
+  it('valida il nome, conserva la bozza su rifiuto e rilegge nome e versione dopo il salvataggio', async () => {
+    api.participants = [participant()];
+    await mount();
+    actionButton('Rinomina l’alunno').click();
+    await flush();
+    const input = page().querySelector<HTMLInputElement>('input')!;
+    input.value = ' ';
+    input.dispatchEvent(new Event('input'));
+    page()
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await flush();
+    expect(pageText()).toContain('Inserisci un nome da 1 a 30');
+    expect(api.commands).toHaveLength(0);
+    input.value = 'Lucia';
+    input.dispatchEvent(new Event('input'));
+    api.commandFailure = new ApiError('RowVersionMismatch', 412, 'Versione superata');
+    page()
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await flush();
+    expect(input.value).toBe('Lucia');
+    expect(pageText()).toContain('Versione superata');
+    api.commandFailure = null;
+    page()
+      .querySelector('form')!
+      .dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await flush();
+    expect(api.commands.at(-1)).toEqual({
+      name: 'UpdateParticipant',
+      payload: {
+        sessionId: 's1',
+        participantId: 'p1',
+        displayName: 'Lucia',
+        stationId: null,
+        baseRowVersion: '5',
+      },
+    });
+    expect(pageText()).toContain('Lucia');
+    expect(page().querySelector('form')).toBeNull();
+    actionButton('Escludi l’alunno', 'Lucia').click();
+    await flush();
+    expect(api.commands.at(-1)?.name).toBe('UpdateParticipant');
+    dialogButton('Escludi').click();
+    await flush();
+    expect(api.commands.at(-1)).toEqual({
+      name: 'ExcludeParticipant',
+      payload: { sessionId: 's1', participantId: 'p1', baseRowVersion: '6' },
+    });
+    expect(pageText()).toContain('escluso');
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(actionButton('Rinomina l’alunno', 'Lucia').disabled).toBe(true);
+    expect(actionButton('Metti in pausa l’alunno', 'Lucia').disabled).toBe(true);
   });
 
   it('apre il dettaglio di un alunno e ne mostra i blocchi, rileggendoli all’annuncio dell’hub', async () => {
@@ -433,6 +502,7 @@ function participant(
 ): SessionParticipantOverview {
   return {
     participantId: 'p1',
+    rowVersion: '5',
     displayName: 'Luca',
     stationId: null,
     admissionStatus: 'Admitted',

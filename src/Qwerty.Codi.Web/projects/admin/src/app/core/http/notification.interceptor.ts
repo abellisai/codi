@@ -41,6 +41,10 @@ const COMMAND_TITLES: Readonly<Record<string, string>> = {
   SaveExerciseDraft: 'Bozza salvata',
   CopyExerciseVersionToDraft: 'Versione copiata nella bozza',
   DeleteExerciseVersion: 'Versione eliminata',
+  UpdateParticipant: 'Nome dell’alunno aggiornato',
+  ExcludeParticipant: 'Alunno escluso dalla sessione',
+  OpenAdmissions: 'Ingressi aperti',
+  CloseAdmissions: 'Ingressi chiusi',
 };
 
 /**

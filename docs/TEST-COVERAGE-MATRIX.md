@@ -5,7 +5,7 @@ scritto, con l'area, il livello, il file che li prova e la sezione normativa. No
 test né un punteggio: un test scritto non è un test superato, e i numeri di copertura vivono in
 `scripts/coverage-baseline.json`.
 
-Aggiornato: 16 ottobre 2026, dopo la rinomina locale in Codì e il confronto della copertura con il codice precedente.
+Aggiornato: 13 novembre 2026, dopo la correzione della raccolta di copertura.
 Riferimento: [specifica
 tecnica](../SPECIFICA_TECNICA_PIATTAFORMA_DIDATTICA.md) §20.3–§20.4.
 
@@ -17,6 +17,54 @@ tecnica](../SPECIFICA_TECNICA_PIATTAFORMA_DIDATTICA.md) §20.3–§20.4.
 - La matrice va aggiornata quando cambia un comportamento di produzione o il suo test (§20.4). Un
   requisito implementato e già descritto non aggiunge versioni della specifica: aggiorna questa
   matrice e lo stato.
+
+## Raccolta di copertura del 13 novembre 2026
+
+Il rapporto vuoto dipendeva dal rifiuto di accesso in scrittura agli assembly da strumentare.
+La raccolta con i permessi necessari produce dati per i quattro assembly applicativi.
+L'esecuzione risiede in `TestResults/quality-fixes/coverage`; tutti i 1.409 test .NET passano.
+Passano anche 396 test Angular admin e 136 test Angular alunni.
+
+| Assembly | Baseline | Misurata | Esito |
+|---|---|---|---|
+| Api | 86,17% | 86,24% | Superata |
+| Application | 97,33% | 96,25% | Sotto soglia |
+| Domain | 96,47% | 94,23% | Sotto soglia |
+| Infrastructure | 97,69% | 98,07% | Superata |
+
+Il confronto termina con uscita 1 per le due soglie già non raggiunte il 16 ottobre.
+Le soglie restano invariate e il collector misura gli stessi assembly e attributi.
+Non esiste una nuova esclusione di codice di produzione.
+Il verificatore supera sei test di regressione.
+Due nuovi casi rifiutano il rapporto vuoto, da solo oppure accanto a un rapporto valido.
+Il messaggio identifica il rapporto vuoto e indica i controlli sul collector e sui permessi.
+Il test vive in `scripts/test-coverage-gate.ps1` e riguarda la tecnica §20.4.
+
+## Evidenze delle correzioni admin del 12 novembre 2026
+
+Passano 1.409 test .NET, 396 test Angular admin e 136 test Angular alunni.
+I risultati risiedono in `TestResults/admin-fixes-20261112`.
+Il browser conferma il recupero del salvataggio senza ricarica e la coerenza dell'anteprima docente.
+Il browser conferma anche rinomina, esclusione, ingressi e risposta Quiz corretta.
+La raccolta Cobertura produce documenti vuoti e non permette il confronto delle soglie.
+Il verificatore termina con uscita 1; le quattro regressioni del verificatore passano.
+Le soglie restano invariate. Nessuna percentuale nuova è dichiarata.
+
+| Comportamento | Test di regressione | Livello |
+|---|---|---|
+| Un rifiuto definitivo interrompe i tentativi invariati; la correzione salva senza ricarica | `projects/public/src/app/core/attempt-autosave.spec.ts` | Angular unitario |
+| Un esito di rete incerto conserva corpo e identificativo | `projects/public/src/app/core/attempt-autosave.spec.ts` | Angular unitario |
+| L'anteprima corretta sostituisce il rifiuto senza avvisi globali persistenti | `participant-realtime.spec.ts`, `workspace-preview.spec.ts` nell'app alunni | Angular unitario |
+| GridPath invia il progetto iniziale vuoto e mantiene la soluzione privata | `projects/admin/src/app/features/admin/exercises/exercise-editor.spec.ts` | Angular componente |
+| La rinomina conserva il testo sul rifiuto e usa la versione riletta | `projects/admin/src/app/features/admin/sessions/session-participants.spec.ts` | Angular componente |
+| L'esclusione richiede conferma e disabilita i comandi individuali | `projects/admin/src/app/features/admin/sessions/session-participants.spec.ts` | Angular componente |
+| Apertura e chiusura degli ingressi usano la revisione corrente | `projects/admin/src/app/features/admin/sessions/session-detail.spec.ts` | Angular componente |
+| La lista espone la versione aggiornata del partecipante | `SessionParticipantRegiaTests.cs`, `AssignmentUseCaseTests.cs` | .NET integrazione |
+| Il Quiz omette l'indicatore del programma | `projects/public/src/app/session/status-badges.spec.ts` | Angular unitario |
+
+I percorsi Angular partono da `src/Qwerty.Codi.Web`.
+I test .NET indicati appartengono a `tests/Qwerty.Codi.IntegrationTests/Sessions`.
+Riferimenti normativi: funzionale §9.2 e tecnica §10.5, §14.3, §14.4, §15.2, §15.5.
 
 ## Evidenze dopo la rinomina in Codì
 
@@ -635,6 +683,7 @@ La raccolta finale esegue questi comportamenti.
 | Prova locale del programma (servizio) | La corsa parte dalla partenza, scorre i passi fino al traguardo con il messaggio della definizione, avanza di un passo alla volta, riconosce l'ostacolo, spiega un progetto senza punto di ingresso, ferma senza cancellare la posizione, riparte dopo un esito e non conosce il protocollo del player | i casi di `trial-run.spec.ts` | Unit | [`trial-run.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/core/trial-run.spec.ts) | §13.1, §13.5 |
 | Riquadri e prova nella pagina dell'alunno | I riquadri rendono tono, icona e testo; i controlli chiusi e la pausa del maestro cambiano il riquadro; la prova è disponibile solo con i controlli attivi, muove il personaggio sulla griglia senza inviare nulla al worker e si ferma quando il maestro mette in pausa, lasciando la posizione raggiunta; progetto e programma stanno nella stessa area di lavoro con il progetto prima, e con un solo pannello la colonna vuota non compare | i casi di `session.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts) | §13.1, §14.4 |
 | Percorso dell'alunno nella pagina | Il percorso mostra scuola, classe, lezione e — quando l'esercizio è assegnato — il suo titolo, con il nome dell'alunno sulla riga sotto; in attesa si ferma alla lezione; un livello senza nome viene saltato invece di lasciare un separatore vuoto | i casi di `session.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts) | §10.5, §14.4 |
+| Pagina dell'alunno: esercizio che conserva valori | Il progetto a blocchi compare con le variabili e l'uscita in due pannelli e l'editor è montato; il riquadro del programma del player non compare; un esercizio dichiarativo resta a un pannello senza progetto; il player resta inerte per una definizione che non esegue | i casi di `session.spec.ts` e `exercise-runtime.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts), [`exercise-runtime.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/core/exercise-runtime.spec.ts) | §13.9, §14.4 |
 
 Comportamenti **non** coperti da un test automatico. Non sono da considerare verificati e restano
 così finché non esiste un test che li prova.

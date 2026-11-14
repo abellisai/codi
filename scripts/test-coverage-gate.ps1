@@ -10,7 +10,7 @@ $testRoot = [IO.Path]::GetFullPath($testRoot)
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 
 function Assert-Gate {
-    param([string] $Name, [string[]] $Reports, [string] $Baseline, [int] $ExpectedExitCode)
+    param([string] $Name, [string[]] $Reports, [string] $Baseline, [int] $ExpectedExitCode, [string] $ExpectedMessage = '')
     $caseRoot = Join-Path $testRoot $Name
     New-Item -ItemType Directory -Path $caseRoot | Out-Null
     for ($index = 0; $index -lt $Reports.Count; $index++) {
@@ -33,6 +33,9 @@ function Assert-Gate {
     }
     if ($actualExitCode -ne $ExpectedExitCode) {
         throw "Caso $Name : atteso exit $ExpectedExitCode, ottenuto $actualExitCode.`n$output"
+    }
+    if ($ExpectedMessage -and $output -notlike "*$ExpectedMessage*") {
+        throw "Caso $Name : messaggio atteso assente: $ExpectedMessage.`n$output"
     }
     Write-Host "PASS $Name"
 }
@@ -62,7 +65,15 @@ try {
         <class filename="one.cs"><lines><line number="10" hits="0" /></lines></class>
         </classes></package></packages></coverage>') '{"A":0.5}' 1
 
-    Write-Host '4/4 regressioni del gate superate.'
+    Assert-Gate 'report-vuoto' @('<coverage><sources /><packages /></coverage>') '{"A":0.5}' 1 'Report Cobertura vuoto'
+
+    Assert-Gate 'report-vuoto-insieme-a-report-valido' @('
+        <coverage><packages><package name="A"><classes>
+        <class filename="one.cs"><lines><line number="10" hits="1" /></lines></class>
+        </classes></package></packages></coverage>',
+        '<coverage><sources /><packages /></coverage>') '{"A":0.5}' 1 'Report Cobertura vuoto'
+
+    Write-Host '6/6 regressioni del gate superate.'
 
     # L'ultimo caso attende exit 1 dal processo figlio, quindi $LASTEXITCODE resta 1: senza questa
     # uscita il test del gate riuscito terminerebbe con il codice del caso che doveva fallire.

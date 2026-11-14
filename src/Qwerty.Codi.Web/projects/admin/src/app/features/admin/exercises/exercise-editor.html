@@ -386,27 +386,6 @@
       </section>
     </form>
 
-    <!-- Programma iniziale: il progetto che l'alunno trova già pronto all'ingresso (§13.1).
-         È il workspaceJson della bozza e viene pubblicato come initial workspace della versione. -->
-    <section
-      class="editor-section"
-      aria-labelledby="editor-initial-title"
-      [attr.inert]="busy() || publication()?.locking() ? '' : null"
-    >
-      <h2 id="editor-initial-title">Programma iniziale</h2>
-      <p class="note" id="editor-initial-help">
-        Componi il programma che l’alunno trova già nel suo spazio di lavoro quando entra
-        nell’esercizio: può essere anche incompleto o con un difetto da correggere. Viene salvato
-        con la bozza e pubblicato insieme alla versione.
-      </p>
-      <app-grid-path-program-editor
-        aria-describedby="editor-initial-help"
-        [allowedBlocks]="allowedBlocks()"
-        [workspaceJson]="initialWorkspace()"
-        (workspaceChanged)="onInitialWorkspaceChanged($event)"
-      />
-    </section>
-
     <!-- Soluzione di riferimento: riservata al docente, mai distribuita agli alunni (§13.1). -->
     <section
       class="editor-section"

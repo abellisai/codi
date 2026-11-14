@@ -372,39 +372,33 @@ describe('ExerciseEditor', () => {
     expect(checkbox('#editor-block-move').disabled).toBe(false);
   });
 
-  it('mostra il programma iniziale e la soluzione di riferimento come workspace distinti', async () => {
+  it('mostra soltanto la soluzione di riferimento come workspace', async () => {
     api.draft = existingDraft();
     await render();
 
     expect(pageText()).not.toContain('Progetto a blocchi');
-    // La pagina ha due workspace a blocchi: il programma iniziale dell'alunno e la soluzione
-    // privata del docente. Sono documenti distinti e vengono pubblicati in posti distinti.
     expect(harness.fixture.debugElement.queryAll(By.directive(GridPathProgramEditor))).toHaveLength(
-      2,
+      1,
     );
-    expect(pageText()).toContain('Programma iniziale');
+    expect(pageText()).not.toContain('Programma iniziale');
     expect(pageText()).toContain('Soluzione di riferimento');
     // L'anteprima della soluzione resta: è la prova che l'esercizio è risolvibile.
     expect(page().querySelector('.cell-character')).not.toBeNull();
   });
 
-  it('conserva il programma iniziale della bozza e ne salva uno nuovo', async () => {
+  it('salva un progetto iniziale vuoto anche se la bozza precedente contiene blocchi', async () => {
     const savedInitial =
       '{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_start","id":"old"}]}}';
-    const newInitial =
-      '{"blocks":{"languageVersion":0,"blocks":[{"type":"aula_move","id":"ini-1"}]}}';
     api.draft = { ...existingDraft(), workspaceJson: savedInitial };
     await render();
 
-    // Il campo «Programma iniziale» è un workspace dell'editor: il docente lo compone e lo salva.
-    initialEditor().workspaceChanged.emit(newInitial);
+    setInput('#editor-instructions', 'Consegna aggiornata');
     await render();
 
     clickButton('Salva bozza');
     await render();
 
-    // Il programma iniziale viaggia con la bozza: è ciò che l'alunno trova all'ingresso.
-    expect(api.commands[0]?.payload['workspaceJson']).toBe(newInitial);
+    expect(api.commands[0]?.payload['workspaceJson']).toBe('{}');
     // La soluzione resta separata e assente quando il docente non l'ha composta.
     expect(api.commands[0]?.payload['referenceSolutionJson']).toBeNull();
   });
@@ -425,7 +419,7 @@ describe('ExerciseEditor', () => {
     const payload = api.commands[0]?.payload ?? {};
     expect(payload['referenceSolutionJson']).toBe(solution);
     // Il programma iniziale resta quello della bozza: la soluzione non lo sostituisce.
-    expect(payload['workspaceJson']).toBe(existingDraft().workspaceJson);
+    expect(payload['workspaceJson']).toBe('{}');
   });
 
   it('mostra le versioni pubblicate e pubblica la bozza salvata', async () => {
@@ -612,14 +606,9 @@ describe('ExerciseEditor', () => {
     return [...page().querySelectorAll<HTMLButtonElement>('.scene-cell')];
   }
 
-  /** Editor del programma iniziale dell'alunno: è il primo workspace della pagina. */
-  function initialEditor(): GridPathProgramEditor {
-    return editorAt(0);
-  }
-
-  /** Editor della soluzione privata del docente: è il secondo workspace della pagina. */
+  /** Unico workspace della pagina: la soluzione privata del docente. */
   function solutionEditor(): GridPathProgramEditor {
-    return editorAt(1);
+    return editorAt(0);
   }
 
   function editorAt(index: number): GridPathProgramEditor {

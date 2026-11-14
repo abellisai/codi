@@ -36,5 +36,7 @@ public sealed record SessionParticipantOverviewDto(
     /// </summary>
     int UnreadMessages)
 {
+    public long RowVersion { get; init; }
+
     public ParticipantObservationDto? ObservedState { get; init; }
 }
