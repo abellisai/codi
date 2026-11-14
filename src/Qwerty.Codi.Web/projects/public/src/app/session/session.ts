@@ -210,7 +210,7 @@ export class ParticipantSession implements OnInit {
       recoveryBlocked: state?.recoveryBlocked ?? false,
       runtimeStatus: this.runtime.status(),
       trialRunning: this.trial.running(),
-      showsProgram: this.exercise()?.exerciseType !== 'Quiz',
+      showsProgram: this.showsProgram(),
     });
   });
 
@@ -297,23 +297,21 @@ export class ParticipantSession implements OnInit {
   );
 
   /**
-   * Vero quando la pagina mostra il pannello del programma. Non dipende dal tentativo: in attesa non
-   * c'è ancora un esercizio, e il pannello resta il posto in cui l'alunno legge che cosa sta
-   * succedendo. Un esercizio dichiarativo è l'unico caso in cui non compare, perché non c'è nulla da
-   * provare.
+   * Vero quando la pagina mostra il riquadro del **programma del player**. Solo la griglia ha un
+   * programma eseguito dal worker: un esercizio dichiarativo risponde e basta, uno che conserva
+   * valori ha il proprio pannello e la prova locale, quindi il riquadro del worker non direbbe nulla
+   * di vero. Non dipende dal tentativo: in attesa non c'è ancora un esercizio e il riquadro resta il
+   * posto in cui l'alunno legge che cosa sta succedendo.
    */
-  protected readonly showsProgram = computed(() => this.exercise() === null || this.usesBlocks());
+  protected readonly showsProgram = computed(() => this.exercise() === null || this.usesGrid());
 
   /**
    * Vero quando la pagina mostra il pannello della **griglia** — stato, Prova, scena. Non dipende dal
    * tentativo, perché in attesa non c'è ancora un esercizio e il pannello resta il posto in cui
    * l'alunno legge che cosa sta succedendo.
    *
-   * Non è `showsProgram`: un esercizio che conserva valori compone un progetto a blocchi, quindi ha
-   * bisogno del pannello del progetto ma **non** di quello della griglia, e mostrarne i comandi gli
-   * offrirebbe una prova che non sa eseguire. È il difetto che il collaudo nel browser ha reso
-   * visibile: la schermata dell'alunno mostrava «Prova» e «Un passo» della griglia sotto un esercizio
-   * di valori.
+   * Un esercizio che conserva valori non ha una griglia: ha il pannello delle variabili e dell'uscita
+   * e una prova locale che vive nel proprio pannello, quindi i comandi della griglia non compaiono.
    */
   protected readonly showsGridProgram = computed(() => this.exercise() === null || this.usesGrid());
 

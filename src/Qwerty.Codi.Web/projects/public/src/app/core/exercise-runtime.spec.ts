@@ -125,12 +125,14 @@ const checkpointEnvelope = JSON.stringify({
 
 describe('ExerciseRuntime', () => {
   let worker: PlayerWorkerStub;
+  let createWorker: ReturnType<typeof vi.fn>;
   let runtime: ExerciseRuntime;
 
   beforeEach(() => {
     worker = new PlayerWorkerStub();
+    createWorker = vi.fn(() => worker);
     TestBed.configureTestingModule({
-      providers: [{ provide: PLAYER_WORKER_FACTORY, useValue: () => worker }],
+      providers: [{ provide: PLAYER_WORKER_FACTORY, useValue: createWorker }],
     });
     runtime = TestBed.inject(ExerciseRuntime);
   });
@@ -143,6 +145,21 @@ describe('ExerciseRuntime', () => {
     expect(load.type === 'LoadProgram' && load.workspaceJson).toBe('{"blocks":[]}');
     expect(load.attemptId).toBe('a1');
     expect(worker.sent.some((message) => message.type === 'StartRun')).toBe(false);
+  });
+
+  it('resta inerte per un esercizio che il player non esegue', async () => {
+    // L'esercizio che conserva valori compone un progetto a blocchi ma non ha una corsa da
+    // comandare: il player non deve creare il worker né dichiarare un errore che non esiste.
+    runtime.loadWork({ ...work, definitionJson: '{"engineVersion":"valueprogram-1"}' });
+
+    expect(createWorker).not.toHaveBeenCalled();
+    expect(worker.sent).toHaveLength(0);
+    expect(runtime.status()).toBe('Ready');
+    expect(runtime.scene()).toBeNull();
+
+    expect(await runtime.apply(directive('d1', 'Run'))).toBe('applied');
+    expect(createWorker).not.toHaveBeenCalled();
+    expect(runtime.status()).toBe('Ready');
   });
 
   it('avvia una corsa una volta sola per direttiva e ignora una ripetizione', () => {

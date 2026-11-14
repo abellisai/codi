@@ -75,6 +75,61 @@ const workspaceJson = JSON.stringify({
     ],
   },
 });
+
+/** Definizione di un esercizio che conserva valori: serve a provare il pannello, non il motore. */
+const valueProgramDefinitionJson = JSON.stringify({
+  schemaVersion: 1,
+  exerciseType: 'ValueProgram',
+  engineVersion: 'valueprogram-1',
+  title: 'Somma uno',
+  instructions: 'Leggi un numero, somma uno e mostra il risultato.',
+  variables: [
+    { name: 'Numero', initialValue: 0 },
+    { name: 'Punti', initialValue: 0 },
+  ],
+  testCases: [{ inputs: [6], expectedOutput: ['7'] }],
+  toolbox: {
+    allowedBlocks: [
+      'val_start',
+      'val_set',
+      'val_show',
+      'val_ask',
+      'val_answer',
+      'val_add',
+      'val_number',
+      'val_variable',
+    ],
+  },
+  limits: {
+    maxBlocks: 40,
+    maxNestingDepth: 8,
+    maxExecutionSteps: 1000,
+    maxActiveDurationMs: 120000,
+  },
+  feedback: { success: 'Bravo!', collision: 'Riprova.' },
+});
+
+const emptyValueProgramWorkspace = JSON.stringify({ blocks: { languageVersion: 0, blocks: [] } });
+
+/** Definizione di un esercizio dichiarativo: legge, risponde, riceve un esito. */
+const quizDefinitionJson = JSON.stringify({
+  schemaVersion: 1,
+  exerciseType: 'Quiz',
+  engineVersion: 'quiz-1',
+  title: 'Quanto fa 2 + 2?',
+  instructions: 'Leggi la domanda e scrivi il risultato.',
+  quiz: { stimulus: '2 + 2 = ?', prompt: 'Scrivi il risultato', match: 'Integer' },
+  toolbox: { allowedBlocks: [] },
+  limits: {
+    maxBlocks: 10,
+    maxNestingDepth: 2,
+    maxExecutionSteps: 10,
+    maxActiveDurationMs: 60000,
+  },
+  feedback: { success: 'Esatto!', collision: 'Riprova.' },
+});
+
+const emptyQuizAnswer = JSON.stringify({ answer: '' });
 @Component({ selector: 'app-participant-workspace', template: '' })
 class WorkspaceStub {
   readonly workspaceJson = input.required<string>();
@@ -600,6 +655,97 @@ describe('Pagina dell’alunno', () => {
     expect(
       [...program.querySelectorAll('button')].map((control) => control.textContent?.trim()),
     ).toEqual(['Prova', 'Un passo', 'Da capo']);
+  });
+
+  it('un esercizio che conserva valori affianca il progetto e le variabili, senza la griglia', async () => {
+    // Il difetto trovato dal collaudo: la pagina montava solo il pannello delle variabili, quindi il
+    // bambino non poteva comporre il programma che il server gli chiedeva di correggere.
+    api.exercise = {
+      ...api.exercise,
+      exerciseTitle: 'Somma uno',
+      exerciseType: 'ValueProgram',
+      engineVersion: 'valueprogram-1',
+      definitionJson: valueProgramDefinitionJson,
+    };
+    api.attempt = {
+      ...api.attempt,
+      workspaceJson: emptyValueProgramWorkspace,
+      workspaceHash: 'impronta-vp',
+      projectRevision: '1',
+    };
+    realtime.authorized.set(true);
+
+    await mount();
+
+    const area = page().querySelector('.work-area');
+    expect(area).not.toBeNull();
+    expect(
+      [...area!.querySelectorAll('section')].map((section) => section.getAttribute('aria-label')),
+    ).toEqual(['Il mio progetto', 'Le variabili e l’uscita']);
+    expect(
+      area!.querySelector('section[aria-label="Il mio progetto"] app-participant-workspace'),
+    ).not.toBeNull();
+    expect(area!.querySelector('section[aria-label="Il mio programma"]')).toBeNull();
+    expect(area!.classList.contains('one-panel')).toBe(false);
+    expect(pageText()).toContain('Somma uno');
+    expect(pageText()).toContain('Le variabili e l’uscita');
+    expect(pageText()).toContain('Il progetto conserva i tuoi blocchi.');
+  });
+
+  it('un esercizio che conserva valori non mostra il riquadro del programma del player', async () => {
+    api.exercise = {
+      ...api.exercise,
+      exerciseTitle: 'Somma uno',
+      exerciseType: 'ValueProgram',
+      engineVersion: 'valueprogram-1',
+      definitionJson: valueProgramDefinitionJson,
+    };
+    api.attempt = {
+      ...api.attempt,
+      workspaceJson: emptyValueProgramWorkspace,
+      workspaceHash: 'impronta-vp',
+    };
+    realtime.authorized.set(true);
+
+    await mount();
+
+    const badges = [...page().querySelectorAll('app-status-badge')];
+    expect(badges.map((badge) => badge.textContent?.trim())).toEqual([
+      'Collegato alla lezione',
+      'Puoi lavorare!',
+    ]);
+  });
+
+  it('un esercizio dichiarativo occupa una riga sola e non monta il progetto', async () => {
+    api.exercise = {
+      ...api.exercise,
+      exerciseTitle: 'Quanto fa 2 + 2?',
+      exerciseType: 'Quiz',
+      engineVersion: 'quiz-1',
+      definitionJson: quizDefinitionJson,
+    };
+    api.attempt = {
+      ...api.attempt,
+      workspaceJson: emptyQuizAnswer,
+      workspaceHash: 'impronta-quiz',
+    };
+    realtime.authorized.set(true);
+
+    await mount();
+
+    const area = page().querySelector('.work-area');
+    expect(area).not.toBeNull();
+    expect(
+      [...area!.querySelectorAll('section')].map((section) => section.getAttribute('aria-label')),
+    ).toEqual(['La mia risposta']);
+    expect(area!.querySelector('app-participant-workspace')).toBeNull();
+    expect(area!.classList.contains('one-panel')).toBe(true);
+
+    const badges = [...page().querySelectorAll('app-status-badge')];
+    expect(badges.map((badge) => badge.textContent?.trim())).toEqual([
+      'Collegato alla lezione',
+      'Puoi lavorare!',
+    ]);
   });
 
   it('con un solo pannello l’area di lavoro non lascia una colonna vuota', async () => {

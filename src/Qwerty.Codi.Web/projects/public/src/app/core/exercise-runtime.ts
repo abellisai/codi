@@ -91,6 +91,13 @@ export class ExerciseRuntime {
   private attemptId: string | null = null;
   private generation = '0';
   private loaded: LoadedWork | null = null;
+  /**
+   * Vero quando il lavoro caricato è di un esercizio che questo player sa eseguire, null quando non
+   * è stato caricato alcun lavoro. Un esercizio che conserva valori compone blocchi ma non ha una
+   * corsa da comandare: il player resta inerte, così non crea un worker che rifiuterebbe la
+   * definizione e non dichiara un errore che non esiste.
+   */
+  private playerExercise: boolean | null = null;
   private pendingResume: GridPathCheckpointState | null = null;
   private resumeRunning = false;
   private permitId = 0;
@@ -114,6 +121,16 @@ export class ExerciseRuntime {
    * checkpoint precedente (§13.7).
    */
   loadWork(work: LoadedWork): void {
+    // Solo la griglia ha un programma che il player sa eseguire. Gli altri motori a blocchi compongono
+    // un progetto nel loro pannello: caricarlo qui creerebbe un worker destinato a rifiutarlo.
+    const engineVersion = readEngineVersion(work.definitionJson);
+    if (engineVersion !== null && engineVersion !== GRID_PATH_ENGINE_VERSION) {
+      this.unload(work.attemptId);
+
+      return;
+    }
+
+    this.playerExercise = true;
     this.loaded = work;
     this.attemptId = work.attemptId;
     this.generation = work.executionGeneration;
@@ -123,6 +140,26 @@ export class ExerciseRuntime {
     this.checkpoint.set(null);
     this.outcome.set(null);
     this.sendLoad();
+  }
+
+  /** Lascia il player inerte per un lavoro che non gli appartiene, senza un worker da smontare. */
+  private unload(attemptId: string): void {
+    this.playerExercise = false;
+    this.loaded = null;
+    this.attemptId = attemptId;
+    this.pendingResume = null;
+    this.resumeRunning = false;
+    if (this.reloadTimer !== null) clearTimeout(this.reloadTimer);
+    this.reloadTimer = null;
+    this.settlePauseConfirmation(false);
+    this.worker?.terminate();
+    this.worker = null;
+    this.status.set('Ready');
+    this.scene.set(null);
+    this.runId.set(null);
+    this.problem.set('');
+    this.checkpoint.set(null);
+    this.outcome.set(null);
   }
 
   /**
@@ -203,6 +240,10 @@ export class ExerciseRuntime {
       this.attemptId = state.attemptId;
       this.reset();
     }
+
+    // Senza un lavoro del player non c'è nulla da avviare, sospendere o riprendere: il comando si
+    // applica alla pagina, non al worker. È il caso degli esercizi che non hanno una corsa (valori).
+    if (this.playerExercise === false) return 'applied';
 
     this.generation = state.executionGeneration ?? this.generation;
 
@@ -481,4 +522,15 @@ function newId(): string {
   return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : `player-${String(Date.now())}-${String(Math.random()).slice(2)}`;
+}
+
+/** Versione del motore dichiarata nel documento, o `null` se il documento non la dichiara. */
+function readEngineVersion(definitionJson: string): string | null {
+  try {
+    const value = JSON.parse(definitionJson)?.engineVersion;
+
+    return typeof value === 'string' ? value : null;
+  } catch {
+    return null;
+  }
 }

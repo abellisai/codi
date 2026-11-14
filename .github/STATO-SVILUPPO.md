@@ -1,7 +1,30 @@
 # Stato di sviluppo Codì
 
-Aggiornato: 13 novembre 2026. Baseline documentale: specifica tecnica 0.59 e funzionale 0.17.
+Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.59 e funzionale 0.17.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
+
+## ValueProgram: editor del progetto nella pagina dell'alunno: 14 novembre 2026
+
+**DIFETTO CORRETTO E VALIDATO NEL BROWSER.** Il collaudo del completamento degli esercizi ha mostrato
+che la pagina dell'alunno non montava l'editor Blockly per un esercizio `ValueProgram`: rendeva solo il
+pannello «Le variabili e l'uscita». Con il progetto iniziale vuoto — l'admin non ne fornisce più uno dal
+22 ottobre — il bambino non poteva comporre il programma e «Fai correggere» rispondeva «Riprova.» con
+«Manca il blocco «quando si avvia»: senza, il programma non parte.». Motore e correzione del server
+funzionavano già: salvando un programma nel tentativo la correzione restituiva «Bravo!».
+
+La correzione rende il progetto a blocchi per entrambi i motori a blocchi (`session.html`): due pannelli
+per griglia e valori, uno solo per il Quiz. Il player resta inerte per le definizioni che non esegue
+(`exercise-runtime.ts`) e la pagina non mostra il riquadro del programma del worker per un esercizio di
+valori (`session.ts`). Le specifiche non cambiano: il comportamento previsto da §13.9 e §14.4 era già
+descritto.
+
+- Test: 4 nuovi casi (`session.spec.ts`, `exercise-runtime.spec.ts`); l'app pubblica passa 140 test.
+- Verifiche eseguite: ESLint, Prettier e build `web.frontend`, tutte con uscita 0.
+- Collaudo browser (Chrome headless, database pulito): 12 alunni completano **GridPath 12/12, Quiz 12/12,
+  ValueProgram 12/12**; harness API 52/52 e UI 11/11.
+- Evidenze: `TestResults/e2e-collaudo-20261114/completamento-esecuzioni/20261114-120006/`,
+  `TestResults/e2e-collaudo-20261114/ui-esecuzioni/20261114-120121/`,
+  `TestResults/e2e-collaudo-20261114/RIEPILOGO.md`.
 
 ## Dipendenze di sviluppo, bundle e copertura: 13 novembre 2026
 
