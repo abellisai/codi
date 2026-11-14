@@ -245,6 +245,7 @@
         <p class="hint">Il programma iniziale della versione è in sola lettura.</p>
         <app-value-program-program-editor
           [allowedBlocks]="values.toolbox.allowedBlocks"
+          [declaredVariables]="values.variables.map((variable) => variable.name)"
           [workspaceJson]="version.workspaceJson"
           [readOnly]="true"
         />
@@ -301,6 +302,7 @@
           @if (inspectedValues(); as values) {
             <app-value-program-program-editor
               [allowedBlocks]="values.toolbox.allowedBlocks"
+              [declaredVariables]="values.variables.map((variable) => variable.name)"
               [workspaceJson]="versionSolutionJson()!"
               [readOnly]="true"
             />

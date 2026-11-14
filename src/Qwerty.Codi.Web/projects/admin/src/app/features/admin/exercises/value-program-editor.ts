@@ -114,6 +114,8 @@ export class ValueProgramEditor implements OnInit {
   protected readonly preview = signal<readonly PreviewRow[] | null>(null);
   protected readonly previewProblem = signal('');
   protected readonly variables = computed(() => leggiVariabili(this.model().variablesText).voci);
+  /** Nomi delle variabili dichiarate: l'editor dei blocchi ne fa i menu dei blocchi con variabile. */
+  protected readonly declaredVariables = computed(() => this.variables().map((voci) => voci.name));
   protected readonly testCases = computed(() => leggiCasi(this.model().testCasesText).voci);
 
   protected readonly editorForm = form(

@@ -114,6 +114,7 @@
           <app-participant-workspace
             [workspaceJson]="autosave.workspace() ?? work.workspaceJson"
             [allowedBlocks]="allowedBlocks()"
+            [declaredVariables]="declaredVariables()"
             [engineVersion]="exercise()?.engineVersion ?? ''"
             [readOnly]="!editingEnabled()"
             (workspaceChanged)="workspaceChanged($event)"

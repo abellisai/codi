@@ -102,6 +102,20 @@ export class ParticipantSession implements OnInit {
       return [];
     }
   });
+  /** Nomi delle variabili dichiarate dalla definizione: alimentano i menu dei blocchi con variabile. */
+  protected readonly declaredVariables = computed<readonly string[]>(() => {
+    try {
+      const definition = JSON.parse(this.exercise()?.definitionJson ?? '{}') as {
+        variables?: { name?: string }[];
+      };
+
+      return (definition.variables ?? [])
+        .map((variable) => variable.name ?? '')
+        .filter((name) => name.length > 0);
+    } catch {
+      return [];
+    }
+  });
 
   /**
    * Dove si trova l'alunno (0.40): scuola, classe, lezione e — quando il docente ha assegnato
@@ -357,16 +371,31 @@ export class ParticipantSession implements OnInit {
     effect(() => {
       this.preview.setOperative(this.realtime.status() === 'connected');
     });
+    // La ricevuta è la conferma del server: unisce nel tentativo la revisione, l'impronta e la
+    // versione di riga lette dalla risposta, così il badge «revisione del progetto» sale a ogni
+    // salvataggio. Vale solo la ricevuta dell'esercizio aperto: il confronto è sull'identificativo
+    // del tentativo. La lettura del tentativo sta in `untracked` perché questo effetto scrive lo
+    // stesso segnale: senza, la scrittura riattiverebbe l'effetto all'infinito.
     effect(() => {
       const receipt = this.autosave.saved();
-      if (receipt !== null && receipt.attemptId === this.attempt()?.attemptId) {
+      if (receipt === null) return;
+      untracked(() => {
+        const attempt = this.attempt();
+        if (attempt === null || attempt.attemptId !== receipt.attemptId) return;
         this.realtime.setWorkspaceHash(receipt.workspaceHash);
         this.realtime.setPersistedRevision(receipt.projectRevision);
+        this.attempt.set({
+          ...attempt,
+          rowVersion: receipt.rowVersion,
+          projectRevision: receipt.projectRevision,
+          workspaceHash: receipt.workspaceHash,
+          lastSavedAtUtc: receipt.lastSavedAtUtc,
+        });
         // Il progetto persistito ha ora la stessa impronta dell'anteprima: si rimanda perché il
         // docente la veda come completa, non come parziale.
         const workspace = this.autosave.workspace();
-        if (workspace !== null) untracked(() => this.preview.publishNow(workspace, true));
-      }
+        if (workspace !== null) this.preview.publishNow(workspace, true);
+      });
     });
     effect(() => {
       // Ogni checkpoint prodotto dal player diventa un salvataggio: la pagina compone l'involucro

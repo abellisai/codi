@@ -19,6 +19,7 @@ import {
   PLAYER_WORKER_FACTORY,
   type PlayerWorker,
 } from '../core/exercise-runtime';
+import { AttemptAutosave } from '../core/attempt-autosave';
 import type { PlayerEvent, PlayerRequest } from '@exercise-engine/player-protocol';
 import { ParticipantRealtime, RealtimeStatus } from '../core/participant-realtime';
 import { ParticipantChat } from '../core/participant-chat';
@@ -135,6 +136,7 @@ class WorkspaceStub {
   readonly workspaceJson = input.required<string>();
   readonly allowedBlocks = input.required<readonly string[]>();
   readonly engineVersion = input.required<string>();
+  readonly declaredVariables = input<readonly string[]>([]);
   readonly readOnly = input(true);
   readonly workspaceChanged = output<string>();
 }
@@ -409,6 +411,49 @@ describe('Pagina dell’alunno', () => {
     expect(pageText()).toContain('Porta il personaggio alla stella.');
     expect(pageText()).toContain('aula_start');
     expect(pageText()).toContain('Lavoro salvato');
+  });
+
+  it('dopo un salvataggio confermato il badge mostra la revisione confermata dal server', async () => {
+    // Il difetto trovato dal collaudo: il salvataggio riusciva ma il badge restava fermo al valore
+    // letto all’ingresso. La pagina unisce nel tentativo i campi della ricevuta dell’autosave.
+    realtime.authorized.set(true);
+    await mount();
+    expect(pageText()).toContain('revisione del progetto 0');
+
+    TestBed.inject(AttemptAutosave).saved.set({
+      attemptId: 'a1',
+      saveId: 's1',
+      rowVersion: '7',
+      projectRevision: '3',
+      workspaceHash: 'impronta-salvata',
+      lastSavedAtUtc: '2026-10-02T08:10:00Z',
+      checkpointSaved: false,
+    });
+    await flush();
+
+    expect(pageText()).toContain('revisione del progetto 3');
+    expect(realtime.workspaceHash).toBe('impronta-salvata');
+  });
+
+  it('una ricevuta di un altro tentativo non aggiorna il badge', async () => {
+    // Il confronto è sull’identificativo del tentativo: la ricevuta di un esercizio precedente,
+    // ancora in memoria nell’autosave, non deve toccare la pagina di quello aperto.
+    realtime.authorized.set(true);
+    await mount();
+
+    TestBed.inject(AttemptAutosave).saved.set({
+      attemptId: 'a2',
+      saveId: 's2',
+      rowVersion: '9',
+      projectRevision: '5',
+      workspaceHash: 'impronta-altro',
+      lastSavedAtUtc: '2026-10-02T08:20:00Z',
+      checkpointSaved: false,
+    });
+    await flush();
+
+    expect(pageText()).toContain('revisione del progetto 0');
+    expect(realtime.workspaceHash).toBe('impronta-progetto');
   });
   it('mostra la conclusione live e rimuove il progetto dopo Goodbye', async () => {
     await mount();

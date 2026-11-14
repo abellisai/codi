@@ -12,6 +12,7 @@ import { ValueProgramProgramEditor } from './value-program-program-editor/value-
 @Component({ selector: 'app-value-program-program-editor', template: '' })
 class WorkspaceStub {
   readonly allowedBlocks = input.required<readonly string[]>();
+  readonly declaredVariables = input<readonly string[]>([]);
   readonly workspaceJson = input.required<string>();
   readonly activeBlockId = input<string | null>(null);
   readonly readOnly = input(false);

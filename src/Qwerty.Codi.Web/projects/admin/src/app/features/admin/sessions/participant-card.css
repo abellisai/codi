@@ -1,3 +1,18 @@
+/* Azioni della card: icona più etichetta visibile (QA/B4). Le nove azioni non stanno in una
+   riga sola su card strette: il contenitore va a capo senza rompere il layout. Lo stile locale
+   prevale sul `.actions` globale, che è pensato per le azioni di riga delle tabelle. */
+.actions {
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.375rem;
+  padding-block: 0.75rem;
+}
+
+.actions .action-label {
+  white-space: normal;
+  text-align: left;
+}
 /* Stili propri della card di un partecipante: il contenitore della pagina e i messaggi d'errore
    arrivano dai fogli globali dell'admin, come le azioni di riga. Qui la card selezionata, i fatti,
    il dettaglio aperto e l'anteprima dei blocchi. */

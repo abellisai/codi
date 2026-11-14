@@ -35,16 +35,38 @@ export function serializeWorkspace(workspace: Blockly.Workspace): string {
 }
 
 /**
+ * Opzioni di ricarica per {@link deserializeWorkspaceJson}.
+ */
+export interface DeserializeOptions {
+  /**
+   * Vero quando gli eventi Blockly prodotti durante il caricamento devono arrivare ai
+   * listener: la ricarica è tracciata come una normale modifica del workspace. Usato dalla
+   * via assistita (strumenti di collaudo e docente). Falso, comportamento di default,
+   * sopprime gli eventi come la ricarica ordinaria.
+   */
+  readonly emitEvents?: boolean;
+}
+
+/**
  * Ricarica nel workspace lo stato prodotto da {@link serializeWorkspace}.
  * La ricarica sostituisce il contenuto, così ripeterla non duplica i blocchi.
- * Gli eventi sono soppressi durante il caricamento e ripristinati anche in errore:
- * `Events.enable` riporta lo stato precedente alla corrispondente `disable`, quindi
- * una soppressione già attiva nel chiamante resta attiva.
+ * La validazione (JSON, blocchi conosciuti, conteggio) avviene prima di toccare il
+ * workspace: uno stato rifiutato non modifica nulla.
+ * Senza `emitEvents` gli eventi sono soppressi durante il caricamento e ripristinati anche
+ * in errore: `Events.enable` riporta lo stato precedente alla corrispondente `disable`,
+ * quindi una soppressione già attiva nel chiamante resta attiva.
+ * Con `emitEvents: true` gli eventi di creazione restano attivi: i listener vedono la
+ * modifica come una normale modifica dell'utente. Il ripristino in caso di errore resta
+ * comunque silenzioso, perché una modifica rifiutata non deve arrivare al salvataggio.
  * Uno stato con blocchi che Blockly non sa ricostruire viene rifiutato: il confronto fra i
  * blocchi attesi e quelli caricati lo rileva anche se Blockly si limitasse a saltarli, e in
  * entrambi i casi il contenuto precedente viene ripristinato (§13.3).
  */
-export function deserializeWorkspaceJson(json: string, workspace: Blockly.Workspace): void {
+export function deserializeWorkspaceJson(
+  json: string,
+  workspace: Blockly.Workspace,
+  options: DeserializeOptions = {},
+): void {
   const state = parseWorkspaceState(json);
   // Anche uno shadow di riserva deve essere conosciuto: altrimenti il problema emergerebbe
   // soltanto quando il blocco che lo sostituisce viene scollegato.
@@ -60,7 +82,10 @@ export function deserializeWorkspaceJson(json: string, workspace: Blockly.Worksp
   const expectedBlocks = countBlocks(state);
   const previousState = Blockly.serialization.workspaces.save(workspace);
 
-  Blockly.Events.disable();
+  const suppressEvents = !options.emitEvents;
+  if (suppressEvents) {
+    Blockly.Events.disable();
+  }
   try {
     workspace.clear();
     Blockly.serialization.workspaces.load(state, workspace);
@@ -69,12 +94,21 @@ export function deserializeWorkspaceJson(json: string, workspace: Blockly.Worksp
       throw new InvalidWorkspaceStateError(UNKNOWN_BLOCKS_MESSAGE);
     }
   } catch (error) {
-    restore(workspace, previousState);
+    // Il ripristino è sempre soppresso: anche nella via con eventi attivi, una modifica
+    // rifiutata non deve produrre eventi di annullamento partiali nel salvataggio.
+    Blockly.Events.disable();
+    try {
+      restore(workspace, previousState);
+    } finally {
+      Blockly.Events.enable();
+    }
     throw error instanceof InvalidWorkspaceStateError
       ? error
       : new InvalidWorkspaceStateError(INVALID_STATE_MESSAGE, error);
   } finally {
-    Blockly.Events.enable();
+    if (suppressEvents) {
+      Blockly.Events.enable();
+    }
   }
 }
 

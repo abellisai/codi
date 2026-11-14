@@ -51,7 +51,7 @@
           <button
             hlmBtn
             type="button"
-            size="icon-xs"
+            size="sm"
             variant="destructive"
             hlmDialogTrigger
             [hlmTooltip]="action.label"
@@ -59,6 +59,7 @@
             [disabled]="busy() || !action.enabled"
           >
             <ng-icon [name]="action.icon" aria-hidden="true" />
+            <span class="action-label">{{ action.label }}</span>
           </button>
           <hlm-dialog-content *hlmDialogPortal="let ctx">
             <hlm-dialog-header>
@@ -88,7 +89,7 @@
         <button
           hlmBtn
           type="button"
-          size="icon-xs"
+          size="sm"
           variant="outline"
           [hlmTooltip]="action.label"
           [attr.aria-label]="labelFor(action)"
@@ -99,6 +100,7 @@
           (click)="run(action.key)"
         >
           <ng-icon [name]="action.icon" aria-hidden="true" />
+          <span class="action-label">{{ action.label }}</span>
         </button>
       }
     }

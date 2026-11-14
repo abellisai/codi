@@ -159,8 +159,9 @@ export class SessionParticipants implements OnInit {
   }
 
   /**
-   * Azioni offerte per un alunno, come pulsanti icona con tooltip. Sono derivate dallo stato letto
-   * dal server, non da un contatore locale: una sessione riletta come conclusa non riabilita niente.
+   * Azioni offerte per un alunno, come pulsanti con icona ed etichetta visibile. Sono derivate
+   * dallo stato letto dal server, non da un contatore locale: una sessione riletta come conclusa
+   * non riabilita niente.
    */
   protected actionsFor(participant: SessionParticipantOverview): readonly ParticipantCardAction[] {
     return [

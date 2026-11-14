@@ -53,9 +53,9 @@ function graphemeCount(text: string): number {
  * consegna: i fatti del tentativo e i blocchi letti per quell'alunno. La selezione resta evidente
  * e l'anteprima non si carica per tutte le dodici card (§14.3).
  *
- * Le azioni sono pulsanti icona con tooltip e `aria-label`: la pagina decide quali sono ammesse,
- * la card le mostra e le affida al gestore che la pagina le passa, perché l'ammissione dipende
- * dallo stato letto dal server.
+ * Le azioni sono pulsanti con icona ed etichetta visibile e `aria-label`: la pagina decide quali
+ * sono ammesse, la card le mostra e le affida al gestore che la pagina le passa, perché
+ * l'ammissione dipende dallo stato letto dal server.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,

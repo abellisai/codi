@@ -24,6 +24,7 @@ import * as Blockly from 'blockly';
 import {
   buildValueProgramToolbox,
   registerValueProgramBlocks,
+  setValueProgramVariables,
 } from '@exercise-engine/value-blocks';
 import {
   deserializeWorkspaceJson,
@@ -52,6 +53,12 @@ export class ValueProgramProgramEditor implements OnDestroy {
 
   /** Blocchi che la definizione mette a disposizione: il cassetto mostra questi. */
   readonly allowedBlocks = input.required<readonly string[]>();
+
+  /**
+   * Variabili dichiarate dalla definizione dell'esercizio: i menu dei blocchi con variabile offrono
+   * queste. Vuote significa «nessuna dichiarata»: il catalogo ripristina la lista del corso.
+   */
+  readonly declaredVariables = input<readonly string[]>([]);
 
   /** Stato del workspace da mostrare; è la serializzazione di Blockly. */
   readonly workspaceJson = input.required<string>();
@@ -83,6 +90,9 @@ export class ValueProgramProgramEditor implements OnDestroy {
     });
 
     effect(() => {
+      // Le variabili si impostano prima di ricaricare i blocchi: un campo già salvato deve trovare
+      // il suo nome nel menu, non una lista rimasta a un esercizio precedente.
+      setValueProgramVariables(this.declaredVariables());
       this.load(this.workspaceJson());
     });
 
@@ -103,6 +113,7 @@ export class ValueProgramProgramEditor implements OnDestroy {
   /** Monta il workspace e vi applica lo stato letto. */
   private mount(): void {
     try {
+      setValueProgramVariables(this.declaredVariables());
       registerValueProgramBlocks();
       const workspace = Blockly.inject(this.host().nativeElement, {
         readOnly: this.readOnly(),

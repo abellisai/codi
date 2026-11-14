@@ -96,6 +96,46 @@ describe('ParticipantCard', () => {
     expect(pause.disabled).toBe(false);
   });
 
+  it('rende le azioni come pulsanti con etichetta visibile accanto all’icona', () => {
+    const fixture = render({
+      participant: participant(),
+      actions: [
+        { key: 'run', label: 'Avvia il progetto', icon: 'lucidePlay', enabled: true },
+        { key: 'pause', label: 'Metti in pausa', icon: 'lucidePause', enabled: true },
+      ],
+    });
+
+    // QA/B4: l'etichetta non vive solo nell'aria-label, si legge sulla card.
+    for (const label of ['Avvia il progetto', 'Metti in pausa']) {
+      const button = buttonByLabel(fixture, `${label}: Luca`);
+      const text = (button.textContent ?? '').trim();
+      expect(text).toContain(label);
+      // L'icona resta accanto al testo: l'attributo ARIA non sostituisce il testo visibile.
+      expect(button.querySelector('ng-icon')).not.toBeNull();
+    }
+  });
+
+  it('rende visibile l’etichetta anche nell’azione con conferma (Azzera)', () => {
+    const fixture = render({
+      participant: participant(),
+      actions: [
+        {
+          key: 'reset',
+          label: 'Azzera il lavoro',
+          icon: 'lucideEraser',
+          enabled: true,
+          requiresConfirmation: true,
+          confirmText: 'Il lavoro dell’alunno sarà archiviato.',
+        },
+      ],
+    });
+
+    const trigger = buttonByLabel(fixture, 'Azzera il lavoro: Luca');
+    expect((trigger.textContent ?? '').trim()).toContain('Azzera il lavoro');
+    // Il dialogo di conferma resta composto: il trigger vive dentro hlm-dialog.
+    expect(trigger.closest('hlm-dialog')).not.toBeNull();
+  });
+
   it('non offre alcuna azione mentre un comando è in corso', () => {
     const fixture = render({
       participant: participant(),

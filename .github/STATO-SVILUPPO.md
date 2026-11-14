@@ -3,6 +3,28 @@
 Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.59 e funzionale 0.17.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
 
+## Azioni della card partecipante con etichetta visibile: 14 novembre 2026
+
+**IMPLEMENTATO E VALIDATO NEL BROWSER (QA/B4, task t_7636e3e5).** Le nove azioni della card
+partecipante erano pulsanti icona: il testo viveva solo nell'`aria-label`. Ora ogni pulsante
+mostra icona ed etichetta visibile (`participant-card.html`: `size="icon-xs"` → `size="sm"` più
+`<span class="action-label">{{ action.label }}</span>`). `aria-label`, tooltip, `aria-pressed`,
+stato abilitato e i dialog di Rinomina, Escludi e Azzera restano invariati. Il CSS locale della
+card sostituisce il `.actions` globale nowrap e manda a capo le azioni.
+
+- Prove live (ng serve 4200 + API 5200, login seed di sviluppo): due pagine partecipanti,
+  19 card, 171 pulsanti: tutti con testo e icona, wrap su 5 righe, nessun overflow, pulsante
+  32 px. Dialog «Azzera» ed «Escludi» aperti e chiusi dal trigger con etichetta visibile, senza
+  eseguire comandi.
+- Test: 2 nuovi casi in `participant-card.spec.ts` (etichetta visibile accanto all'icona;
+  etichetta visibile sul trigger dentro `hlm-dialog`).
+- Verifiche eseguite: `ng test web.admin` 398/398 alle 13:14, rerun mirato 27/27, ESLint e build
+  con uscita 0, `dotnet test` in Release con uscita 0 (398+8+1004).
+- Aperto: la suite admin completa rieseguita dopo le 13:52 non compila per un errore TS in
+  `libraries/exercise-engine/value-blocks.spec.ts:115`, introdotto da un'altra porzione di
+  lavoro in corso sull'albero condiviso. Da riverificare dopo lo sbarco di quella porzione.
+- Evidenze: allegato `qa-b4-report.md` del task e screenshot della pagina partecipanti.
+
 ## ValueProgram: editor del progetto nella pagina dell'alunno: 14 novembre 2026
 
 **DIFETTO CORRETTO E VALIDATO NEL BROWSER.** Il collaudo del completamento degli esercizi ha mostrato

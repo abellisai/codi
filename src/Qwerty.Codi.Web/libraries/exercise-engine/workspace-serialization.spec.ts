@@ -154,7 +154,114 @@ describe('workspace serialization', () => {
       Blockly.Events.enable();
     }
   });
+
+  it('caricamento assistito (emitEvents): gli eventi di modifica arrivano ai listener', async () => {
+    const workspace = new Blockly.Workspace();
+    const seen: string[] = [];
+    workspace.addChangeListener((event) => {
+      seen.push(event.type);
+    });
+
+    deserializeWorkspaceJson(JSON.stringify(oneBlockState), workspace, { emitEvents: true });
+    await waitForBlocklyEvents(seen);
+
+    expect(workspace.getAllBlocks(false)).toHaveLength(1);
+    expect(seen).toContain(Blockly.Events.BLOCK_CREATE);
+    // Gli eventi non sono soppressi dopo la carica: il listener di salvataggio resta attivo.
+    expect(Blockly.Events.isEnabled()).toBe(true);
+    workspace.dispose();
+  });
+
+  it('caricamento assistito: il workspace con eventi attivi registra la modifica come i trascinamenti', async () => {
+    const workspace = new Blockly.Workspace();
+    // Prima la via ordinaria, senza eventi: il listener non deve vedere nulla.
+    deserializeWorkspaceJson(JSON.stringify(oneBlockState), workspace);
+    const seen: string[] = [];
+    workspace.addChangeListener((event) => {
+      seen.push(event.type);
+    });
+    const otherState: WorkspaceState = {
+      blocks: {
+        languageVersion: 0,
+        blocks: [{ type: 'math_number', id: 'plainNumber', fields: { NUM: 7 } }],
+      },
+    };
+
+    deserializeWorkspaceJson(JSON.stringify(otherState), workspace, { emitEvents: true });
+    await waitForBlocklyEvents(seen);
+
+    expect(seen).toContain(Blockly.Events.BLOCK_CREATE);
+    expect(seen).toContain(Blockly.Events.BLOCK_DELETE);
+    workspace.dispose();
+  });
+
+  it('caricamento assistito: JSON rifiutato lascia il workspace intatto e il ripristino è silenzioso', async () => {
+    const workspace = new Blockly.Workspace();
+    deserializeWorkspaceJson(JSON.stringify(oneBlockState), workspace);
+    const seen: string[] = [];
+    workspace.addChangeListener((event) => {
+      seen.push(event.type);
+    });
+
+    expect(() =>
+      deserializeWorkspaceJson(
+        '{"blocks":{"languageVersion":0,"blocks":[{"type":"codi_unknown_block","id":"x"}]}}',
+        workspace,
+        {
+          emitEvents: true,
+        },
+      ),
+    ).toThrow(InvalidWorkspaceStateError);
+    await waitForBlocklyEvents(seen, 0);
+
+    const blocks = workspace.getAllBlocks(false);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].type).toBe(PROTOTYPE_BLOCK_TYPE);
+    // Nessun evento di annullamento: una modifica rifiutata non arriva al salvataggio.
+    expect(seen).toEqual([]);
+    expect(Blockly.Events.isEnabled()).toBe(true);
+    workspace.dispose();
+  });
+
+  it('caricamento assistito con soppressione già attiva nel chiamante: resta attiva', () => {
+    const workspace = new Blockly.Workspace();
+    const seen: string[] = [];
+    workspace.addChangeListener((event) => {
+      seen.push(event.type);
+    });
+
+    Blockly.Events.disable();
+    try {
+      deserializeWorkspaceJson(JSON.stringify(oneBlockState), workspace, { emitEvents: true });
+      expect(Blockly.Events.isEnabled()).toBe(false);
+    } finally {
+      Blockly.Events.enable();
+    }
+
+    expect(seen).toEqual([]);
+    expect(workspace.getAllBlocks(false)).toHaveLength(1);
+    workspace.dispose();
+  });
 });
+
+/**
+ * Attende che la coda eventi di Blockly arrivi ai listener. Blockly smaltisce gli eventi
+ * in un microtask/macrotask successivo alla carica: senza attesa il listener non avrebbe
+ * ancora visto nulla. `minTicks` permette di accertare che nessun evento arriva.
+ */
+async function waitForBlocklyEvents(seen: string[], minTicks = 1): Promise<void> {
+  // La coda eventi di Blockly usa ritardi reali: in jsdom i setTimeout(0) ravvicinati non
+  // bastano; piccoli ritardi di alcuni millisecondi garantiscono lo smaltimento.
+  for (let tick = 0; tick < 40; tick += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    if (minTicks === 0) continue;
+    if (seen.length > 0) break;
+  }
+  if (minTicks === 0) {
+    // Spazio sufficiente perché eventuali eventi in coda siano già stati smaltiti.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+}
 
 function shadowState(withActiveBlock = true, shadowType = 'math_number'): WorkspaceState {
   return {

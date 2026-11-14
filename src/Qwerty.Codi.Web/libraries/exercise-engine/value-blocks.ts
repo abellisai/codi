@@ -76,14 +76,43 @@ export const MAX_REPEAT_COUNT = 50;
 export const MAX_INTEGER = 1_000_000;
 
 /**
- * Variabili che il blocco offre prima che il docente ne dichiari di sue.
+ * Variabili che il blocco offre quando la definizione non ne dichiara nessuna.
  *
  * I nomi sono quelli del corso — `Punti` per la macchina dei punti, `Numero` per la carta appena
  * letta, `A`, `B`, `Totale` per la somma — così il bambino trova il blocco pronto invece di dover
- * scrivere un nome a mano. Le variabili dichiarate dall'esercizio si aggiungono a queste, e il server
- * accetta soltanto quelle: offrire un nome fuori elenco sarebbe un progetto destinato al rifiuto.
+ * scrivere un nome a mano. È anche il fallback: un esercizio che dichiara variabili le mostra tutte
+ * e non queste, perché il server accetta soltanto le variabili dichiarate e offrire un nome fuori
+ * elenco sarebbe un progetto destinato al rifiuto.
  */
 export const COURSE_VARIABLES: readonly string[] = ['Punti', 'Numero', 'Totale', 'A', 'B'];
+
+/** Variabili attive nei menu: lo stato è del modulo, non del singolo workspace. */
+let activeVariables: readonly string[] = COURSE_VARIABLES;
+
+/**
+ * Imposta le variabili dichiarate dall'esercizio aperto: i menu dei blocchi con variabile offrono
+ * solo queste. Una lista vuota ripristina `COURSE_VARIABLES`, così un esercizio senza variabili
+ * mantiene il comportamento precedente. La lista è uno stato del modulo: chi monta un workspace la
+ * imposta **prima** di caricare o aggiornare i blocchi, e ogni definizione la reimposta — una
+ * definizione caricata non deve contaminare il workspace di un esercizio successivo.
+ */
+export function setValueProgramVariables(variables: readonly string[]): void {
+  const declared = [
+    ...new Set(variables.map((name) => name.trim()).filter((name) => name.length > 0)),
+  ];
+
+  activeVariables = declared.length > 0 ? declared : COURSE_VARIABLES;
+}
+
+/** Ripristina la lista del corso: la usano i test e chi non ha più un esercizio aperto. */
+export function resetValueProgramVariables(): void {
+  activeVariables = COURSE_VARIABLES;
+}
+
+/** Opzioni correnti del menu a tendina: etichetta e valore hanno lo stesso nome della variabile. */
+export function valueProgramVariableOptions(): Blockly.MenuOption[] {
+  return activeVariables.map((name) => [name, name]);
+}
 
 /** Rappresentazione di una relazione di confronto: valore per il server, etichetta per il bambino. */
 const COMPARISON_OPTIONS: readonly (readonly [string, string])[] = [
@@ -97,11 +126,62 @@ let registered = false;
 /**
  * Registra i blocchi del catalogo. La definizione vive in un registro globale di Blockly: registrarla
  * di nuovo a ogni navigazione non aggiunge nulla, e registrare due volte lo stesso tipo è un errore.
+ *
+ * I tre blocchi con il menu della variabile sono registrati a mano, non dall'array JSON: il menu di
+ * una definizione JSON è una lista ferma alla registrazione, mentre qui le opzioni devono essere
+ * lette **all'apertura** del menu, quando le variabili dell'esercizio sono già note. Gli altri blocchi
+ * restano nell'array JSON perché le loro opzioni non cambiano mai.
  */
 export function registerValueProgramBlocks(): void {
   if (registered) {
     return;
   }
+
+  Blockly.Blocks['val_set'] = {
+    init(this: Blockly.Block) {
+      this.appendValueInput(VALUE_INPUT)
+        .appendField('porta')
+        .appendField(new Blockly.FieldDropdown(valueProgramVariableOptions), VARIABLE_FIELD)
+        .appendField('a');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(230);
+      this.setTooltip('Conserva un valore in una variabile.');
+      this.setHelpUrl('');
+    },
+  };
+
+  Blockly.Blocks['val_change'] = {
+    init(this: Blockly.Block) {
+      // «cambia Punti di 1»: un blocco del corso, e non una scorciatoia per «porta Punti a Punti + 1».
+      // Non ripete il nome della variabile, che è la forma in cui un bambino lo sbaglia.
+      this.appendValueInput(DELTA_FIELD)
+        .appendField('cambia')
+        .appendField(new Blockly.FieldDropdown(valueProgramVariableOptions), VARIABLE_FIELD)
+        .appendField('di');
+      this.setPreviousStatement(true, null);
+      this.setNextStatement(true, null);
+      this.setColour(230);
+      this.setTooltip('Somma una quantità al valore che la variabile ha in questo momento.');
+      this.setHelpUrl('');
+    },
+  };
+
+  Blockly.Blocks['val_variable'] = {
+    init(this: Blockly.Block) {
+      // Il reporter di una variabile: nel corso si trascina nel foro di un blocco, e mostra il nome in
+      // una forma ovale. Un campo di testo lascerebbe il bambino scrivere un nome che non esiste; una
+      // scelta fra le variabili dichiarate glielo impedisce.
+      this.appendDummyInput().appendField(
+        new Blockly.FieldDropdown(valueProgramVariableOptions),
+        VARIABLE_FIELD,
+      );
+      this.setOutput(true, null);
+      this.setColour(330);
+      this.setTooltip('Il valore che la variabile ha in questo momento.');
+      this.setHelpUrl('');
+    },
+  };
 
   Blockly.common.defineBlocksWithJsonArray([
     {
@@ -114,42 +194,6 @@ export function registerValueProgramBlocks(): void {
       nextStatement: null,
       colour: 120,
       tooltip: 'Il programma comincia quando si clicca sulla bandiera verde.',
-      helpUrl: '',
-    },
-    {
-      type: 'val_set',
-      message0: 'porta %1 a %2',
-      args0: [
-        {
-          type: 'field_dropdown',
-          name: VARIABLE_FIELD,
-          options: COURSE_VARIABLES.map((nome) => [nome, nome]),
-        },
-        { type: 'input_value', name: VALUE_INPUT },
-      ],
-      previousStatement: null,
-      nextStatement: null,
-      colour: 230,
-      tooltip: 'Conserva un valore in una variabile.',
-      helpUrl: '',
-    },
-    {
-      type: 'val_change',
-      // «cambia Punti di 1»: un blocco del corso, e non una scorciatoia per «porta Punti a Punti + 1».
-      // Non ripete il nome della variabile, che è la forma in cui un bambino lo sbaglia.
-      message0: 'cambia %1 di %2',
-      args0: [
-        {
-          type: 'field_dropdown',
-          name: VARIABLE_FIELD,
-          options: COURSE_VARIABLES.map((nome) => [nome, nome]),
-        },
-        { type: 'input_value', name: DELTA_FIELD },
-      ],
-      previousStatement: null,
-      nextStatement: null,
-      colour: 230,
-      tooltip: 'Somma una quantità al valore che la variabile ha in questo momento.',
       helpUrl: '',
     },
     {
@@ -226,24 +270,6 @@ export function registerValueProgramBlocks(): void {
       output: null,
       colour: 330,
       tooltip: 'Un numero scritto nel programma.',
-      helpUrl: '',
-    },
-    {
-      type: 'val_variable',
-      // Il reporter di una variabile: nel corso si trascina nel foro di un blocco, e mostra il nome in
-      // una forma ovale. Un campo di testo lascerebbe il bambino scrivere un nome che non esiste; una
-      // scelta fra le variabili dichiarate glielo impedisce.
-      message0: '%1',
-      args0: [
-        {
-          type: 'field_dropdown',
-          name: VARIABLE_FIELD,
-          options: COURSE_VARIABLES.map((nome) => [nome, nome]),
-        },
-      ],
-      output: null,
-      colour: 330,
-      tooltip: 'Il valore che la variabile ha in questo momento.',
       helpUrl: '',
     },
     {

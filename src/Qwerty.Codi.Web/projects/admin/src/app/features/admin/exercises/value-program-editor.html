@@ -105,6 +105,7 @@
         </p>
         <app-value-program-program-editor
           [allowedBlocks]="allowedBlocks()"
+          [declaredVariables]="declaredVariables()"
           [workspaceJson]="workspaceJson()"
           [activeBlockId]="null"
           (workspaceChanged)="onWorkspace($event)"

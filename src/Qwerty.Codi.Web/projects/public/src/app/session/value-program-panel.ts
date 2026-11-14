@@ -1,7 +1,8 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { ApiService, Attempt, toApiError, type ValueProgramOutcome } from '@codi/api';
 import { AttemptTransport } from '../core/attempt-transport';
 import { WorkspacePreviewPublisher } from '../core/workspace-preview';
+import { setValueProgramVariables } from '@exercise-engine/value-blocks';
 import {
   ValueProgramRunner,
   type ValueInstruction,
@@ -182,6 +183,14 @@ export class ValueProgramPanel {
   private readonly corsa = signal<ValueProgramRunner | null>(null);
   private readonly stato = signal<ValueRunState | null>(null);
   private readonly variabileAttesa = signal('');
+
+  constructor() {
+    // Quando la definizione cambia, i menu dei blocchi con variabile devono offrire le variabili di
+    // questo esercizio e non quelle del precedente: il pannello le reimposta a ogni lettura della
+    // definizione. Il workspace le reimposta di suo prima di caricare i blocchi; qui la lista segue
+    // la stessa definizione, quindi i due punti non possono divergere.
+    effect(() => setValueProgramVariables(this.dichiarate()));
+  }
 
   /** Nomi delle variabili, nell'ordine in cui la definizione le dichiara. */
   private readonly dichiarate = computed(() => {
