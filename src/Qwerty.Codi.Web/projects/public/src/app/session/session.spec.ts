@@ -447,6 +447,55 @@ describe('Pagina dell’alunno', () => {
     expect(realtime.workspaceHash).toBe('impronta-salvata');
   });
 
+  it('la conferma salva le revisioni senza reinviare il checkpoint già ricevuto', async () => {
+    await mount();
+    const autosave = TestBed.inject(AttemptAutosave);
+    const persistCheckpoint = vi.spyOn(autosave, 'checkpoint').mockImplementation(() => undefined);
+    const runtime = TestBed.inject(ExerciseRuntime);
+    const notice = {
+      runId: 'run-1',
+      runtimeStatus: 'Paused' as const,
+      checkpoint: {
+        schemaVersion: 1,
+        engineVersion: 'gridpath-1',
+        position: { x: 1, y: 0 },
+        direction: 'East' as const,
+        outcome: 'running' as const,
+        executions: 1,
+        consumed: 1,
+        activeBlockId: 'move-1',
+        activeDurationMs: 300,
+        pauseReason: 'Teacher',
+        frames: [],
+      },
+    };
+    runtime.checkpoint.set(notice);
+    await flush();
+    expect(persistCheckpoint).toHaveBeenCalledTimes(1);
+
+    autosave.saved.set({
+      attemptId: 'a1',
+      saveId: 's1',
+      rowVersion: '7',
+      projectRevision: '3',
+      workspaceHash: 'impronta-salvata',
+      lastSavedAtUtc: '2026-10-02T08:10:00Z',
+      checkpointSaved: true,
+    });
+    await flush();
+    expect(persistCheckpoint).toHaveBeenCalledTimes(1);
+
+    runtime.checkpoint.set({
+      ...notice,
+      checkpoint: { ...notice.checkpoint, executions: 2, consumed: 2 },
+    });
+    await flush();
+    expect(persistCheckpoint).toHaveBeenCalledTimes(2);
+    expect(persistCheckpoint).toHaveBeenLastCalledWith(
+      expect.objectContaining({ projectRevision: '3', workspaceHash: 'impronta-salvata' }),
+    );
+  });
+
   it('una ricevuta di un altro tentativo non aggiorna il modello corrente', async () => {
     // Il confronto è sull’identificativo del tentativo: la ricevuta di un esercizio precedente,
     // ancora in memoria nell’autosave, non deve toccare la pagina di quello aperto.

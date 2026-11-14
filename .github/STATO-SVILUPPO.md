@@ -1,7 +1,38 @@
 # Stato di sviluppo Codì
 
-Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.61 e funzionale 0.19.
+Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.62 e funzionale 0.20.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
+
+## Ciclo dei checkpoint ed effetti pubblici: 14 novembre 2026
+
+**VALIDATO LOCALMENTE.** La conferma del salvataggio aggiornava `attempt`, che riattivava l'effetto del checkpoint.
+L'effetto reinviava lo stesso checkpoint. Ogni nuova ricevuta ripeteva il ciclo e aggiornava anche l'anteprima docente.
+Ora l'effetto dipende soltanto dal nuovo checkpoint del player. Legge il tentativo corrente dentro `untracked`.
+La ricevuta continua ad aggiornare revisioni e impronta. Il checkpoint successivo usa i nuovi valori.
+Il test di regressione ha riprodotto il difetto prima della correzione: due invii invece di uno.
+
+`ResultFeedback` conserva le stelle Three.js e aggiunge dodici stelline con due emissioni.
+L'esito sbagliato mostra un riquadro rosso, un punto esclamativo, tre cerchi in espansione e un invito a riprovare.
+Gli effetti interessano percorsi, quiz ed esercizi con variabili. Durano meno di cinque secondi e rispettano il movimento ridotto.
+Layout, colori generali, comandi grandi e grafica pubblica precedente restano presenti.
+Le specifiche funzionale 0.20 e tecnica 0.62 descrivono gli effetti richiesti.
+
+Controlli eseguiti dall'agente il 14 novembre 2026:
+
+- Test mirati della pagina: 34 superati dopo la correzione.
+- `ng test web.frontend --watch=false`: uscita 0, 156 test superati in 17 file.
+- ESLint sui quattro file TypeScript modificati: uscita 0.
+- Prettier sui quattro file TypeScript modificati: uscita 0.
+- `ng build web.frontend`: uscita 0, nessun avviso, bundle iniziale 263,18 kB.
+- Chrome: nove scenari superati, con UI, Blockly, worker e Three.js reali; trasporti sintetici.
+- Verifica browser: le chiamate checkpoint restano ferme per 3,5 secondi dopo la conferma del lavoro concluso.
+- Verifica browser: avviso rosso, durata finita, schermo stretto, movimento ridotto e disegno senza WebGL.
+
+La prima esecuzione nel sandbox ha rifiutato risorse di rete Blockly e scrittura degli artefatti.
+La ripetizione autorizzata fuori dal sandbox ha superato test e build.
+Resta la diagnostica preesistente del canvas assente in jsdom; nessun test risulta fallito.
+Evidenze e script: `TestResults/public-feedback-20261114` e `TestResults/public-feedback-check.mjs`.
+I trasporti sintetici non scrivono dati operativi. Il collaudo con bambini e sui dodici PC resta da eseguire.
 
 ## Azioni del partecipante a icona con tooltip: 14 novembre 2026
 

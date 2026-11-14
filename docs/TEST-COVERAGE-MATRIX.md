@@ -18,6 +18,21 @@ tecnica](../SPECIFICA_TECNICA_PIATTAFORMA_DIDATTICA.md) §20.3–§20.4.
   requisito implementato e già descritto non aggiunge versioni della specifica: aggiorna questa
   matrice e lo stato.
 
+## Checkpoint senza reinvio ed effetti pubblici del 14 novembre 2026
+
+Passano 156 test pubblici in 17 file. Le percentuali di copertura non sono state ricalcolate.
+
+| Comportamento | Test o verifica |
+|---|---|
+| La ricevuta aggiorna il tentativo senza reinviare il checkpoint precedente | `session.spec.ts` |
+| Un nuovo checkpoint usa revisioni e impronta confermate | `session.spec.ts` |
+| L'esito corretto mostra stelle; quello sbagliato mostra avviso e incoraggiamento | `result-feedback.spec.ts` |
+| Il worker conclude e le richieste checkpoint restano ferme dopo la conferma | Chrome, `TestResults/public-feedback-check.mjs` |
+| Avviso rosso, durata finita e movimento ridotto | Chrome, `TestResults/public-feedback-check.mjs` |
+
+La verifica Chrome usa trasporti sintetici e non modifica dati operativi.
+Le evidenze risiedono in `TestResults/public-feedback-20261114`.
+
 ## Rinomina pubblica e uscita del 14 novembre 2026
 
 Passano 1.413 test .NET, 151 test pubblici e 408 test admin con librerie condivise.

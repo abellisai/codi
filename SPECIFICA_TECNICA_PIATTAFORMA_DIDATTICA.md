@@ -1,6 +1,6 @@
 # Codì: specifica tecnica della piattaforma didattica
 
-Versione: 0.61 — Progetto tecnico iniziale approfondito
+Versione: 0.62 — Progetto tecnico iniziale approfondito
 Data: 14 novembre 2026
 Stato: proposta implementativa, non software già realizzato
 Documento funzionale di riferimento: [Specifiche della piattaforma didattica](./SPECIFICHE_PIATTAFORMA_DIDATTICA.md)
@@ -1721,6 +1721,11 @@ Scheda nascosta, scena fuori schermo e `prefers-reduced-motion` sospendono il mo
 La distruzione smaltisce renderer, geometrie, materiali, osservatori e ascoltatori.
 Senza WebGL resta il disegno statico. Il canvas non riceve il puntatore né informazioni necessarie all'esercizio.
 `ResultFeedback` usa l'esito del motore o della correzione, senza dedurre il successo dal testo.
+I risultati corretti aggiungono dodici stelline CSS, con due emissioni e durata totale massima di 4,095 secondi.
+I risultati sbagliati mostrano un riquadro rosso, un punto esclamativo e un invito a correggere il lavoro.
+Tre cerchi in espansione durano 3,3 secondi complessivi. L'avviso non usa lampeggi rapidi o suoni.
+Entrambi gli esiti usano `role="status"` e testo esplicito. Le decorazioni non ricevono il puntatore.
+Con `prefers-reduced-motion` le decorazioni non si muovono. Simbolo e testo restano disponibili.
 Le animazioni non cambiano permessi, salvataggi, telemetria o valutazione.
 
 **Stato a colpo d'occhio (0.38).** La pagina dell'alunno mostra in cima tre riquadri con **icona, colore e
@@ -2400,6 +2405,7 @@ Fonti primarie consultate per la baseline del 30 settembre 2026. I riferimenti s
 
 | Versione | Data | Modifiche |
 |---|---|---|
+| 0.62 | 2026-11-14 | Risultati pubblici con stelline CSS e avviso rosso con tre cerchi. Decorazioni brevi e riduzione del movimento. Il salvataggio del checkpoint dipende dal nuovo evento del player. La ricevuta aggiorna il tentativo senza causare un nuovo invio. |
 | 0.61 | 2026-11-14 | Profilo autorevole in snapshot e rinnovo dell'autorizzazione per sincronizzare la rinomina. Migrazione 0014 per registrare l'uscita volontaria ed escludere il partecipante dalla regia e dai comandi. |
 | 0.60 | 2026-11-14 | Parte pubblica per bambini di nove anni, funzionale 0.18. Comandi grandi, ingresso numerato, indicazione dello stato e risultati con Three.js differito. Riduzione del movimento e disegno statico senza WebGL. Nessun cambiamento al protocollo o allo schema. |
 | 0.59 | 2026-11-12 | La lista dei partecipanti espone `rowVersion` come stringa decimale. La regia usa i comandi esistenti per rinomina, esclusione e ingressi. Il client distingue i rifiuti definitivi dei salvataggi dagli esiti di rete incerti. Nessuna migrazione o nuova rotta. |

@@ -1,6 +1,6 @@
 # Codì: piattaforma web per la regia delle lezioni di informatica
 
-Versione: 0.19 — Bozza da discutere e migliorare
+Versione: 0.20 — Bozza da discutere e migliorare
 Data: 14 novembre 2026
 Destinatari: docente e sviluppatori
 
@@ -211,6 +211,9 @@ La parte pubblica applica questi requisiti:
 - I risultati mostrano simbolo, parole e colore, con incoraggiamento dopo una risposta sbagliata.
 - Il benvenuto presenta un personaggio animato con Three.js.
 - Un risultato corretto presenta stelle animate con Three.js.
+- Una pioggia di stelline accompagna i risultati corretti nei percorsi, nei quiz e negli esercizi con variabili.
+- Un risultato sbagliato mostra un avviso rosso, un punto esclamativo e un invito a riprovare.
+- L'avviso usa tre cerchi in espansione, senza lampeggi rapidi o suoni di allarme.
 - Le animazioni durano meno di cinque secondi e non coprono i comandi.
 - L'impostazione del dispositivo per ridurre il movimento mostra una scena ferma.
 - Senza accelerazione grafica restano disponibili un disegno statico e tutti i comandi.
@@ -562,6 +565,7 @@ Questo scenario costituisce il riferimento principale per valutare le successive
 
 | Versione | Data | Modifica |
 |---|---|---|
+| 0.20 | 2026-11-14 | Effetti pubblici per bambini fino a dieci anni: stelline dopo i risultati corretti e avviso rosso incoraggiante dopo gli errori. Movimento breve e riducibile. |
 | 0.19 | 2026-11-14 | Il nome corretto nella regia compare nella pagina pubblica. L'uscita volontaria rimuove il partecipante dalla regia e dai destinatari dei comandi, senza cancellare i lavori. |
 | 0.18 | 2026-11-14 | Parte pubblica per bambini di nove anni: ingresso guidato, pulsanti grandi, indicazione «Adesso», risultati visivi e animazioni Three.js accessibili. Terminologia «insegnante» nei testi. |
 | 0.17 | 2026-10-22 | **Eliminazione di una versione pubblicata non più recente**, su richiesta dell'utente del 22 ottobre 2026: dall'elenco delle versioni dell'editor una versione si elimina con conferma, purché non sia la più recente e non sia già stata assegnata a una lezione; l'ultima resta perché è quella che le prossime assegnazioni userebbero, e per sostituirla se ne pubblica una nuova (§9.2). |

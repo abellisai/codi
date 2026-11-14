@@ -473,9 +473,12 @@ export class ParticipantSession implements OnInit {
       // Ogni checkpoint prodotto dal player diventa un salvataggio: la pagina compone l'involucro
       // con tentativo, generazione e progetto, che il worker non conosce.
       const notice = this.runtime.checkpoint();
-      const attempt = this.attempt();
-      if (notice === null || attempt === null) return;
-      untracked(() =>
+      if (notice === null) return;
+      // Solo un nuovo evento del player avvia il salvataggio. La ricevuta aggiorna il tentativo,
+      // ma non deve reinviare il checkpoint ancora presente nel segnale.
+      untracked(() => {
+        const attempt = this.attempt();
+        if (attempt === null) return;
         this.autosave.checkpoint({
           schemaVersion: 1,
           engineVersion: notice.checkpoint.engineVersion,
@@ -487,8 +490,8 @@ export class ParticipantSession implements OnInit {
           projectRevision: attempt.projectRevision,
           runtimeStatus: notice.runtimeStatus,
           runtimeState: { ...notice.checkpoint },
-        }),
-      );
+        });
+      });
     });
     // Un comando consegnato può cambiare il lavoro: quando l'identificativo del tentativo cambia,
     // definizione e progetto si rileggono. Le scritture stanno in `untracked`, altrimenti l'effetto
