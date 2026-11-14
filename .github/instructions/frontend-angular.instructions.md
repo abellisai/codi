@@ -5,7 +5,7 @@ applyTo: "**/src/Qwerty.Codi.Web/**"
 # Angular
 
 Workspace multi-app: `projects/admin` (`web.admin`, base `/admin/`, Spartan)
-e `projects/public` (`web.frontend`, base `/`, UI da definire).
+e `projects/public` (`web.frontend`, base `/`, interfaccia propria per bambini, Three.js decorativo).
 Trasporto e contratti comuni in `libraries/api` (`@codi/api`); motore Blockly in
 `libraries/exercise-engine`. Non duplicare questi sorgenti nelle app e non importare servizi
 admin, Helm o CSS dell'admin nelle librerie comuni o nel frontend. Le route del router admin

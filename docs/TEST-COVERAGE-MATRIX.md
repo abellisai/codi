@@ -5,7 +5,7 @@ scritto, con l'area, il livello, il file che li prova e la sezione normativa. No
 test né un punteggio: un test scritto non è un test superato, e i numeri di copertura vivono in
 `scripts/coverage-baseline.json`.
 
-Aggiornato: 13 novembre 2026, dopo la correzione della raccolta di copertura.
+Aggiornato: 14 novembre 2026, dopo la revisione della parte pubblica.
 Riferimento: [specifica
 tecnica](../SPECIFICA_TECNICA_PIATTAFORMA_DIDATTICA.md) §20.3–§20.4.
 
@@ -17,6 +17,56 @@ tecnica](../SPECIFICA_TECNICA_PIATTAFORMA_DIDATTICA.md) §20.3–§20.4.
 - La matrice va aggiornata quando cambia un comportamento di produzione o il suo test (§20.4). Un
   requisito implementato e già descritto non aggiunge versioni della specifica: aggiorna questa
   matrice e lo stato.
+
+## Rinomina pubblica e uscita del 14 novembre 2026
+
+Passano 1.413 test .NET, 151 test pubblici e 408 test admin con librerie condivise.
+Le percentuali di copertura non sono state ricalcolate per questa porzione.
+
+| Comportamento | Test |
+|---|---|
+| Nome corretto nello snapshot proprio e nel rinnovo del collegamento | `SessionParticipantRegiaTests.cs`, `ParticipantHubTests.cs` |
+| Versioni monotone e profilo del solo destinatario | `participant-realtime.spec.ts` |
+| Titolo pubblico e memoria del nome corretto | `session.spec.ts` |
+| Errore durante l'uscita senza navigazione prematura | `session.spec.ts` |
+| Uscita senza esclusione docente e senza ammissione residua | `SessionParticipantTests.cs` |
+| Rimozione dalla griglia e nuovo ingresso distinto | `ParticipantHttpTests.cs` |
+| Conservazione dei tentativi ed esclusione dai comandi successivi | `AssignmentUseCaseTests.cs` |
+| Aggiornamento ripetibile da schema 13 e vincolo sulla data di uscita | `ParticipantLeaveMigrationTests.cs` |
+
+Riferimenti: funzionale §6.2 e tecnica §14.4. I test .NET usano database temporanei.
+
+## Precondizioni dei comandi di classe del 14 novembre 2026
+
+`projects/admin/src/app/features/admin/sessions/session-detail.spec.ts` verifica otto nuovi casi.
+I comandi collettivi restano disabilitati senza esercizio per tutti gli alunni ammessi.
+Il messaggio sotto i pulsanti indica prima l'assegnazione e poi il permesso di lavorare.
+Il test della sequenza verifica anche `aria-describedby` e la rimozione del messaggio dopo il permesso.
+Quattro casi aggiuntivi verificano l'indicazione per lezione non avviata, pausa, conclusione e classe vuota.
+I test comprendono classe vuota, classe mista ed esclusi.
+Il servizio non invia i comandi vietati, anche quando il codice chiama direttamente i metodi.
+L'assegnazione permette il lavoro; il permesso di lavorare permette l'esecuzione.
+Riferimenti: tecnica §6.4, §6.5 e §14.3. Passano 73 test dell'area sessioni admin.
+
+## Parte pubblica e animazioni del 14 novembre 2026
+
+I test pubblici passano con 148 casi in 16 file. Le evidenze complete sono nel registro di sviluppo.
+La revisione aggiunge questi comportamenti verificati, con riferimento a funzionale §8 e tecnica §14.4:
+
+| Comportamento | Livello | File |
+|---|---|---|
+| Indicazione principale coerente con pausa e collegamento | Angular, componente | `projects/public/src/app/session/session.spec.ts` |
+| Assenza dei dati tecnici nella pagina del bambino | Angular, componente | `projects/public/src/app/session/session.spec.ts` |
+| Invito ad aspettare dopo la perdita del collegamento | Angular, funzione pura | `projects/public/src/app/session/status-badges.spec.ts` |
+| Successo distinto dall'esito negativo anche con testi uguali | Angular, componente | `projects/public/src/app/shared/result-feedback.spec.ts` |
+| Movimento ridotto, fine animazione, sospensione e smaltimento | Angular, componente con renderer sostituito | `projects/public/src/app/shared/learning-scene.spec.ts` |
+| Disegno statico quando WebGL non è disponibile | Angular, componente | `projects/public/src/app/shared/learning-scene.spec.ts` |
+| Successo della prova e azzeramento dopo una nuova prova | Angular, servizio e motore reale | `projects/public/src/app/core/trial-run.spec.ts` |
+
+Chrome verifica anche l'ingresso con Invio, i comandi grandi e le scene Three.js reali.
+Le richieste al server usano risposte sintetiche nel browser.
+Le evidenze risiedono in `TestResults/public-design-20261114`.
+Questa esecuzione non misura una nuova percentuale di copertura.
 
 ## Raccolta di copertura del 13 novembre 2026
 
@@ -679,9 +729,9 @@ La raccolta finale esegue questi comportamenti.
 | Stato della sessione condiviso fra regia e pagina dei partecipanti: una sola sottoscrizione all'hub e rilettura del dettaglio aperto dopo un comando | Angular | [session-participants.spec.ts](../src/Qwerty.Codi.Web/projects/admin/src/app/features/admin/sessions/session-participants.spec.ts) | §14.1, §14.3 |
 | Ingresso dell'alunno: la home sente la lezione e invita a scrivere il codice; senza lezione in corso lo dichiara; con codice e nome entra; tiene solo le cifre e non più di otto; senza nome non entra; un codice diverso è un tentativo nuovo con chiave nuova; il ripiego carica le scuole solo quando serve; il nome si ricorda | Angular | [join.spec.ts](../src/Qwerty.Codi.Web/projects/public/src/app/join/join.spec.ts) | §9.4, §14.1, §14.4 |
 | Codice di ingresso in regia: mostrato con il pulsante di copia solo mentre la lezione è in play, assente in attesa e dopo lo Stop | Angular | [session-detail.spec.ts](../src/Qwerty.Codi.Web/projects/admin/src/app/features/admin/sessions/session-detail.spec.ts) | §9.4, §14.1 |
-| Riquadri di stato dell'alunno (mappa) | Collegamento negli otto stati del trasporto; precedenza fra lezione conclusa, recupero, pausa del maestro, attesa e controlli chiusi; sei stati del programma; la prova locale viene prima della corsa comandata; ogni riquadro porta un testo, quindi il colore non è l'unica informazione | i casi di `status-badges.spec.ts` | Unit | [`status-badges.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/status-badges.spec.ts) | §6.2, §11.6, §14.4 |
+| Riquadri di stato dell'alunno (mappa) | Collegamento negli otto stati del trasporto; precedenza fra lezione conclusa, recupero, pausa dell’insegnante, attesa e controlli chiusi; sei stati del programma; la prova locale viene prima della corsa comandata; ogni riquadro porta un testo, quindi il colore non è l'unica informazione | i casi di `status-badges.spec.ts` | Unit | [`status-badges.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/status-badges.spec.ts) | §6.2, §11.6, §14.4 |
 | Prova locale del programma (servizio) | La corsa parte dalla partenza, scorre i passi fino al traguardo con il messaggio della definizione, avanza di un passo alla volta, riconosce l'ostacolo, spiega un progetto senza punto di ingresso, ferma senza cancellare la posizione, riparte dopo un esito e non conosce il protocollo del player | i casi di `trial-run.spec.ts` | Unit | [`trial-run.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/core/trial-run.spec.ts) | §13.1, §13.5 |
-| Riquadri e prova nella pagina dell'alunno | I riquadri rendono tono, icona e testo; i controlli chiusi e la pausa del maestro cambiano il riquadro; la prova è disponibile solo con i controlli attivi, muove il personaggio sulla griglia senza inviare nulla al worker e si ferma quando il maestro mette in pausa, lasciando la posizione raggiunta; progetto e programma stanno nella stessa area di lavoro con il progetto prima, e con un solo pannello la colonna vuota non compare | i casi di `session.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts) | §13.1, §14.4 |
+| Riquadri e prova nella pagina dell'alunno | I riquadri rendono tono, icona e testo; i controlli chiusi e la pausa dell’insegnante cambiano il riquadro; la prova è disponibile solo con i controlli attivi, muove il personaggio sulla griglia senza inviare nulla al worker e si ferma quando l’insegnante mette in pausa, lasciando la posizione raggiunta; progetto e programma stanno nella stessa area di lavoro con il progetto prima, e con un solo pannello la colonna vuota non compare | i casi di `session.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts) | §13.1, §14.4 |
 | Percorso dell'alunno nella pagina | Il percorso mostra scuola, classe, lezione e — quando l'esercizio è assegnato — il suo titolo, con il nome dell'alunno sulla riga sotto; in attesa si ferma alla lezione; un livello senza nome viene saltato invece di lasciare un separatore vuoto | i casi di `session.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts) | §10.5, §14.4 |
 | Pagina dell'alunno: esercizio che conserva valori | Il progetto a blocchi compare con le variabili e l'uscita in due pannelli e l'editor è montato; il riquadro del programma del player non compare; un esercizio dichiarativo resta a un pannello senza progetto; il player resta inerte per una definizione che non esegue | i casi di `session.spec.ts` e `exercise-runtime.spec.ts` | Angular | [`session.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/session/session.spec.ts), [`exercise-runtime.spec.ts`](../src/Qwerty.Codi.Web/projects/public/src/app/core/exercise-runtime.spec.ts) | §13.9, §14.4 |
 

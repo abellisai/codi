@@ -175,7 +175,7 @@ public sealed class ParticipantChatTests : IAsyncLifetime
         // Act
         var failure = await _scenario.Host.ExpectFailureAsAsync(
             PostParticipantMessageCommand.RequestName,
-            new { text = "Ciao maestro", clientMessageKey = "chiave-attesa" },
+            new { text = "Ciao insegnante", clientMessageKey = "chiave-attesa" },
             LucaContext);
 
         // Assert
@@ -305,7 +305,7 @@ public sealed class ParticipantChatTests : IAsyncLifetime
         // Arrange
         await PostTeacherAsync("Ciao Luca", "chiave-fine");
         AcquireConnection(_anna);
-        await PostParticipantAsync(_anna, "Ciao maestro", "chiave-fine-figlio");
+        await PostParticipantAsync(_anna, "Ciao insegnante", "chiave-fine-figlio");
 
         // Act
         await _scenario.Host.CommandAsAsync<SessionDto>(

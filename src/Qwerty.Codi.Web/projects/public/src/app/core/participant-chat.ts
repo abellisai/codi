@@ -16,17 +16,17 @@ function graphemeCount(text: string): number {
 }
 
 /**
- * Chat fra il maestro e il singolo alunno (§8, §15.1). Il bambino legge ciò che il maestro gli
- * scrive e risponde; non esiste una chat fra bambini, perché il thread è sempre fra il maestro e un
+ * Chat fra l’insegnante e il singolo alunno (§8, §15.1). Il bambino legge ciò che l’insegnante gli
+ * scrive e risponde; non esiste una chat fra bambini, perché il thread è sempre fra l’insegnante e un
  * alunno solo, e l'identità arriva dalla credenziale.
  *
  * Il thread vive in memoria sul server e non si persiste: l'hub annuncia i messaggi nuovi ma non
  * ripete il thread, quindi la lettura si rifà all'apertura e a ogni riconnessione, e i due flussi si
  * ricompongono per identificativo senza duplicare un messaggio già visto.
  *
- * La chat sta con la pagina: si scrive quando il maestro lascia la pagina al lavoro, e il server
+ * La chat sta con la pagina: si scrive quando l’insegnante lascia la pagina al lavoro, e il server
  * rifiuta comunque la scrittura mentre la pagina è in attesa o in pausa. Leggere il thread si può
- * sempre: un messaggio del maestro non si perde perché i controlli sono chiusi.
+ * sempre: un messaggio dell’insegnante non si perde perché i controlli sono chiusi.
  */
 @Injectable({ providedIn: 'root' })
 export class ParticipantChat {
@@ -50,7 +50,7 @@ export class ParticipantChat {
 
   /**
    * Vero quando il bambino può rispondere. È la stessa condizione che il server applica al comando:
-   * pagina al lavoro, cioè né in attesa né in pausa del maestro. La connessione deve essere
+   * pagina al lavoro, cioè né in attesa né in pausa dell’insegnante. La connessione deve essere
    * operativa, perché il caso d'uso ricava la sessione dal registro delle connessioni.
    */
   readonly canWrite = computed(() => {
@@ -66,7 +66,7 @@ export class ParticipantChat {
   });
 
   constructor() {
-    // La prima lettura è immediata — chi ricarica la pagina deve vedere subito ciò che il maestro
+    // La prima lettura è immediata — chi ricarica la pagina deve vedere subito ciò che l’insegnante
     // gli ha scritto — e poi si rilegge a ogni ritorno del collegamento: l'hub non ripete ciò che è
     // arrivato mentre la pagina non c'era, e un messaggio perso non deve sparire per sempre.
     effect(() => {
@@ -93,7 +93,7 @@ export class ParticipantChat {
   }
 
   /**
-   * Legge il proprio thread. Il conteggio dei non letti è quello del maestro e non si mostra: il
+   * Legge il proprio thread. Il conteggio dei non letti è quello dell’insegnante e non si mostra: il
    * server non misura se un bambino ha letto, e un numero inventato sarebbe peggio di nessun numero.
    */
   async load(): Promise<void> {
@@ -109,7 +109,7 @@ export class ParticipantChat {
   }
 
   /**
-   * Scrive al maestro. Il testo è verificato qui per la forma e la lunghezza, così il bambino ha
+   * Scrive all’insegnante. Il testo è verificato qui per la forma e la lunghezza, così il bambino ha
    * subito una risposta comprensibile invece di un rifiuto dopo il viaggio; il server resta comunque
    * l'unico che decide se la scrittura è ammessa.
    */
@@ -117,7 +117,7 @@ export class ParticipantChat {
     const message = text.trim();
     if (!this.canWrite() || this.busy()) return null;
     if (message === '') {
-      this.problem.set('Scrivi qualcosa al maestro prima di inviare.');
+      this.problem.set('Scrivi qualcosa all’insegnante prima di inviare.');
 
       return null;
     }

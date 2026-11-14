@@ -38,8 +38,8 @@ public sealed class UnitOfWorkRepositoryTests : IAsyncLifetime
         var id = await users.InsertAsync(row);
         var first = await users.GetAsync(id);
         var stale = await users.GetAsync(id);
-        first!.Username = "Maestro";
-        first.NormalizedUsername = "maestro";
+        first!.Username = "Insegnante";
+        first.NormalizedUsername = "insegnante";
         Assert.True(await users.UpdateAsync(first));
         stale!.Username = "Sovrascrittura";
         stale.NormalizedUsername = "sovrascrittura";
@@ -51,8 +51,8 @@ public sealed class UnitOfWorkRepositoryTests : IAsyncLifetime
         Assert.Equal(1, stale.RowVersion);
         Assert.False(await users.DeleteAsync(stale));
         var stored = Assert.Single(await users.GetAllAsync());
-        Assert.Equal("Maestro", stored.Username);
-        Assert.Equal("maestro", stored.NormalizedUsername);
+        Assert.Equal("Insegnante", stored.Username);
+        Assert.Equal("insegnante", stored.NormalizedUsername);
         Assert.Equal(row.SecurityStamp, stored.SecurityStamp);
         Assert.Equal(TestTimeProvider.Instant, stored.ToDomain().CreatedAtUtc);
         Assert.True(await users.DeleteAsync(first));
@@ -193,7 +193,7 @@ public sealed class UnitOfWorkRepositoryTests : IAsyncLifetime
         await using var work = await _database.Units.CreateAsync(useTransaction: true);
         var users = work.Repo<IAdminUserRepository>();
         var first = AdminUserEntity.FromDomain(AdminUser.Create("Maestra", "hash", TestTimeProvider.Instant));
-        var second = AdminUserEntity.FromDomain(AdminUser.Create("Maestro", "hash", TestTimeProvider.Instant));
+        var second = AdminUserEntity.FromDomain(AdminUser.Create("Insegnante", "hash", TestTimeProvider.Instant));
         await users.InsertAsync(first);
         await users.InsertAsync(second);
         second.NormalizedUsername = first.NormalizedUsername;
@@ -205,7 +205,7 @@ public sealed class UnitOfWorkRepositoryTests : IAsyncLifetime
         Assert.Equal(2067, error.SqliteExtendedErrorCode);
         Assert.Equal(1, second.RowVersion);
         var stored = await users.GetAsync(second.Id);
-        Assert.Equal("maestro", stored!.NormalizedUsername);
+        Assert.Equal("insegnante", stored!.NormalizedUsername);
         Assert.Equal(1, stored.RowVersion);
     }
 

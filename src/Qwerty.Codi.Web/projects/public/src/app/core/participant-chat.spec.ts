@@ -58,7 +58,7 @@ describe('ParticipantChat', () => {
     });
   });
 
-  it('legge il proprio thread all’apertura, senza i non letti del maestro', async () => {
+  it('legge il proprio thread all’apertura, senza i non letti dell’insegnante', async () => {
     api.executeQuery.mockResolvedValue(thread([teacher('m1', 'Come sta andando?')], 3));
 
     await render();
@@ -66,7 +66,7 @@ describe('ParticipantChat', () => {
     expect(api.executeQuery).toHaveBeenCalledWith('GetOwnMessages', {});
     expect(chat().messages()).toHaveLength(1);
     expect(chat().messages()[0]?.text).toBe('Come sta andando?');
-    // Il conteggio dei non letti è del maestro: la vista del bambino non lo porta con sé.
+    // Il conteggio dei non letti è dell’insegnante: la vista del bambino non lo porta con sé.
     expect('unreadByTeacher' in chat()).toBe(false);
   });
 
@@ -204,7 +204,7 @@ describe('ParticipantChat', () => {
   }
 });
 
-/** Thread come lo restituisce `GetOwnMessages`: i non letti sono del maestro. */
+/** Thread come lo restituisce `GetOwnMessages`: i non letti sono dell’insegnante. */
 function thread(
   messages: readonly ParticipantMessage[] = [],
   unreadByTeacher = 0,

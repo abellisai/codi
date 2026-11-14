@@ -134,7 +134,7 @@ describe('Ingresso dell’alunno', () => {
     // Le scuole non si caricano all'apertura: servono solo a chi non ha il codice.
     expect(participants.calls).not.toContain('schools');
     expect(pageText()).toContain('La lezione è iniziata');
-    expect(pageText()).toContain('Codice della lezione');
+    expect(pageText()).toContain('Scrivi il codice');
   });
 
   it('senza lezione in corso lo dichiara invece di far digitare un codice che non esiste', async () => {
@@ -170,7 +170,7 @@ describe('Ingresso dell’alunno', () => {
     await flush();
 
     expect(codeField().value).toBe('12345678');
-    // Senza nome non si entra: il maestro deve poter riconoscere chi è entrato.
+    // Senza nome non si entra: l’insegnante deve poter riconoscere chi è entrato.
     expect(button('Entra').disabled).toBe(true);
 
     typeName('Luca');
@@ -326,7 +326,7 @@ describe('Ingresso dell’alunno', () => {
 
   function button(label: string): HTMLButtonElement {
     const found = [...page().querySelectorAll('button')].find(
-      (candidate) => (candidate.textContent ?? '').trim() === label,
+      (candidate) => (candidate.textContent ?? '').replace('➜', '').trim() === label,
     );
     if (found === undefined) {
       throw new Error(`Pulsante non trovato: ${label}`);

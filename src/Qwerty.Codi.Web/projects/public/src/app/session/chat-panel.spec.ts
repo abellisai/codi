@@ -35,22 +35,22 @@ describe('ChatPanel', () => {
     await settle();
 
     expect(fixture.nativeElement.querySelector('.chat')).toBeNull();
-    expect(text()).toContain('Scrivi al maestro');
+    expect(text()).toContain('Scrivi all’insegnante');
 
-    button('Scrivi al maestro').click();
+    button('Scrivi all’insegnante').click();
     await settle();
 
     expect(fixture.nativeElement.querySelector('.chat')).not.toBeNull();
     expect(text()).toContain('Qui non c’è ancora niente');
   });
 
-  it('un messaggio del maestro apre il pannello da sé e si legge con il suo autore', async () => {
+  it('un messaggio dell’insegnante apre il pannello da sé e si legge con il suo autore', async () => {
     // Nessuno ha aperto la chat: il pannello compare perché c'è qualcosa da leggere.
     chat.messages.set([teacher('m1', 'Bravo, continua così')]);
     await settle();
 
     expect(fixture.nativeElement.querySelector('.chat')).not.toBeNull();
-    expect(text()).toContain('Il maestro');
+    expect(text()).toContain('L’insegnante');
     expect(text()).toContain('Bravo, continua così');
     expect(fixture.nativeElement.querySelectorAll('.message')).toHaveLength(1);
   });
@@ -83,13 +83,13 @@ describe('ChatPanel', () => {
     });
     await settle();
 
-    type('Maestro, non capisco');
+    type('Insegnante, non capisco');
     await settle();
     button('Invia').click();
     await settle();
 
     // Il testo resta: il bambino non deve riscriverlo.
-    expect(textarea().value).toBe('Maestro, non capisco');
+    expect(textarea().value).toBe('Insegnante, non capisco');
     expect(text()).toContain('La lezione è terminata');
     expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
   });
@@ -102,7 +102,7 @@ describe('ChatPanel', () => {
     // Il messaggio si legge comunque: ciò che manca è la risposta, e il perché è scritto.
     expect(text()).toContain('Aspetta un momento');
     expect(fixture.nativeElement.querySelector('textarea')).toBeNull();
-    expect(text()).toContain('Puoi rispondere quando il maestro apre l’attività');
+    expect(text()).toContain('Puoi rispondere quando l’insegnante apre l’attività');
   });
 
   function text(): string {
@@ -120,7 +120,7 @@ describe('ChatPanel', () => {
 
   function button(label: string): HTMLButtonElement {
     const found = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (candidate) => candidate.textContent?.trim() === label,
+      (candidate) => candidate.textContent?.trim().endsWith(label),
     );
     if (found === undefined) {
       throw new Error(`Pulsante non trovato: ${label}`);

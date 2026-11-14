@@ -170,14 +170,36 @@ export class SessionDetail implements OnInit {
     await this.regia.changeAdmissions();
   }
 
-  /**
-   * Comandi sul contenuto della sessione: si offrono quando la classe è in corso e c'è qualcuno a
-   * cui applicarli. Le precompilazioni sono del server — §6.5 chiede che le verifichi su **tutti** i
-   * destinatari prima di scrivere — quindi un rifiuto arriva qui con il suo messaggio.
-   */
-  protected readonly canCommandActivity = computed(
-    () => this.online() && this.session()?.status === 'Active' && this.participants().length > 0,
-  );
+  /** Assegnazione, permesso di lavorare ed esecuzione hanno precondizioni distinte. */
+  protected readonly canCommandActivity = this.regia.canCommandActivity;
+  protected readonly canEnableClass = this.regia.canEnableClass;
+  protected readonly canRunClass = this.regia.canRunClass;
+
+  /** Il motivo resta leggibile anche quando il pulsante non può ricevere il focus. */
+  protected readonly activityDisabledReason = computed(() => {
+    if (this.busy()) return 'Attendi che il comando in corso termini.';
+    if (!this.online()) return 'Attendi il collegamento prima di usare i comandi.';
+    const status = this.session()?.status;
+    if (status === 'Lobby') return 'Prima avvia la lezione.';
+    if (status === 'Paused') return 'Prima riprendi la lezione.';
+    if (status === 'Ended') return 'La lezione è conclusa: i comandi non sono più disponibili.';
+    if (status !== 'Active') return 'Attendi il caricamento della lezione.';
+    const admitted = this.participants().filter(
+      (participant) => participant.admissionStatus === 'Admitted',
+    );
+    if (admitted.length === 0) return 'Attendi che un bambino entri nella lezione.';
+    if (admitted.some((participant) => participant.attemptId === null))
+      return 'Prima assegna un esercizio a tutti i bambini.';
+    if (admitted.some((participant) => participant.recoveryBlocked))
+      return 'Riprendi il lavoro dei bambini che richiedono il recupero dalla pagina Partecipanti.';
+    if (
+      admitted.some((participant) => participant.teacherPaused || participant.view !== 'Exercise')
+    )
+      return 'Riprendi il lavoro dei bambini in pausa o in attesa dalla pagina Partecipanti.';
+    if (!this.canRunClass())
+      return 'Prima premi «Permetti di lavorare», poi puoi eseguire i programmi di tutti.';
+    return '';
+  });
 
   ngOnInit(): void {
     // L'indirizzo è l'unica sorgente della sessione mostrata: la pagina si registra sul servizio,

@@ -346,6 +346,7 @@ export class SessionRegiaService {
 
   /** Abilita l'attività di tutta la classe: i controlli si accendono senza avviare il programma. */
   async enableClass(): Promise<void> {
+    if (!this.canEnableClass()) return;
     await this.runContentCommand('EnableActivity');
   }
 
@@ -356,6 +357,7 @@ export class SessionRegiaService {
 
   /** Avvia il progetto corrente della classe: non azzera la scena. */
   async runClass(): Promise<void> {
+    if (!this.canRunClass()) return;
     await this.runContentCommand('RunProgram');
   }
 
@@ -366,6 +368,7 @@ export class SessionRegiaService {
 
   /** Riavvia la classe: la generazione avanza e il progetto resta. */
   async restartClass(): Promise<void> {
+    if (!this.canRunClass()) return;
     await this.runContentCommand('RestartExecution');
   }
 
@@ -512,6 +515,26 @@ export class SessionRegiaService {
   /** Comandi sul contenuto: si offrono quando la classe è in corso e c'è qualcuno a cui applicarli. */
   readonly canCommandActivity = computed(
     () => this.online() && this.session()?.status === 'Active' && this.participants().length > 0,
+  );
+
+  /** I comandi collettivi riguardano gli alunni ammessi, come sul server. */
+  private readonly classParticipants = computed(() =>
+    this.participants().filter((participant) => participant.admissionStatus === 'Admitted'),
+  );
+
+  /** Tutti i destinatari devono avere un esercizio assegnato e poter lavorare. */
+  readonly canEnableClass = computed(
+    () =>
+      this.canCommandActivity() &&
+      this.classParticipants().length > 0 &&
+      this.classParticipants().every((participant) => this.canEnable(participant)),
+  );
+
+  /** L'esecuzione collettiva richiede anche il permesso di lavorare per tutti. */
+  readonly canRunClass = computed(
+    () =>
+      this.canEnableClass() &&
+      this.classParticipants().every((participant) => this.canRun(participant)),
   );
 
   /** Abilitabile: ha un esercizio caricato, non è in pausa docente né di recupero, guarda l'esercizio. */

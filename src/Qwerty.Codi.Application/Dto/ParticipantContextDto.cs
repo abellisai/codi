@@ -6,7 +6,7 @@ namespace Qwerty.Codi.Application.Dto;
 ///
 /// I tre nomi — scuola, classe, lezione — servono alla pagina dell'alunno per dire **dove si trova**
 /// (0.40): il bambino arriva da un codice di otto cifre e deve poter riconoscere la sua classe e la
-/// sua lezione senza chiederlo al maestro. Il titolo dell'esercizio non è qui: arriva dalla consegna,
+/// sua lezione senza chiederlo all’insegnante. Il titolo dell'esercizio non è qui: arriva dalla consegna,
 /// che esiste solo quando il docente ha assegnato un'attività.
 /// </summary>
 public sealed record ParticipantContextDto(

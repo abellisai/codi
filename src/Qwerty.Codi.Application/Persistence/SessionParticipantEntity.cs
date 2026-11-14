@@ -21,6 +21,7 @@ public sealed class SessionParticipantEntity : IPersistedEntity<string>
     public long ConnectionEpoch { get; set; }
     public long JoinedAtUtcMs { get; set; }
     public long? ExcludedAtUtcMs { get; set; }
+    public long? LeftAtUtcMs { get; set; }
     public long CreatedAtUtcMs { get; set; }
     public long UpdatedAtUtcMs { get; set; }
     public long RowVersion { get; set; }
@@ -39,6 +40,7 @@ public sealed class SessionParticipantEntity : IPersistedEntity<string>
             ConnectionEpoch = participant.ConnectionEpoch,
             JoinedAtUtcMs = participant.JoinedAtUtc.ToUnixTimeMilliseconds(),
             ExcludedAtUtcMs = participant.ExcludedAtUtc?.ToUnixTimeMilliseconds(),
+            LeftAtUtcMs = participant.LeftAtUtc?.ToUnixTimeMilliseconds(),
             CreatedAtUtcMs = participant.CreatedAtUtc.ToUnixTimeMilliseconds(),
             UpdatedAtUtcMs = participant.UpdatedAtUtc.ToUnixTimeMilliseconds(),
             RowVersion = participant.RowVersion,
@@ -57,7 +59,8 @@ public sealed class SessionParticipantEntity : IPersistedEntity<string>
         ExcludedAtUtcMs is { } excluded ? DateTimeOffset.FromUnixTimeMilliseconds(excluded) : null,
         DateTimeOffset.FromUnixTimeMilliseconds(CreatedAtUtcMs),
         DateTimeOffset.FromUnixTimeMilliseconds(UpdatedAtUtcMs),
-        RowVersion);
+        RowVersion,
+        LeftAtUtcMs is { } left ? DateTimeOffset.FromUnixTimeMilliseconds(left) : null);
 
     /// <summary>
     /// L'ammissione è uno dei due valori di §7.4: un altro testo non è uno stato, e leggerlo come

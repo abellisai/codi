@@ -206,6 +206,7 @@ public static class RepoDbSqliteBootstrap
             .Column(entity => entity.StationId!, "station_id")
             .Column(entity => entity.DisplayName, "display_name")
             .Column(entity => entity.AdmissionStatusText, "admission_status")
+            .Column(entity => entity.LeftAtUtcMs!, "left_at_utc_ms")
             .Column(entity => entity.ConnectionEpoch, "connection_epoch")
             .Column(entity => entity.JoinedAtUtcMs, "joined_at_utc_ms")
             .Column(entity => entity.ExcludedAtUtcMs!, "excluded_at_utc_ms")

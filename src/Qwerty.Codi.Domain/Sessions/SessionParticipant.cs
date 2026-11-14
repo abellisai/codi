@@ -25,7 +25,8 @@ public sealed class SessionParticipant
         DateTimeOffset? excludedAtUtc,
         DateTimeOffset createdAtUtc,
         DateTimeOffset updatedAtUtc,
-        long rowVersion)
+        long rowVersion,
+        DateTimeOffset? leftAtUtc = null)
     {
         Id = id;
         SessionId = sessionId;
@@ -38,6 +39,7 @@ public sealed class SessionParticipant
         CreatedAtUtc = createdAtUtc;
         UpdatedAtUtc = updatedAtUtc;
         RowVersion = rowVersion;
+        LeftAtUtc = leftAtUtc;
     }
 
     public Guid Id { get; }
@@ -61,6 +63,9 @@ public sealed class SessionParticipant
 
     /// <summary>Istante dell'esclusione; presente soltanto se lo stato è <see cref="AdmissionStatus.Excluded"/>.</summary>
     public DateTimeOffset? ExcludedAtUtc { get; private set; }
+
+    /// <summary>Uscita volontaria: nasconde la partecipazione dalla regia senza cancellare i lavori.</summary>
+    public DateTimeOffset? LeftAtUtc { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; }
 
@@ -110,7 +115,8 @@ public sealed class SessionParticipant
         DateTimeOffset? excludedAtUtc,
         DateTimeOffset createdAtUtc,
         DateTimeOffset updatedAtUtc,
-        long rowVersion)
+        long rowVersion,
+        DateTimeOffset? leftAtUtc = null)
     {
         EnsureIdentifier(id, nameof(id), "L'identificativo della partecipazione è obbligatorio.");
         EnsureIdentifier(sessionId, nameof(sessionId), "Una partecipazione appartiene a una sessione.");
@@ -142,6 +148,11 @@ public sealed class SessionParticipant
         }
 
         EnsureExclusionCoherence(admissionStatus, excludedAtUtc);
+        if (leftAtUtc is { } left)
+        {
+            EnsureUtc(left, nameof(leftAtUtc));
+            if (left < joinedAtUtc) throw new ArgumentException("L'uscita non può precedere l'ingresso.", nameof(leftAtUtc));
+        }
 
         if (joinedAtUtc < createdAtUtc)
         {
@@ -157,11 +168,21 @@ public sealed class SessionParticipant
         return new SessionParticipant(
             id, sessionId, stationId, ParticipantName.Trim(displayName),
             admissionStatus, connectionEpoch, joinedAtUtc, excludedAtUtc,
-            createdAtUtc, updatedAtUtc, rowVersion);
+            createdAtUtc, updatedAtUtc, rowVersion, leftAtUtc);
     }
 
     /// <summary>Vero se la partecipazione è ammessa e può quindi ricevere stato desiderato.</summary>
-    public bool IsAdmitted => AdmissionStatus == AdmissionStatus.Admitted;
+    public bool IsAdmitted => AdmissionStatus == AdmissionStatus.Admitted && LeftAtUtc is null;
+
+    /// <summary>Registra una sola volta l'uscita volontaria.</summary>
+    public void Leave(DateTimeOffset nowUtc)
+    {
+        EnsureUtc(nowUtc, nameof(nowUtc));
+        if (nowUtc < JoinedAtUtc) throw new ArgumentException("L'uscita non può precedere l'ingresso.", nameof(nowUtc));
+        if (LeftAtUtc is not null) return;
+        LeftAtUtc = nowUtc;
+        UpdatedAtUtc = nowUtc;
+    }
 
     /// <summary>
     /// Esclude la partecipazione dalla sessione (§10.4). Ripetere l'esclusione non cambia nulla:
@@ -223,7 +244,7 @@ public sealed class SessionParticipant
 
         return new SessionParticipant(
             Id, SessionId, StationId, DisplayName, AdmissionStatus, ConnectionEpoch,
-            JoinedAtUtc, ExcludedAtUtc, CreatedAtUtc, UpdatedAtUtc, rowVersion);
+            JoinedAtUtc, ExcludedAtUtc, CreatedAtUtc, UpdatedAtUtc, rowVersion, LeftAtUtc);
     }
 
     private static void EnsureDisplayName(string displayName)

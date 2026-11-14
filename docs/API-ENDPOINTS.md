@@ -148,8 +148,9 @@ e — dalla 0.37 — `/api/v1/public/in-play`, che risponde con il solo booleano
 usa endpoint dedicati e non entra nel catalogo. `UpdateParticipant` ed `ExcludeParticipant`
 modificano una riga esistente e dichiarano `baseRowVersion`; non incrementano `sessionRevision`.
 Upload/download media admin sono stati rimossi: non sono più rotte disponibili.
-`POST /api/v1/public/participant/leave` esegue `LeaveSession`: revoca la credenziale senza
-cancellare la partecipazione e cancella il cookie del partecipante insieme al token antiforgery.
+`POST /api/v1/public/participant/leave` esegue `LeaveSession`: registra l'uscita e revoca le credenziali.
+La regia e i comandi collettivi non includono più chi è uscito. I lavori restano nello storico.
+La risposta cancella il cookie del partecipante insieme al token antiforgery.
 I salvataggi del lavoro (`PUT .../workspace`, `.../checkpoint`) e la finalizzazione del grant
 conclusivo sono **implementati**; l'anteprima pubblicata ha due porte — il metodo hub
 `WorkspacePreviewUpdated` entro 24 KiB, che rifiuta con `InvalidPayload` oltre il limite, e

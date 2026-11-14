@@ -59,7 +59,8 @@ Le form admin usano Signal Forms e Spartan Field.
 La pagina dell'alunno mostra lo stato con riquadri a icona colorata (collegamento, permesso di
 lavorare, stato del programma) e consente la prova locale del proprio algoritmo (funzionale 0.8,
 tecnica 0.38): la prova vive nella pagina, non nel worker, e non produce checkpoint né telemetria.
-L'interfaccia resta provvisoria nell'aspetto e nel collaudo in aula.
+La revisione del 14 novembre 2026 introduce ingresso numerato, pulsanti grandi e il riquadro «Adesso».
+Three.js anima il benvenuto e i risultati corretti. Il collaudo con bambini e sui dodici PC resta da eseguire.
 Associazioni corso-classe, iscrizioni e contenuti/immagini restano eliminati dal prodotto.
 
 ## Backend e dati presenti

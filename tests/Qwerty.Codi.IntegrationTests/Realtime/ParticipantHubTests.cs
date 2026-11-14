@@ -215,6 +215,16 @@ public sealed class ParticipantHubTests : IAsyncLifetime
         await hub.InitializeClient(new InitializeClientArguments(1, Guid.NewGuid(), "0.1.0", "gridpath-1"));
         var snapshot = Snapshot(clients);
         await hub.SnapshotApplied(new SnapshotAppliedArguments(snapshot.EffectiveRevision, snapshot.ConnectionEpoch));
+        Assert.NotNull(snapshot.Profile);
+        Assert.Equal("Luca", snapshot.Profile.DisplayName);
+        var corrected = await _scenario.Host.CommandAsAsync<SessionParticipantDto>(UpdateParticipantCommand.RequestName,
+            new
+            {
+                sessionId = participant.Seed.SessionId,
+                participantId = participant.ParticipantId,
+                displayName = "Luca Rossi",
+                baseRowVersion = snapshot.Profile.RowVersion
+            }, _scenario.RegiaContext());
 
         // Act
         await hub.Heartbeat(
@@ -225,6 +235,9 @@ public sealed class ParticipantHubTests : IAsyncLifetime
         var lease = Assert.IsType<ExecutionLeaseDto>(sent.Arguments[0]);
         Assert.Equal(snapshot.ConnectionEpoch, lease.ConnectionEpoch);
         Assert.Equal((long)ParticipantProtocol.ExecutionLeaseDuration.TotalSeconds, lease.MaxDurationSeconds);
+        Assert.Equal(corrected.DisplayName, lease.Profile?.DisplayName);
+        Assert.Equal(corrected.RowVersion, lease.Profile?.RowVersion);
+        Assert.Equal(participant.ParticipantId, lease.Profile?.ParticipantId);
     }
 
     [Fact]

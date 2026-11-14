@@ -62,6 +62,7 @@ public sealed class GetParticipantSnapshotHandler(
             participant.Id,
             participant.ConnectionEpoch,
             timeProvider.GetUtcNow(),
-            state);
+            state,
+            new ParticipantProfileDto(participant.Id, participant.DisplayName, participantRow.RowVersion));
     }
 }

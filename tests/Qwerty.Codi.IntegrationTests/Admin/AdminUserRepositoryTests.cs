@@ -124,7 +124,7 @@ public sealed class AdminUserRepositoryTests : IAsyncLifetime
                 INSERT INTO admin_user (
                     id, username, normalized_username, password_hash, security_stamp,
                     is_active, failed_login_count, created_at_utc_ms, updated_at_utc_ms, row_version)
-                VALUES ($id, 'Maestra', 'maestro', $hash, 'stamp', 1, 0, $now, $now, 1);
+                VALUES ($id, 'Maestra', 'insegnante', $hash, 'stamp', 1, 0, $now, $now, 1);
                 """;
 
             AddParameter(command, "$id", Guid.NewGuid().ToString("D"));
@@ -136,7 +136,7 @@ public sealed class AdminUserRepositoryTests : IAsyncLifetime
 
         // Act
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _repository.ReadAdminAsync("maestro", CancellationToken.None));
+            _repository.ReadAdminAsync("insegnante", CancellationToken.None));
 
         // Assert
         Assert.Equal("normalizedUsername", exception.ParamName);

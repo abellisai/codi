@@ -132,7 +132,7 @@ describe('Pannello della risposta', () => {
     expect(page.textContent).not.toContain('Giusto!');
   });
 
-  it('non salva nulla quando il maestro non lascia lavorare', async () => {
+  it('non salva nulla quando l’insegnante non lascia lavorare', async () => {
     const page = await mount(false);
     confirmButton(page).click();
     await flush();

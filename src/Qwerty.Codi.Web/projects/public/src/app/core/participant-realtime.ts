@@ -5,6 +5,7 @@ import {
   DesiredState,
   ExecutionLease,
   ParticipantMessage,
+  ParticipantProfile,
   ParticipantSnapshot,
   WorkspacePreview,
   toApiError,
@@ -59,6 +60,7 @@ export class ParticipantRealtime {
   readonly authorized = signal(false);
   readonly notice = signal('');
   readonly lastCommand = signal<{ commandName: string; outcome: string } | null>(null);
+  readonly profile = signal<ParticipantProfile | null>(null);
 
   /**
    * Messaggi della chat annunciati dall'hub (§8), in ordine di arrivo. L'hub porta **il messaggio**,
@@ -123,6 +125,7 @@ export class ParticipantRealtime {
     this.protocol = new ParticipantProtocolState();
     this.queue = Promise.resolve();
     this.status.set('connecting');
+    this.profile.set(null);
     this.chatIncoming.set([]);
     const connection = new HubConnectionBuilder()
       .withUrl('/hubs/v1/participant', {
@@ -170,6 +173,7 @@ export class ParticipantRealtime {
       ) {
         this.leaseValidUntilUtc.set(lease.validUntilUtc);
         this.authorized.set(true);
+        this.acceptProfile(lease.profile);
       }
     });
     connection.on('ConnectionSuperseded', () => {
@@ -225,11 +229,24 @@ export class ParticipantRealtime {
     const connection = this.connection;
     this.connection = null;
     this.desiredState.set(null);
+    this.profile.set(null);
     this.workspaceHash = null;
     this.chatIncoming.set([]);
     this.runtime.stop();
     document.removeEventListener('visibilitychange', this.visibilityChanged);
     if (connection !== null) await connection.stop();
+  }
+
+  private acceptProfile(profile: ParticipantProfile | null | undefined): void {
+    if (
+      !profile ||
+      profile.participantId !== this.protocol.snapshot?.participantId ||
+      !/^\d+$/.test(profile.rowVersion)
+    )
+      return;
+    const current = this.profile();
+    if (current && BigInt(profile.rowVersion) <= BigInt(current.rowVersion)) return;
+    this.profile.set(profile);
   }
 
   private async initialize(connection: HubConnection): Promise<void> {
@@ -254,6 +271,7 @@ export class ParticipantRealtime {
     incoming: ParticipantSnapshot,
   ): Promise<void> {
     if (!this.protocol.acceptSnapshot(incoming)) return;
+    this.acceptProfile(incoming.profile);
     this.invalidateLease();
     await this.application(incoming.desiredState);
     if (this.connection !== connection) return;

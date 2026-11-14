@@ -39,7 +39,7 @@ public sealed class SessionParticipantRegiaTests : IAsyncLifetime
     [Trait("Category", "Integration")]
     public async Task UpdateParticipant_CorreggeNomeEPostazione()
     {
-        // Arrange: Luca entra senza postazione, Anna da un PC riconosciuto; il maestro sposta Luca
+        // Arrange: Luca entra senza postazione, Anna da un PC riconosciuto; l’insegnante sposta Luca
         // su quella postazione e ne corregge il nome (§9.5).
         var fixture = await StartedSessionAsync();
         var luca = await JoinAsync(fixture, "Luca");
@@ -72,6 +72,11 @@ public sealed class SessionParticipantRegiaTests : IAsyncLifetime
         var reread = Assert.Single(overview, participant => participant.ParticipantId == luca.Joined.ParticipantId);
         Assert.Equal(updated.RowVersion, reread.RowVersion);
         Assert.Equal(updated.DisplayName, reread.DisplayName);
+        var ownSnapshot = Assert.IsType<ParticipantSnapshotDto>(await _host.ExecuteAsAsync(CodiRequestKind.Query,
+            GetParticipantSnapshotQuery.RequestName, new { },
+            CodiUseCaseHost.ParticipantContext(luca.Joined.CredentialSessionId, luca.Joined.ParticipantId)));
+        Assert.Equal(updated.DisplayName, ownSnapshot.Profile?.DisplayName);
+        Assert.Equal(updated.RowVersion, ownSnapshot.Profile?.RowVersion);
 
         var row = await ColumnsAsync(
             "SELECT display_name, station_id, row_version FROM session_participant WHERE id = $id;",

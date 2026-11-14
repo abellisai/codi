@@ -240,7 +240,8 @@ internal sealed class ParticipantHub(
                         lease.ConnectionEpoch,
                         (long)lease.MaxDuration.TotalSeconds,
                         lease.ValidUntilUtc,
-                        serverInstance.InstanceId),
+                        serverInstance.InstanceId,
+                        snapshot.Profile),
                     Context.ConnectionAborted)
                 .ConfigureAwait(false);
         }

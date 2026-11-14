@@ -28,7 +28,10 @@ import {
     }`,
   styles: `
     .workspace {
-      height: 420px;
+      height: clamp(320px, 44vh, 480px);
+      border: 2px solid #dce2ef;
+      border-radius: 1rem;
+      overflow: hidden;
       width: 100%;
     }
   `,
@@ -113,7 +116,8 @@ export class ParticipantWorkspace implements OnDestroy {
           ? { toolbox: engine.buildToolbox(this.allowedBlocks()), trashcan: true }
           : {}),
         move: { scrollbars: true, wheel: true },
-        zoom: { controls: true, wheel: true },
+        zoom: { controls: true, wheel: true, startScale: 1.15, maxScale: 2, minScale: 0.7 },
+        grid: { spacing: 24, length: 3, colour: '#dce2ef', snap: true },
       });
       this.workspace.addChangeListener((event) => {
         if (this.readOnly() || event.isUiEvent || this.workspace === null) return;

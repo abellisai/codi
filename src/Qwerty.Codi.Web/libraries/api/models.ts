@@ -409,11 +409,14 @@ export interface ParticipantJoined {
   readonly view: string;
 }
 
-/**
- * Contesto del partecipante autenticato (§10.5): chi è, la sua ammissione, la vista voluta e i nomi
- * del percorso — scuola, classe, lezione — con cui la pagina dice all'alunno dove si trova (0.40).
- * I nomi possono essere vuoti se la riga corrispondente non c'è più: sono contesto, non permessi.
- */
+/** Nome autorevole del partecipante con la versione della riga che lo contiene. */
+export interface ParticipantProfile {
+  readonly participantId: string;
+  readonly displayName: string;
+  readonly rowVersion: string;
+}
+
+/** Contesto iniziale della partecipazione autenticata, con i nomi del percorso della lezione. */
 export interface ParticipantContext {
   readonly participantId: string;
   readonly sessionId: string;
@@ -454,6 +457,7 @@ export interface DesiredState {
 
 /** Snapshot del partecipante (§11.2): revisione, epoca e stato desiderato da applicare. */
 export interface ParticipantSnapshot {
+  readonly profile?: ParticipantProfile | null;
   readonly protocolVersion: number;
   readonly serverInstanceId: string;
   readonly sessionId: string;
@@ -612,6 +616,7 @@ export interface AttemptFinalizationGrant {
  * epoca, durata massima e scadenza. I contatori viaggiano come stringhe decimali (§10.2).
  */
 export interface ExecutionLease {
+  readonly profile?: ParticipantProfile | null;
   readonly nonce: string;
   readonly effectiveRevision: string;
   readonly connectionEpoch: string;

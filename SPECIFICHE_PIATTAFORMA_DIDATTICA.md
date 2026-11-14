@@ -1,7 +1,7 @@
 # Codì: piattaforma web per la regia delle lezioni di informatica
 
-Versione: 0.17 — Bozza da discutere e migliorare
-Data: 16 ottobre 2026
+Versione: 0.19 — Bozza da discutere e migliorare
+Data: 14 novembre 2026
 Destinatari: docente e sviluppatori
 
 ## 1. Obiettivo
@@ -27,8 +27,8 @@ Il sorgente contiene scuole/classi, corsi/lezioni, anagrafica esercizi e sequenz
 live (sessioni, ingressi, regia e hub), l'autore Blockly con le versioni pubblicate e il player che
 esegue l'esercizio nel browser dell'alunno, con salvataggi e osservazione del lavoro. L'ingresso in
 aula usa il **codice di lezione** di otto cifre che il docente detta a voce (0.7); la scelta di
-scuola e classe resta come ripiego. Restano da fare
-il laboratorio su 12 PC e la grafica definitiva dell'app alunni. La
+scuola e classe resta come ripiego. La revisione grafica pubblica del 14 novembre 2026 segue §8.
+Restano il laboratorio su 12 PC e il collaudo con bambini. La
 [mappa di ripresa](docs/RIPRESA-SVILUPPO.md) distingue codice presente, prove eseguite e
 verifiche mancanti. Le checklist di §15 sono criteri progettuali, non un registro di avanzamento.
 
@@ -108,10 +108,10 @@ Il nome serve per la visualizzazione, non come identificativo tecnico. Due bambi
 
 1. Apre il sito.
 2. Il sito si accorge che una lezione è in play e chiede il **codice di lezione**.
-3. Digita le otto cifre che il maestro ha detto.
+3. Digita le otto cifre che l’insegnante ha detto.
 4. Inserisce il nome e preme **Entra**.
 5. Il server individua la sessione dal codice e crea la partecipazione alla sessione con una credenziale di sessione limitata ai permessi dell'alunno.
-6. Il bambino vede “Ciao, [nome]! Aspetta il maestro” oppure l'attività già assegnata.
+6. Il bambino vede “Ciao, [nome]! Aspetta l’insegnante” oppure l'attività già assegnata.
 7. Il docente vede immediatamente la nuova presenza, senza aggiornare la pagina.
 
 Se l'alunno non ha il codice, il sito offre la scelta di scuola e classe: individua la lezione in play di quella classe e l'ingresso prosegue allo stesso modo. È un ripiego, non la via ordinaria: chiede al bambino informazioni che non ha.
@@ -149,6 +149,14 @@ L'admin vede eventuali client che non hanno confermato la chiusura e l'istante d
 L'archiviazione conserva lo storico. Le eventuali funzioni di cancellazione dei dati devono essere separate e chiaramente riconoscibili: l'eliminazione di una sessione è una di queste, non è la chiusura della lezione e non è raggiungibile per errore da un comando di regia.
 
 ### 6.2 Pannello di regia
+
+La rinomina di un alunno dalla regia aggiorna anche il nome nella sua pagina pubblica senza ricarica.
+Il nome corretto dall'insegnante prevale sul nome digitato all'ingresso.
+L'aggiornamento raggiunge soltanto il bambino interessato, anche durante una pausa.
+
+Quando il bambino preme «Esci», la regia lo rimuove dall'elenco e dal conteggio dei partecipanti.
+I comandi collettivi non raggiungono chi è uscito. Il sistema conserva i lavori già salvati.
+Un successivo ingresso crea una nuova partecipazione.
 
 La schermata principale deve mostrare una griglia di 12 riquadri, adattabile al numero effettivo di partecipanti. Ogni riquadro contiene:
 
@@ -192,6 +200,24 @@ Regole proposte per evitare conflitti:
 
 ## 8. Interfaccia per bambini di 8–9 anni
 
+Decisione del 14 novembre 2026: la parte pubblica accompagna bambini di nove anni che iniziano a usare il PC.
+I testi dell'applicazione usano «insegnante».
+La parte pubblica applica questi requisiti:
+
+- Pulsanti di almeno 56 pixel con testo e icona per le azioni principali.
+- Ingresso con due campi numerati: nome e codice di otto cifre.
+- Un riquadro «Adesso» indica cosa fare o perché aspettare.
+- Consegna, blocchi e risultato hanno riquadri distinti e riconoscibili.
+- I risultati mostrano simbolo, parole e colore, con incoraggiamento dopo una risposta sbagliata.
+- Il benvenuto presenta un personaggio animato con Three.js.
+- Un risultato corretto presenta stelle animate con Three.js.
+- Le animazioni durano meno di cinque secondi e non coprono i comandi.
+- L'impostazione del dispositivo per ridurre il movimento mostra una scena ferma.
+- Senza accelerazione grafica restano disponibili un disegno statico e tutti i comandi.
+- Revisioni, identificativi e documenti del progetto non compaiono nella vista del bambino.
+
+Il collaudo con bambini e sui dodici PC resta necessario per verificare comprensione e prestazioni.
+
 - Testi brevi, in italiano, con caratteri grandi e buon contrasto.
 - Pulsanti grandi con icona e testo: **Entra**, **Prova**, **Ferma**, **Aiuto**.
 - Una sola attività principale alla volta e navigazione ridotta al minimo.
@@ -200,24 +226,24 @@ Regole proposte per evitare conflitti:
 - Salvataggio automatico con indicazione comprensibile dello stato.
 - Messaggi rassicuranti per attesa, pausa e perdita di connessione.
 - Azioni utilizzabili con mouse e tastiera; trascinamento dei blocchi facilitato.
-- Messaggi brevi con il maestro, con il campo della risposta dove il bambino lo cerca.
+- Messaggi brevi con l’insegnante, con il campo della risposta dove il bambino lo cerca.
 
-Esempi: “Guarda il maestro”, “Tra poco ricominciamo”, “Sto cercando di ricollegarmi”. Il pulsante **Aiuto**, previsto come evoluzione, invia una richiesta al docente senza aprire chat tra bambini.
+Esempi: “Guarda l’insegnante”, “Tra poco ricominciamo”, “Sto cercando di ricollegarmi”. Il pulsante **Aiuto**, previsto come evoluzione, invia una richiesta al docente senza aprire chat tra bambini.
 
-### 8.1 Messaggi con il maestro
+### 8.1 Messaggi con l’insegnante
 
-Il maestro può scrivere a un alunno dalla sua card nella pagina dei partecipanti, e l'alunno
+L’insegnante può scrivere a un alunno dalla sua card nella pagina dei partecipanti, e l'alunno
 **risponde** dalla propria pagina: il pannello si apre da sé quando arriva un messaggio, perché a
 otto anni non si cerca una conversazione. Il messaggio è breve — al massimo 300 caratteri — e il
 testo si mostra come testo, mai come HTML.
 
-La conversazione è **fra il maestro e quel bambino**: non esiste una chat fra bambini e il bambino
-non può scrivere nel thread di un altro. La pagina dell'alunno mostra sempre ciò che il maestro ha
+La conversazione è **fra l’insegnante e quel bambino**: non esiste una chat fra bambini e il bambino
+non può scrivere nel thread di un altro. La pagina dell'alunno mostra sempre ciò che l’insegnante ha
 scritto, anche durante una pausa, ma la risposta è ammessa solo mentre la pagina è al lavoro: in
 attesa o in pausa il campo non c'è e la pagina dice perché, invece di offrire un campo che non
 funziona.
 
-Il maestro vede sulla card quanti messaggi dell'alunno non ha ancora letto, e il conteggio si azzera
+L’insegnante vede sulla card quanti messaggi dell'alunno non ha ancora letto, e il conteggio si azzera
 quando apre la conversazione. La conversazione **non resta**: vive finché dura la lezione e viene
 eliminata alla fine, quindi non c'è uno storico da consultare dopo la lezione.
 
@@ -231,7 +257,7 @@ L'editor utilizza Blockly sia nell'area di creazione dell'admin sia nell'area di
 
 ### 9.2 Creazione da parte del docente
 
-L'admin deve disporre di un editor visuale Blockly integrato nell'area amministrativa per creare e modificare gli esercizi. Definisce la consegna, la scena e i blocchi utilizzabili, compone la soluzione di riferimento, prova l'attività e la pubblica per l'assegnazione. Il **progetto iniziale degli alunni è vuoto**: il docente non lo compone, così l'alunno parte da un lavoro che il maestro può vedere e correggere per intero.
+L'admin deve disporre di un editor visuale Blockly integrato nell'area amministrativa per creare e modificare gli esercizi. Definisce la consegna, la scena e i blocchi utilizzabili, compone la soluzione di riferimento, prova l'attività e la pubblica per l'assegnazione. Il **progetto iniziale degli alunni è vuoto**: il docente non lo compone, così l'alunno parte da un lavoro che l’insegnante può vedere e correggere per intero.
 
 Il docente deve poter impostare:
 
@@ -536,13 +562,15 @@ Questo scenario costituisce il riferimento principale per valutare le successive
 
 | Versione | Data | Modifica |
 |---|---|---|
+| 0.19 | 2026-11-14 | Il nome corretto nella regia compare nella pagina pubblica. L'uscita volontaria rimuove il partecipante dalla regia e dai destinatari dei comandi, senza cancellare i lavori. |
+| 0.18 | 2026-11-14 | Parte pubblica per bambini di nove anni: ingresso guidato, pulsanti grandi, indicazione «Adesso», risultati visivi e animazioni Three.js accessibili. Terminologia «insegnante» nei testi. |
 | 0.17 | 2026-10-22 | **Eliminazione di una versione pubblicata non più recente**, su richiesta dell'utente del 22 ottobre 2026: dall'elenco delle versioni dell'editor una versione si elimina con conferma, purché non sia la più recente e non sia già stata assegnata a una lezione; l'ultima resta perché è quella che le prossime assegnazioni userebbero, e per sostituirla se ne pubblica una nuova (§9.2). |
 | 0.16 | 2026-10-22 | **Niente programma iniziale nell'admin**, su richiesta dell'utente del 22 ottobre 2026: l'editor non compone più il progetto di partenza e l'anteprima che lo eseguiva sparisce; resta la soluzione di riferimento, che verifica la risolvibilità. Il progetto iniziale degli alunni è vuoto (§9.2). |
 | 0.15 | 2026-10-22 | **Limiti dell'esercizio**, su richiesta dell'utente del 22 ottobre 2026: nel percorso sulla griglia il docente configura **solo la durata massima della corsa, in minuti**. Numero di blocchi, annidamento e passi restano budgets tecnici del sistema. Nella stessa giornata la scelta è passata da secondi a minuti (§9.2). |
 | 0.14 | 2026-10-22 | **Eliminazione di una sessione**, su richiesta dell'utente del 22 ottobre 2026: dal pannello admin una sessione **conclusa o mai avviata** si cancella definitivamente, con conferma esplicita. Spariscono la sessione e ciò che le appartiene — presenze, comandi, lavori — mentre scuole, classi, lezioni ed esercizi restano. Una sessione in corso non si elimina: prima si conclude (§6.1). |
 | 0.13 | 2026-10-16 | Semplificazione della pubblicazione admin: comando unico, stati espliciti, errori collegati ai campi e barra delle azioni sempre visibile. |
 | 0.12 | 2026-10-16 | Nome del prodotto **Codì**, su decisione dell'utente. Cartelle e identificatori tecnici usano `Codi`. Le funzioni didattiche restano quelle descritte nelle sezioni precedenti. |
-| 0.11 | 2026-10-14 | **Chat fra il maestro e il singolo alunno**, su richiesta dell'utente del 13–14 ottobre 2026: il maestro scrive all'alunno dalla sua card e l'alunno **risponde** dalla propria pagina. La chat è **solo fra il maestro e quel bambino** — una chat fra bambini non esiste — e il messaggio è breve: al massimo 300 caratteri. Il bambino **legge sempre**, anche durante una pausa, ma **scrive** solo mentre la pagina è al lavoro: in attesa o in pausa la risposta non è ammessa, e la pagina lo spiega invece di lasciare un campo che non funziona. Il maestro vede sulla card quanti messaggi dell'alunno non ha ancora letto. La conversazione **non resta** dopo la lezione: vive in memoria e viene eliminata quando la lezione finisce (§6.2, §8). |
+| 0.11 | 2026-10-14 | **Chat fra l’insegnante e il singolo alunno**, su richiesta dell'utente del 13–14 ottobre 2026: l’insegnante scrive all'alunno dalla sua card e l'alunno **risponde** dalla propria pagina. La chat è **solo fra l’insegnante e quel bambino** — una chat fra bambini non esiste — e il messaggio è breve: al massimo 300 caratteri. Il bambino **legge sempre**, anche durante una pausa, ma **scrive** solo mentre la pagina è al lavoro: in attesa o in pausa la risposta non è ammessa, e la pagina lo spiega invece di lasciare un campo che non funziona. L’insegnante vede sulla card quanti messaggi dell'alunno non ha ancora letto. La conversazione **non resta** dopo la lezione: vive in memoria e viene eliminata quando la lezione finisce (§6.2, §8). |
 | 0.10 | 2026-10-09 | Percorso dell'alunno, su richiesta dell'utente del 9 ottobre 2026: quando entra nella lezione l'alunno legge **scuola / classe / lezione / esercizio** e, sulla riga sotto, il proprio nome. L'esercizio compare nel percorso solo quando il docente lo ha assegnato; gli altri tre livelli arrivano dal contesto della sessione, che l'alunno può leggere con la propria credenziale (§2.1, §5.3). |
 | 0.9 | 2026-10-09 | Impaginazione della pagina dell'alunno, su richiesta dell'utente del 9 ottobre 2026: **progetto a sinistra e programma a destra**, affiancati nella stessa area di lavoro, e pagina a **tutta larghezza** invece della colonna stretta. Su schermi stretti le due colonne tornano una sotto l'altra, e dove manca un pannello — in attesa non c'è ancora un progetto — quello presente occupa la riga invece di lasciare un vuoto (§2.1, §5.3). |
 | 0.8 | 2026-10-09 | Esperienza dell'alunno, su feedback dell'utente del 9 ottobre 2026: lo stato si legge a colpo d'occhio con **icone colorate e parole** — collegamento, permesso di lavorare, stato del programma — e l'alunno **prova** il proprio algoritmo quando i controlli sono attivi, vedendo il personaggio muoversi sulla scena e l'esito del gioco. La prova è locale: non cambia il progetto, non produce un'esecuzione comandata e si ferma quando il docente avvia la classe (§2.1, §5.3, §15, §16, §19). |

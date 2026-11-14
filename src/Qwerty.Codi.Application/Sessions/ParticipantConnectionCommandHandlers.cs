@@ -23,7 +23,7 @@ public sealed class ReportRecoveryBlockedHandler(IUnitOfWorkContext factory, ISe
         var state = await work.Repo<IParticipantStateRepository>().GetAsync(participantId.ToString("D"), cancellationToken).ConfigureAwait(false);
         if (participant is null || session is null || state is null || participant.ConnectionEpoch != request.ConnectionEpoch ||
             connection.Epoch != request.ConnectionEpoch || !connection.SnapshotApplied || state.EffectiveRevision != request.EffectiveRevision ||
-            participant.AdmissionStatusText != "Admitted" || session.Status == "Ended" || state.AttemptId != request.AttemptId?.ToString("D"))
+            participant.AdmissionStatusText != "Admitted" || participant.LeftAtUtcMs is not null || session.Status == "Ended" || state.AttemptId != request.AttemptId?.ToString("D"))
             throw new CodiRequestException(CodiErrorCodes.SessionStateConflict, "Il recupero riferisce uno stato superato.");
         state.ResumeContextJson ??= JsonSerializer.Serialize(DesiredStateProjection.Create(state), CodiJson.Payload);
         state.RecoveryBlockedFlag = 1;
@@ -31,7 +31,8 @@ public sealed class ReportRecoveryBlockedHandler(IUnitOfWorkContext factory, ISe
         state.UpdatedAtUtcMs = time.GetUtcNow().ToUnixTimeMilliseconds();
         await SessionCommandPreamble.UpdateStateAsync(work, state, cancellationToken).ConfigureAwait(false);
         await work.CommitAsync(cancellationToken).ConfigureAwait(false);
-        return ParticipantSnapshotFactory.Create(server, session.ToDomain(), participantId, participant.ConnectionEpoch, time.GetUtcNow(), state);
+        return ParticipantSnapshotFactory.Create(server, session.ToDomain(), participantId, participant.ConnectionEpoch, time.GetUtcNow(), state,
+            new ParticipantProfileDto(participantId, participant.DisplayName, participant.RowVersion));
     }
 }
 
@@ -100,8 +101,9 @@ public sealed class InitializeParticipantConnectionHandler(
         var epoch = participant.AcquireConnection(nowUtc);
 
         var participantStore = work.Repo<ISessionParticipantRepository>();
+        participantRow = SessionParticipantEntity.FromDomain(participant);
         if (!await participantStore
-                .UpdateAsync(SessionParticipantEntity.FromDomain(participant), cancellationToken)
+                .UpdateAsync(participantRow, cancellationToken)
                 .ConfigureAwait(false))
         {
             throw CodiRequestException.RowVersionMismatch();
@@ -120,7 +122,8 @@ public sealed class InitializeParticipantConnectionHandler(
             participant.Id,
             epoch,
             nowUtc,
-            state);
+            state,
+            new ParticipantProfileDto(participant.Id, participant.DisplayName, participantRow.RowVersion));
     }
 
     /// <summary>

@@ -38,7 +38,7 @@ public sealed class AdminUsernameTests
     [Fact]
     public void Normalize_ConNomiDiversi_ProduceValoriDiversi()
     {
-        Assert.NotEqual(AdminUsername.Normalize("Maestra"), AdminUsername.Normalize("Maestro"));
+        Assert.NotEqual(AdminUsername.Normalize("Maestra"), AdminUsername.Normalize("Insegnante"));
     }
 
     [Theory]

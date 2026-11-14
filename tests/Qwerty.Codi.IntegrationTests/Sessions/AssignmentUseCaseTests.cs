@@ -21,6 +21,31 @@ public sealed class AssignmentUseCaseTests
 {
     private const string InitialWorkspaceJson = """{"blocks":[]}""";
 
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Uscita_ConEsercizioAssegnato_ConservaLavoriEdEscludeDaiComandiCollettivi()
+    {
+        await using var scenario = await OutboxScenario.CreateAsync();
+        var seed = await scenario.StartedSessionAsync();
+        var luca = await scenario.JoinAsync(seed, "Luca");
+        var anna = await scenario.JoinAsync(seed, "Anna", "anna");
+        var lessonId = await GuidAsync(scenario, $"SELECT lesson_id FROM lesson_session WHERE id = '{seed.SessionId:D}';");
+        var versionId = Guid.NewGuid();
+        await SeedExerciseAsync(scenario, scenario.AdminId, lessonId, Guid.NewGuid(), [versionId]);
+        await AssignAndEnableAsync(scenario, seed, versionId);
+        var before = await StateAsync(scenario, luca.Joined.ParticipantId);
+        await scenario.Host.CommandAsAsync<bool>(LeaveSessionCommand.RequestName, new { },
+            CodiUseCaseHost.ParticipantContext(luca.Joined.CredentialSessionId, luca.Joined.ParticipantId));
+        Assert.Equal(2L, await CountAsync(scenario, "SELECT COUNT(*) FROM exercise_attempt;"));
+        var after = await StateAsync(scenario, luca.Joined.ParticipantId);
+        Assert.Equal(before["attempt_id"], after["attempt_id"]);
+        Assert.Equal(0L, after["interaction_enabled"]);
+        var accepted = await scenario.Host.CommandAsAsync<CommandAcceptedDto>(RunProgramCommand.RequestName,
+            new { sessionId = seed.SessionId, expectedSessionRevision = await CurrentRevisionAsync(scenario, seed.SessionId) }, scenario.RegiaContext());
+        Assert.Equal(1L, await CountAsync(scenario, $"SELECT COUNT(*) FROM command_delivery WHERE command_id='{accepted.CommandId:D}' AND participant_id='{anna.Joined.ParticipantId:D}';"));
+        Assert.Equal(0L, await CountAsync(scenario, $"SELECT COUNT(*) FROM command_delivery WHERE command_id='{accepted.CommandId:D}' AND participant_id='{luca.Joined.ParticipantId:D}';"));
+    }
+
     [Theory]
     [InlineData("Enabled")]
     [InlineData("Paused")]

@@ -73,8 +73,8 @@ internal static class PublicDiscoveryEndpoints
 
     /// <summary>
     /// Presenza di una lezione in play (§10.3): è la lettura che permette alla home dell'alunno di
-    /// accorgersi che il maestro ha avviato la lezione. Risponde con il solo booleano — quale
-    /// lezione sia, e in quale classe, non si dice: per raggiungerla serve il codice, che il maestro
+    /// accorgersi che l’insegnante ha avviato la lezione. Risponde con il solo booleano — quale
+    /// lezione sia, e in quale classe, non si dice: per raggiungerla serve il codice, che l’insegnante
     /// detta a voce. Anche qui il trasporto si limita a delegare.
     /// </summary>
     private static async Task<IResult> GetLessonInPlayAsync(

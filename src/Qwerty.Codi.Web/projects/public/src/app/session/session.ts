@@ -10,6 +10,7 @@ import {
   untracked,
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { ResultFeedback } from '../shared/result-feedback';
 import {
   ApiService,
   AssignedExercise,
@@ -19,7 +20,7 @@ import {
   ParticipantSnapshot,
   toApiError,
 } from '@codi/api';
-import { ParticipantRealtime, RealtimeStatus } from '../core/participant-realtime';
+import { ParticipantRealtime } from '../core/participant-realtime';
 import { ParticipantService } from '../core/participant-service';
 import { AttemptAutosave } from '../core/attempt-autosave';
 import { WorkspacePreviewPublisher } from '../core/workspace-preview';
@@ -66,9 +67,15 @@ interface Board {
 /** Progetto dell'alunno, player Blockly nel worker e salvataggio automatico. */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  // CHAT DISABILITATA (2026-11-14, decisione Ale): `ChatPanel` tolto dai imports; ripristinarlo
-  // insieme al blocco commentato in `session.html`.
-  imports: [RouterLink, ParticipantWorkspace, QuizPanel, ValueProgramPanel, StatusBadge],
+  // La chat pubblica resta sospesa come nella versione remota.
+  imports: [
+    RouterLink,
+    ParticipantWorkspace,
+    QuizPanel,
+    ValueProgramPanel,
+    StatusBadge,
+    ResultFeedback,
+  ],
   selector: 'app-participant-session',
   styleUrl: './session.css',
   templateUrl: './session.html',
@@ -85,6 +92,9 @@ export class ParticipantSession implements OnInit {
   protected readonly trial = inject(TrialRun);
 
   protected readonly context = signal<ParticipantContext | null>(null);
+  protected readonly displayName = computed(
+    () => this.realtime.profile()?.displayName ?? this.context()?.displayName ?? 'La mia lezione',
+  );
   protected readonly snapshot = signal<ParticipantSnapshot | null>(null);
   protected readonly exercise = signal<AssignedExercise | null>(null);
   protected readonly attempt = signal<Attempt | null>(null);
@@ -261,7 +271,7 @@ export class ParticipantSession implements OnInit {
 
     return knowsEngine(exercise.engineVersion)
       ? ''
-      : 'Questo esercizio non si apre con questa versione del programma: chiedi al maestro.';
+      : 'Questo esercizio non si apre con questa versione del programma: chiedi all’insegnante.';
   });
 
   /**
@@ -339,14 +349,72 @@ export class ParticipantSession implements OnInit {
   protected readonly sceneMessage = computed(() =>
     this.trial.active() ? this.trial.message() : this.outcomeMessage(),
   );
+
+  protected readonly sceneSucceeded = computed(() =>
+    this.trial.active() ? this.trial.succeeded() : this.runtime.outcome()?.outcome === 'success',
+  );
+
+  /** Una sola indicazione principale, coerente con i permessi effettivi. */
+  protected readonly guidance = computed(() => {
+    const state = this.permissions();
+    if (this.needsJoin())
+      return { title: 'Entra di nuovo', text: 'Premi Entra di nuovo per tornare nella lezione.' };
+    if (state?.view === 'Goodbye' || this.connection() === 'ended')
+      return {
+        title: 'La lezione è conclusa. Puoi uscire.',
+        text: 'Grazie per il tuo lavoro! Premi Esci.',
+      };
+    if (this.connection() !== 'connected')
+      return {
+        title: 'Aspetta un momento',
+        text: 'Sto cercando la tua lezione. Se l’attesa continua, chiama l’insegnante.',
+      };
+    if (state?.recoveryBlocked || this.autosave.conflict())
+      return {
+        title: 'Aspetta: recuperiamo il tuo lavoro',
+        text: 'Lascia aperta la pagina. Chiedi aiuto all’insegnante.',
+      };
+    if (state?.teacherPaused)
+      return {
+        title: 'Pausa: ascolta l’insegnante',
+        text: 'Lascia il mouse. Tra poco potrai continuare.',
+      };
+    if (state?.view === 'Waiting')
+      return {
+        title: 'Aspetta l’insegnante',
+        text: 'L’insegnante sta preparando la tua attività.',
+      };
+    if (this.unsupportedType())
+      return {
+        title: 'Chiedi aiuto all’insegnante',
+        text: 'Questo esercizio non si apre su questo computer.',
+      };
+    if (!this.editingEnabled())
+      return {
+        title: 'Aspetta il tuo turno',
+        text: 'Ascolta l’insegnante. Ti dirà quando cominciare.',
+      };
+    if (!this.exercise() || !this.attempt())
+      return {
+        title: 'Preparo la tua attività',
+        text: 'Aspetta un momento. Non devi premere nulla.',
+      };
+    if (this.trial.running() || this.runtime.status() === 'Running')
+      return { title: 'Guarda cosa fa il programma', text: 'Segui il personaggio sulla griglia.' };
+    if (this.showsQuiz())
+      return { title: 'Leggi e rispondi', text: 'Scrivi la tua risposta. Poi premi Conferma.' };
+    return {
+      title: 'Crea il tuo programma',
+      text: 'Unisci i blocchi. Poi premi Prova per vedere cosa succede.',
+    };
+  });
+
   protected readonly busy = signal(false);
   protected readonly error = signal('');
 
   /** Stato e avvisi del collegamento: il trasporto aperto non basta, conta l'operatività. */
   protected readonly connection = this.realtime.status;
   protected readonly notice = this.realtime.notice;
-  protected readonly leaseValidUntilUtc = this.realtime.leaseValidUntilUtc;
-  protected readonly lastCommand = this.realtime.lastCommand;
   protected readonly runtime = this.realtime.runtime;
   private workLoadGeneration = 0;
   private pendingWork: { attemptId: string; promise: Promise<void> } | null = null;
@@ -364,6 +432,10 @@ export class ParticipantSession implements OnInit {
 
   constructor() {
     effect(() => {
+      const profile = this.realtime.profile();
+      if (profile) untracked(() => this.participants.rememberDisplayName(profile.displayName));
+    });
+    effect(() => {
       this.autosave.setOperative(this.realtime.authorized());
     });
     // L'anteprima segue l'operatività del collegamento, non il permesso di modificare: il docente
@@ -372,8 +444,8 @@ export class ParticipantSession implements OnInit {
       this.preview.setOperative(this.realtime.status() === 'connected');
     });
     // La ricevuta è la conferma del server: unisce nel tentativo la revisione, l'impronta e la
-    // versione di riga lette dalla risposta, così il badge «revisione del progetto» sale a ogni
-    // salvataggio. Vale solo la ricevuta dell'esercizio aperto: il confronto è sull'identificativo
+    // versione di riga lette dalla risposta. Le revisioni restano nel modello, senza apparire
+    // nella vista del bambino. Vale solo la ricevuta dell'esercizio aperto: il confronto è sull'identificativo
     // del tentativo. La lettura del tentativo sta in `untracked` perché questo effetto scrive lo
     // stesso segnale: senza, la scrittura riattiverebbe l'effetto all'infinito.
     effect(() => {
@@ -432,7 +504,7 @@ export class ParticipantSession implements OnInit {
       });
     });
 
-    // La prova è dell'alunno e vive finché il maestro lascia lavorare: quando i controlli si
+    // La prova è dell'alunno e vive finché l’insegnante lascia lavorare: quando i controlli si
     // chiudono, o quando arriva un'esecuzione comandata, l'animazione locale si ferma e la scena
     // torna a quella del player. La posizione raggiunta resta: si smette di muoverla, non si cancella.
     effect(() => {
@@ -643,7 +715,7 @@ export class ParticipantSession implements OnInit {
 
   /**
    * Personaggio disegnato: quello della **prova** locale quando è in corso, altrimenti quello del
-   * player comandato dal maestro. La scena è una sola: mostrarne due confonderebbe il bambino.
+   * player comandato dall’insegnante. La scena è una sola: mostrarne due confonderebbe il bambino.
    */
   private readonly character = computed<{ position: BoardCell; direction: string } | null>(() => {
     if (this.trial.active()) {
@@ -721,13 +793,13 @@ export class ParticipantSession implements OnInit {
 
     try {
       await this.autosave.flush();
-      await this.realtime.stop();
       await this.participants.leave();
+      await this.realtime.stop();
+      await this.router.navigateByUrl('/join');
     } catch (failure) {
       this.error.set(toApiError(failure).message);
     } finally {
       this.busy.set(false);
-      await this.router.navigateByUrl('/join');
     }
   }
 
@@ -745,22 +817,4 @@ export class ParticipantSession implements OnInit {
       )[status] ?? 'pronto'
     );
   }
-
-  /** Etichetta dello stato del collegamento: si legge a schermo, non è un codice. */
-  protected connectionLabel(status: RealtimeStatus): string {
-    return ConnectionLabels[status];
-  }
 }
-
-/** Traduzione degli stati del collegamento, in un posto solo. */
-const ConnectionLabels: Record<RealtimeStatus, string> = {
-  idle: 'non avviato',
-  connecting: 'collegamento in corso…',
-  connected: 'collegato',
-  reconnecting: 'ricollegamento…',
-  waiting: 'in attesa di un’altra pagina',
-  superseded: 'sostituito da un’altra pagina',
-  blocked: 'collegamento interrotto',
-  revoked: 'partecipazione revocata',
-  ended: 'lezione conclusa',
-};

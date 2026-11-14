@@ -42,7 +42,8 @@ internal static class ParticipantSnapshotFactory
         Guid participantId,
         long connectionEpoch,
         DateTimeOffset nowUtc,
-        ParticipantStateEntity state) =>
+        ParticipantStateEntity state,
+        ParticipantProfileDto? profile = null) =>
         new(
             ParticipantProtocol.CurrentVersion,
             serverInstance.InstanceId,
@@ -51,7 +52,8 @@ internal static class ParticipantSnapshotFactory
             state.EffectiveRevision,
             connectionEpoch,
             nowUtc,
-            DesiredState(state));
+            DesiredState(state),
+            profile);
 
     /// <summary>
     /// Stato desiderato del destinatario (§6.2) nella forma dell'involucro: si legge dalla sua riga,

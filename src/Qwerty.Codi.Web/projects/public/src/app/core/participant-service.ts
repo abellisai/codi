@@ -36,7 +36,16 @@ export interface JoinByCodeRequest {
  */
 @Injectable({ providedIn: 'root' })
 export class ParticipantService {
+  static readonly DisplayNameStorageKey = 'codi:display-name';
   private readonly http = inject(HttpClient);
+
+  rememberDisplayName(displayName: string): void {
+    try {
+      localStorage.setItem(ParticipantService.DisplayNameStorageKey, displayName);
+    } catch {
+      /* Il browser può impedire la memoria del nome. */
+    }
+  }
 
   /**
    * Bootstrap dell'area pubblica (§9.4): emette la coppia antiforgery e il **ticket di ammissione**
@@ -47,7 +56,7 @@ export class ParticipantService {
   }
 
   /**
-   * Vero se c'è una lezione in play (§10.3): la home lo chiede per accorgersi che il maestro ha
+   * Vero se c'è una lezione in play (§10.3): la home lo chiede per accorgersi che l’insegnante ha
    * avviato la lezione. La risposta è un solo booleano: quale lezione sia non si sa da qui, serve
    * il codice.
    */

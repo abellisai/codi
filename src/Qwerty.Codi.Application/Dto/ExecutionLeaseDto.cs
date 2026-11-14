@@ -10,4 +10,5 @@ public sealed record ExecutionLeaseDto(
     long ConnectionEpoch,
     long MaxDurationSeconds,
     DateTimeOffset ValidUntilUtc,
-    Guid ServerInstanceId);
+    Guid ServerInstanceId,
+    ParticipantProfileDto? Profile = null);

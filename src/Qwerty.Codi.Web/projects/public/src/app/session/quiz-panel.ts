@@ -11,6 +11,7 @@ import { ApiService, Attempt, QuizOutcome, toApiError } from '@codi/api';
 import { AttemptTransport } from '../core/attempt-transport';
 import { workspaceDigest } from '../core/attempt-autosave';
 import { WorkspacePreviewPublisher } from '../core/workspace-preview';
+import { ResultFeedback } from '../shared/result-feedback';
 
 /** Il verbale di risposta dell'alunno, nella forma che il server si aspetta (§13.9). */
 function answerRecord(answer: string): string {
@@ -31,6 +32,7 @@ function answerRecord(answer: string): string {
  * risposta che verrà comunque corretta alla conferma.
  */
 @Component({
+  imports: [ResultFeedback],
   selector: 'app-quiz-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -45,7 +47,7 @@ function answerRecord(answer: string): string {
     <input
       id="quiz-answer"
       type="text"
-      inputmode="numeric"
+      [attr.inputmode]="numericAnswer() ? 'numeric' : 'text'"
       autocomplete="off"
       [value]="answer()"
       [disabled]="!enabled() || busy()"
@@ -54,16 +56,20 @@ function answerRecord(answer: string): string {
     />
 
     <p class="actions">
-      <button type="button" [disabled]="!enabled() || busy()" (click)="confirm()">Conferma</button>
+      <button class="primary" type="button" [disabled]="!enabled() || busy()" (click)="confirm()">
+        Conferma
+      </button>
     </p>
 
     @if (problem(); as message) {
       <p role="alert">{{ message }}</p>
     }
     @if (outcome(); as result) {
-      <p role="status" class="outcome">
-        {{ result.correct ? result.successMessage : result.wrongMessage }}
-      </p>
+      <app-result-feedback
+        class="outcome"
+        [success]="result.correct"
+        [message]="result.correct ? result.successMessage : result.wrongMessage"
+      />
     }
   `,
   styles: `
@@ -97,7 +103,7 @@ export class QuizPanel {
   readonly definitionJson = input.required<string>();
   readonly attempt = input.required<Attempt>();
   readonly connectionEpoch = input.required<string>();
-  /** Vero quando il maestro lascia lavorare: fuori da lì il pannello è in sola lettura. */
+  /** Vero quando l’insegnante lascia lavorare: fuori da lì il pannello è in sola lettura. */
   readonly enabled = input(false);
 
   /** Risposta salvata e confermata: la pagina rilegge il lavoro appena scritto. */
@@ -110,6 +116,7 @@ export class QuizPanel {
 
   /** Rappresentazione da leggere, dalla definizione pubblicata. */
   protected readonly stimulus = computed(() => this.read('stimulus'));
+  protected readonly numericAnswer = computed(() => this.read('match') === 'Integer');
   /** Che cosa deve produrre l'alunno. */
   protected readonly prompt = computed(() => this.read('prompt'));
 
@@ -155,6 +162,7 @@ export class QuizPanel {
 
   protected onInput(event: Event): void {
     this.answer.set((event.target as HTMLInputElement).value);
+    this.outcome.set(null);
   }
 
   /** Legge una proprietà di testo dalla definizione; una definizione illeggibile non la inventa. */

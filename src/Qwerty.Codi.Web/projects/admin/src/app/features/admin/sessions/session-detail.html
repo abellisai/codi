@@ -4,10 +4,6 @@
   </p>
 }
 @for (command of commands(); track command.commandId) {
-  <p role="status">
-    {{ command.commandName }}: {{ command.summary.applied }} applicate,
-    {{ command.summary.pending }} in attesa, {{ command.summary.failed }} fallite.
-  </p>
   @for (delivery of command.deliveries; track delivery.participantId) {
     @if (delivery.requiresRecovery) {
       <p role="alert">Un alunno richiede il recupero del lavoro.</p>
@@ -152,6 +148,9 @@
               variant="outline"
               hlmDialogTrigger
               [disabled]="busy() || !canCommandActivity()"
+              [attr.aria-describedby]="
+                busy() || !canCommandActivity() ? 'activity-disabled-reason' : null
+              "
               (click)="prepareAssignment()"
             >
               <ng-icon name="lucideClipboardList" aria-hidden="true" />
@@ -196,27 +195,32 @@
             hlmBtn
             type="button"
             variant="outline"
-            [disabled]="busy() || !canCommandActivity()"
+            [disabled]="busy() || !canEnableClass()"
+            [attr.aria-describedby]="
+              busy() || !canEnableClass() ? 'activity-disabled-reason' : null
+            "
             (click)="enableClass()"
           >
             <ng-icon name="lucideCircleCheck" aria-hidden="true" />
-            Abilita la classe
+            Permetti di lavorare
           </button>
           <button
             hlmBtn
             type="button"
             variant="outline"
-            [disabled]="busy() || !canCommandActivity()"
+            [disabled]="busy() || !canRunClass()"
+            [attr.aria-describedby]="busy() || !canRunClass() ? 'activity-disabled-reason' : null"
             (click)="runClass()"
           >
             <ng-icon name="lucideRocket" aria-hidden="true" />
-            Avvia la classe
+            Esegui i programmi di tutti
           </button>
           <button
             hlmBtn
             type="button"
             variant="outline"
-            [disabled]="busy() || !canCommandActivity()"
+            [disabled]="busy() || !canRunClass()"
+            [attr.aria-describedby]="busy() || !canRunClass() ? 'activity-disabled-reason' : null"
             (click)="restartClass()"
           >
             <ng-icon name="lucideRotateCcw" aria-hidden="true" />
@@ -224,6 +228,11 @@
           </button>
         </div>
         <!-- «Accettato» non è «applicato»: l'esito dice quante consegne sono state messe in coda. -->
+        @if (activityDisabledReason(); as reason) {
+          <p id="activity-disabled-reason" class="text-muted-foreground text-sm" role="status">
+            {{ reason }}
+          </p>
+        }
         <p class="busy" role="status">{{ notice() }}</p>
       </section>
 

@@ -1,67 +1,95 @@
-/* Ingresso grezzo: serve a vedere se il percorso funziona, non a piacere. Gli stili definitivi
-   dell'app alunni si decidono con il player e con i test in aula. */
 .join {
-  max-width: 32rem;
-  margin: 0 auto;
-  padding: 1.5rem;
-  font-size: 1.125rem;
+  max-width: 40rem;
+  margin: 1rem auto 3rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: 2rem;
+  box-shadow: 0 12px 35px #24355309;
 }
-
-.join label {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.join select,
-.join input {
-  width: 100%;
-  padding: 0.5rem;
-  font-size: 1rem;
-}
-
-.join button {
-  padding: 0.75rem 1.5rem;
-  font-size: 1.125rem;
-}
-
-/* Il codice si legge a distanza e si digita con due dita: cifre grandi e spaziate, tastiera
-   numerica sul tablet (§14.4). */
-.code-input {
-  font-family: ui-monospace, SFMono-Regular, 'Cascadia Mono', Consolas, monospace;
-  font-size: 2rem;
-  letter-spacing: 0.35em;
+.join-heading {
   text-align: center;
 }
-
+.join-heading h1 {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+}
+.join-icon {
+  display: grid;
+  place-items: center;
+  margin: auto;
+  width: 4rem;
+  height: 4rem;
+  background: #efebfc;
+  color: var(--purple);
+  border-radius: 1.25rem;
+  font-size: 2.5rem;
+}
 .presence {
-  padding: 0.5rem 0.75rem;
-  background: #eef;
-}
-
-.fallback {
-  margin: 1.5rem 0 0.5rem;
-}
-
-.link {
-  padding: 0.5rem 0;
-  border: none;
-  background: none;
-  color: #2b4a8b;
-  text-decoration: underline;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: #fff4d6;
+  color: #745010;
+  padding: 1rem;
+  border-radius: 1rem;
   font-size: 1rem;
 }
-
+.presence.started {
+  background: #e6f8ed;
+  color: #175c38;
+}
+.presence > span {
+  font-size: 1.75rem;
+}
+.join-field {
+  margin: 1.75rem 0;
+}
+.join-field label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.step-number {
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  background: #efebfc;
+  color: var(--purple);
+  border-radius: 50%;
+}
+.join-field .hint {
+  margin: 0.5rem 0;
+}
+.code-input {
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  letter-spacing: 0.22em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.enter {
+  width: 100%;
+  font-size: 1.3rem;
+  min-height: 4rem;
+}
+.join-hint,
+.fallback,
+.back {
+  text-align: center;
+}
+.fallback {
+  border-top: 2px solid var(--line);
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+}
 .chain {
-  padding-top: 0.5rem;
-  border-top: 1px solid #ccd;
+  margin-top: 1rem;
 }
-
-.lesson {
-  padding: 0.5rem 0.75rem;
-  background: #eef;
+.back {
+  margin-bottom: 0;
 }
-
-.error {
-  padding: 0.5rem 0.75rem;
-  background: #fee;
+@media (max-width: 600px) {
+  .join {
+    margin: 1rem;
+  }
 }

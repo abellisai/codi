@@ -1,38 +1,44 @@
 <main class="join">
-  <h1>Entra nella lezione</h1>
-
-  <!-- La home sente se il maestro ha avviato la lezione: chiedere un codice quando nessuna lezione
-       è in corso sarebbe chiedere una cosa che non esiste. -->
-  <p class="presence" role="status" aria-live="polite">
+  <div class="join-heading">
+    <span class="join-icon" aria-hidden="true">➜</span>
+    <p class="eyebrow">Pronti per cominciare?</p>
+    <h1>Entra nella lezione</h1>
+    <p>Ti bastano il tuo nome e 8 cifre.</p>
+  </div>
+  <p class="presence" [class.started]="inPlay()" role="status">
+    <span aria-hidden="true">{{ inPlay() ? '✓' : '◷' }}</span>
     @if (inPlay()) {
-      La lezione è iniziata! Chiedi il codice al maestro e scrivilo qui.
+      La lezione è iniziata! Chiedi il codice all’insegnante.
     } @else if (presenceChecked()) {
-      Nessuna lezione in corso: aspetta che il maestro inizi la lezione.
+      Nessuna lezione in corso. Aspetta l’insegnante.
     } @else {
-      Un momento…
+      Cerco la tua lezione…
     }
   </p>
-
   @if (error(); as message) {
     <p class="error" role="alert">{{ message }}</p>
   }
-
-  <p>
-    <label for="nome">Il tuo nome</label>
-    <input
-      id="nome"
-      type="text"
-      maxlength="30"
-      autocomplete="off"
-      [disabled]="busy()"
-      [value]="displayName()"
-      (input)="onName($event)"
-    />
-  </p>
-
-  <section class="code" aria-label="Codice della lezione">
-    <p>
-      <label for="codice">Codice della lezione</label>
+  <form (submit)="$event.preventDefault(); joinWithCode()" [attr.aria-busy]="busy()">
+    <div class="join-field">
+      <label for="nome"
+        ><span class="step-number" aria-hidden="true">1</span> Scrivi il tuo nome</label
+      >
+      <input
+        id="nome"
+        type="text"
+        maxlength="30"
+        autocomplete="given-name"
+        placeholder="Come ti chiami?"
+        [disabled]="busy()"
+        [value]="displayName()"
+        (input)="onName($event)"
+      />
+    </div>
+    <div class="join-field">
+      <label for="codice"
+        ><span class="step-number" aria-hidden="true">2</span> Scrivi il codice</label
+      >
+      <p id="code-help" class="hint">Sono le 8 cifre che ti dà l’insegnante.</p>
       <input
         id="codice"
         class="code-input"
@@ -41,35 +47,52 @@
         autocomplete="off"
         maxlength="8"
         placeholder="12345678"
+        aria-describedby="code-help code-progress"
         [disabled]="busy()"
         [value]="code()"
         (input)="onCode($event)"
       />
-    </p>
-
-    <button type="button" [disabled]="!canJoinWithCode()" (click)="joinWithCode()">Entra</button>
-  </section>
-
-  <!-- Il percorso con scuola e classe resta, ma non è più la via ordinaria: si scopre solo se
-       l'alunno dichiara di non avere il codice. -->
-  <p class="fallback">
-    <button type="button" class="link" (click)="toggleChain()">
-      {{ showChain() ? 'Nascondi la scelta di scuola e classe' : 'Non ho il codice' }}
+      <p id="code-progress" class="hint" role="status">
+        {{ code().length === 8 ? '✓ Il codice è completo.' : code().length + ' cifre su 8' }}
+      </p>
+    </div>
+    <button class="primary enter" type="submit" [disabled]="!canJoinWithCode()">
+      {{ busy() ? 'Un momento…' : 'Entra' }} <span aria-hidden="true">➜</span>
     </button>
-  </p>
-
+    @if (!canJoinWithCode() && !busy()) {
+      <p class="hint join-hint">
+        {{
+          displayName().trim() === ''
+            ? 'Prima scrivi il tuo nome.'
+            : 'Completa il codice per entrare.'
+        }}
+      </p>
+    }
+  </form>
+  <div class="fallback">
+    <button
+      type="button"
+      class="secondary"
+      [attr.aria-expanded]="showChain()"
+      aria-controls="school-chain"
+      [disabled]="busy()"
+      (click)="toggleChain()"
+    >
+      {{ showChain() ? 'Nascondi scuola e classe' : 'Non ho il codice' }}
+    </button>
+  </div>
   @if (showChain()) {
-    <section class="chain" aria-label="Scelta di scuola e classe">
+    <section id="school-chain" class="chain" aria-label="Scelta di scuola e classe">
+      <p class="hint">Chiedi all’insegnante quale scuola e classe scegliere.</p>
       <p>
         <label for="scuola">Scuola</label>
         <select id="scuola" [disabled]="busy()" (change)="chooseSchool($event)">
-          <option value="">— scegli la scuola —</option>
+          <option value="">Scegli la scuola</option>
           @for (school of schools(); track school.id) {
             <option [value]="school.id">{{ school.name }}</option>
           }
         </select>
       </p>
-
       <p>
         <label for="classe">Classe</label>
         <select
@@ -77,7 +100,7 @@
           [disabled]="busy() || schoolId() === ''"
           (change)="chooseClassroom($event)"
         >
-          <option value="">— scegli la classe —</option>
+          <option value="">Scegli la classe</option>
           @for (classroom of classrooms(); track classroom.id) {
             <option [value]="classroom.id">
               {{ classroom.name }} ({{ classroom.schoolYear }})
@@ -85,20 +108,22 @@
           }
         </select>
       </p>
-
       @if (play(); as session) {
-        <p class="lesson" role="status">
-          Lezione in corso: <strong>{{ session.lessonTitle }}</strong> · {{ session.courseTitle }}
+        <p class="presence started" role="status">
+          Lezione in corso: <strong>{{ session.lessonTitle }}</strong>
         </p>
       } @else if (classroomId() !== '') {
-        <p class="lesson" role="status">In questa classe non c’è una lezione in corso.</p>
+        <p role="status">In questa classe non c’è una lezione in corso.</p>
       }
-
-      <button type="button" [disabled]="!canJoinWithChain()" (click)="joinWithChain()">
+      <button
+        class="primary"
+        type="button"
+        [disabled]="!canJoinWithChain()"
+        (click)="joinWithChain()"
+      >
         Entra con scuola e classe
       </button>
     </section>
   }
-
-  <p><a routerLink="/">Torna all’inizio</a></p>
+  <p class="back"><a class="button" routerLink="/">Torna all’inizio</a></p>
 </main>

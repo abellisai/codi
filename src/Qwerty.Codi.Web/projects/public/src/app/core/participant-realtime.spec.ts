@@ -133,6 +133,38 @@ describe('ParticipantRealtime', () => {
     await flush();
     return transport.current;
   }
+  it('aggiorna il profilo al rinnovo e scarta profili estranei o precedenti', async () => {
+    await service.start();
+    const connection = transport.current;
+    connection.emit('SessionSnapshot', {
+      ...snapshot,
+      profile: { participantId: 'p', displayName: 'Nome iniziale', rowVersion: '9007199254740993' },
+    });
+    await flush();
+    expect(service.profile()?.displayName).toBe('Nome iniziale');
+    const renew = (name: string, version: string, participantId = 'p') => {
+      vi.advanceTimersByTime(3000);
+      const heartbeat = connection.calls.filter((call) => call.method === 'Heartbeat').at(-1)!;
+      connection.emit('LeaseGranted', {
+        nonce: heartbeat.data['nonce'],
+        effectiveRevision: '2',
+        connectionEpoch: '1',
+        serverInstanceId: 'server',
+        maxDurationSeconds: '10',
+        validUntilUtc: '',
+        profile: { participantId, displayName: name, rowVersion: version },
+      });
+    };
+    renew('Luca Rossi', '9007199254740994');
+    expect(service.profile()?.displayName).toBe('Luca Rossi');
+    renew('Nome precedente', '9007199254740993');
+    expect(service.profile()?.displayName).toBe('Luca Rossi');
+    renew('Altro bambino', '9007199254740995', 'other');
+    expect(service.profile()?.displayName).toBe('Luca Rossi');
+    await service.stop();
+    expect(service.profile()).toBeNull();
+  });
+
   it('affida al publisher il ripiego dell’anteprima senza lasciare un avviso globale', async () => {
     const connection = await connect();
     const preview: WorkspacePreview = {

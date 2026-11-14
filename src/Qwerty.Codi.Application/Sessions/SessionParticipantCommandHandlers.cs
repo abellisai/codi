@@ -330,7 +330,7 @@ public sealed class JoinSessionHandler(
             // risposta persa.
             throw new CodiRequestException(
                 CodiErrorCodes.SessionStateConflict,
-                "L'ingresso è già stato registrato ma la sua credenziale non è più utilizzabile: chiedi al maestro.");
+                "L'ingresso è già stato registrato ma la sua credenziale non è più utilizzabile: chiedi all’insegnante.");
         }
 
         return new JoinSessionOutcome(joined, credential.SecurityStamp);
@@ -498,8 +498,8 @@ public sealed class JoinSessionHandler(
 }
 
 /// <summary>
-/// Uscita volontaria dell'alunno dalla sessione (§9.2, §10.3): revoca la credenziale corrente e
-/// non tocca né la partecipazione né il lavoro. L'identità arriva dal contesto verificato dal
+/// Uscita volontaria dell'alunno dalla sessione (§9.2, §10.3): registra l'uscita e revoca le
+/// credenziali senza cancellare i lavori. L'identità arriva dal contesto verificato dal
 /// trasporto, quindi il comando non può far uscire un partecipante diverso da chi lo invoca.
 ///
 /// Lettura e scrittura stanno nella stessa transazione, così la revoca non ha finestre fra il
@@ -510,7 +510,9 @@ public sealed class JoinSessionHandler(
 public sealed class LeaveSessionHandler(
     IUnitOfWorkContext unitOfWorkContext,
     TimeProvider timeProvider,
-    IParticipantMessageStore messages) : IRequestHandler<LeaveSessionCommand, bool>
+    IParticipantMessageStore messages,
+    ISessionCoordinator sessionCoordinator,
+    IParticipantConnectionRegistry connections) : IRequestHandler<LeaveSessionCommand, bool>
 {
     public async ValueTask<bool> Handle(LeaveSessionCommand request, CancellationToken cancellationToken)
     {
@@ -522,6 +524,15 @@ public sealed class LeaveSessionHandler(
             throw CodiRequestException.AuthenticationRequired(LeaveSessionCommand.RequestName);
         }
 
+        Guid sessionId;
+        await using (var lookup = await unitOfWorkContext.CreateAsync(cancellationToken: cancellationToken).ConfigureAwait(false))
+        {
+            var participantRow = await lookup.Repo<ISessionParticipantRepository>()
+                .GetAsync(participantId.ToString("D"), cancellationToken).ConfigureAwait(false)
+                ?? throw CodiRequestException.AuthenticationRequired(LeaveSessionCommand.RequestName);
+            sessionId = Guid.Parse(participantRow.SessionId);
+        }
+        await using var coordination = await sessionCoordinator.AcquireAsync(sessionId, cancellationToken).ConfigureAwait(false);
         await using var work = await unitOfWorkContext
             .CreateAsync(useTransaction: true, cancellationToken: cancellationToken)
             .ConfigureAwait(false);
@@ -552,11 +563,39 @@ public sealed class LeaveSessionHandler(
             throw CodiRequestException.RowVersionMismatch();
         }
 
+        var participantKey = participantId.ToString("D");
+        var participants = work.Repo<ISessionParticipantRepository>();
+        var storedParticipant = await participants.GetAsync(participantKey, cancellationToken).ConfigureAwait(false)
+            ?? throw CodiRequestException.AuthenticationRequired(LeaveSessionCommand.RequestName);
+        var participant = storedParticipant.ToDomain();
+        participant.Leave(timeProvider.GetUtcNow());
+        if (!await participants.UpdateAsync(SessionParticipantEntity.FromDomain(participant), cancellationToken).ConfigureAwait(false))
+            throw CodiRequestException.RowVersionMismatch();
+
+        var otherCredentials = await credentials.QueryAsync(row => row.ParticipantId == participantKey, cancellationToken).ConfigureAwait(false);
+        foreach (var row in otherCredentials.Where(row => row.Id != credentialSessionId.ToString("D")))
+        {
+            var other = row.ToDomain();
+            if (other.Revoke(timeProvider.GetUtcNow()) &&
+                await credentials.TryRevokeAsync(other, cancellationToken).ConfigureAwait(false) is null)
+                throw CodiRequestException.RowVersionMismatch();
+        }
+
+        var state = await work.Repo<IParticipantStateRepository>().GetAsync(participantKey, cancellationToken).ConfigureAwait(false);
+        if (state is not null)
+        {
+            state.InteractionEnabledFlag = 0;
+            state.UpdatedAtUtcMs = timeProvider.GetUtcNow().ToUnixTimeMilliseconds();
+            await SessionCommandPreamble.UpdateStateAsync(work, state, cancellationToken).ConfigureAwait(false);
+        }
+
         await work.CommitAsync(cancellationToken).ConfigureAwait(false);
 
         // §15.1: chi esce non è più un destinatario della chat, quindi il suo thread non resta nel
         // processo. Una ripetizione dell'uscita non arriva fin qui, perché la revoca è già registrata.
         messages.Remove(participantId);
+        if (connections.Get(participantId) is { } connection)
+            connections.Release(participantId, connection.ConnectionId, connection.Epoch);
 
         return true;
     }

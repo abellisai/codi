@@ -31,7 +31,7 @@ export interface SessionStatusInput {
  *
  * L'ordine è quello dell'importanza per il bambino: prima «sono collegato?», poi «posso lavorare?»,
  * infine «che cosa fa il mio programma?». La funzione è pura, così le precedenze — pausa del
- * maestro, recupero, controlli chiusi — si verificano senza montare la pagina.
+ * insegnante, recupero, controlli chiusi — si verificano senza montare la pagina.
  */
 export function sessionStatusBadges(input: SessionStatusInput): readonly StatusBadgeSpec[] {
   return [
@@ -67,7 +67,7 @@ function connectionBadge(status: RealtimeStatus): StatusBadgeSpec {
 
 /**
  * Che cosa può fare adesso. La precedenza è deliberata: una lezione conclusa non torna indietro, un
- * recupero in corso spiega perché il lavoro è fermo, e la pausa del maestro viene prima dei
+ * recupero in corso spiega perché il lavoro è fermo, e la pausa dell’insegnante viene prima dei
  * controlli chiusi — altrimenti il bambino leggerebbe due motivi diversi per la stessa attesa.
  */
 function workBadge(input: SessionStatusInput): StatusBadgeSpec {
@@ -75,20 +75,24 @@ function workBadge(input: SessionStatusInput): StatusBadgeSpec {
     return { tone: 'idle', icon: 'flag', label: 'La lezione è conclusa: puoi uscire' };
   }
 
+  if (input.connection !== 'connected') {
+    return { tone: 'wait', icon: 'refresh', label: 'Aspetta il collegamento alla lezione' };
+  }
+
   if (input.recoveryBlocked) {
     return { tone: 'wait', icon: 'refresh', label: 'Stiamo recuperando il tuo lavoro' };
   }
 
   if (input.teacherPaused) {
-    return { tone: 'stop', icon: 'pause', label: 'In pausa: guarda il maestro' };
+    return { tone: 'stop', icon: 'pause', label: 'In pausa: guarda l’insegnante' };
   }
 
   if (input.view === 'Waiting') {
-    return { tone: 'wait', icon: 'hourglass', label: 'Aspetta: il maestro prepara l’attività' };
+    return { tone: 'wait', icon: 'hourglass', label: 'Aspetta: l’insegnante prepara l’attività' };
   }
 
   if (!input.interactionEnabled) {
-    return { tone: 'wait', icon: 'lock', label: 'Controlli chiusi: aspetta il maestro' };
+    return { tone: 'wait', icon: 'lock', label: 'Controlli chiusi: aspetta l’insegnante' };
   }
 
   return { tone: 'ok', icon: 'play', label: 'Puoi lavorare!' };

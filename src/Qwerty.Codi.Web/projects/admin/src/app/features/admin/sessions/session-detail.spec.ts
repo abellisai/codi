@@ -17,6 +17,7 @@ import {
   WorkspacePreviewReceipt,
 } from '@core/api';
 import { SessionDetail } from './session-detail';
+import { SessionRegiaService } from './session-regia-service';
 
 /** Sostituto deterministico del dispatcher: registra le richieste e restituisce quello che serve. */
 class ApiStub {
@@ -274,7 +275,7 @@ describe('SessionDetail', () => {
     expect(document.querySelector('hlm-dialog-content')).toBeNull();
     expect(commandButton('Stop').disabled).toBe(true);
     // Conclusa la sessione, i comandi di classe non sono più offerti: il server non li ammette.
-    expect(commandButton('Abilita la classe').disabled).toBe(true);
+    expect(commandButton('Permetti di lavorare').disabled).toBe(true);
   });
 
   it('mostra un rifiuto e rilegge la sessione, come un conflitto di stato', async () => {
@@ -328,7 +329,7 @@ describe('SessionDetail', () => {
     await mount('Active');
     api.session = summary('Active', true, '8');
 
-    commandButton('Abilita la classe').click();
+    commandButton('Permetti di lavorare').click();
     await flush();
 
     expect(api.commands).toEqual([
@@ -336,6 +337,105 @@ describe('SessionDetail', () => {
     ]);
     // «Accettato» non è «applicato»: la pagina dichiara le consegne messe in coda.
     expect(pageText()).toContain('EnableActivity: 2 consegne registrate.');
+  });
+
+  it.each([
+    [],
+    [participant({ attemptId: null, view: 'Waiting', interactionEnabled: false })],
+    [participant({ attemptId: null })],
+    [participant({ view: 'Waiting' })],
+    [participant(), participant({ participantId: 'p2', attemptId: null, view: 'Waiting' })],
+    [participant({ admissionStatus: 'Excluded' })],
+  ])(
+    'non offre lavoro o esecuzione senza esercizio per tutti i destinatari: %j',
+    async (...rows) => {
+      api.participants = rows;
+      await mount('Active');
+      expect(commandButton('Permetti di lavorare').disabled).toBe(true);
+      expect(commandButton('Esegui i programmi di tutti').disabled).toBe(true);
+      expect(commandButton('Riavvia la classe').disabled).toBe(true);
+      // Il servizio verifica il vincolo anche senza passare dai pulsanti disabilitati.
+      const regia = TestBed.inject(SessionRegiaService);
+      await regia.enableClass();
+      await regia.runClass();
+      await regia.restartClass();
+      expect(api.commands).toEqual([]);
+    },
+  );
+
+  it('offre il lavoro dopo l’assegnazione e l’esecuzione dopo il permesso', async () => {
+    api.participants = [
+      participant({ attemptId: null, view: 'Waiting', interactionEnabled: false }),
+    ];
+    await mount('Active');
+    expect(commandButton('Assegna esercizio').disabled).toBe(false);
+    expect(pageText()).toContain('Prima assegna un esercizio a tutti i bambini.');
+    expect(commandButton('Permetti di lavorare').getAttribute('aria-describedby')).toBe(
+      'activity-disabled-reason',
+    );
+    expect(commandButton('Esegui i programmi di tutti').getAttribute('aria-describedby')).toBe(
+      'activity-disabled-reason',
+    );
+    expect(commandButton('Assegna esercizio').getAttribute('aria-describedby')).toBeNull();
+    api.participants = [participant({ interactionEnabled: false })];
+    await TestBed.inject(SessionRegiaService).refresh();
+    await flush();
+    expect(commandButton('Permetti di lavorare').disabled).toBe(false);
+    expect(commandButton('Esegui i programmi di tutti').disabled).toBe(true);
+    expect(pageText()).not.toContain('Prima assegna un esercizio');
+    expect(pageText()).toContain(
+      'Prima premi «Permetti di lavorare», poi puoi eseguire i programmi di tutti.',
+    );
+    expect(commandButton('Permetti di lavorare').getAttribute('aria-describedby')).toBeNull();
+    api.participants = [participant({ interactionEnabled: true })];
+    commandButton('Permetti di lavorare').click();
+    await flush();
+    expect(commandButton('Esegui i programmi di tutti').disabled).toBe(false);
+    expect(page().querySelector('#activity-disabled-reason')).toBeNull();
+    expect(
+      commandButton('Esegui i programmi di tutti').getAttribute('aria-describedby'),
+    ).toBeNull();
+    commandButton('Esegui i programmi di tutti').click();
+    await flush();
+    expect(api.commands.map((command) => command.name)).toEqual(['EnableActivity', 'RunProgram']);
+  });
+
+  it.each([
+    ['Lobby', 'Prima avvia la lezione.'],
+    ['Paused', 'Prima riprendi la lezione.'],
+    ['Ended', 'La lezione è conclusa'],
+  ] as const)(
+    'spiega il vincolo della sessione %s prima dell’assegnazione',
+    async (status, reason) => {
+      api.participants = [
+        participant({ attemptId: null, view: 'Waiting', interactionEnabled: false }),
+      ];
+      await mount(status);
+      expect(page().querySelector('#activity-disabled-reason')?.textContent).toContain(reason);
+      expect(pageText()).not.toContain('Prima assegna un esercizio');
+    },
+  );
+
+  it('indica l’attesa degli alunni quando la classe è vuota', async () => {
+    await mount('Active');
+    expect(page().querySelector('#activity-disabled-reason')?.textContent).toContain(
+      'Attendi che un bambino entri',
+    );
+  });
+
+  it('ignora gli alunni esclusi per le precondizioni del comando collettivo', async () => {
+    api.participants = [
+      participant(),
+      participant({
+        participantId: 'p2',
+        admissionStatus: 'Excluded',
+        attemptId: null,
+        view: 'Waiting',
+      }),
+    ];
+    await mount('Active');
+    expect(commandButton('Permetti di lavorare').disabled).toBe(false);
+    expect(commandButton('Esegui i programmi di tutti').disabled).toBe(false);
   });
 
   it('assegna la casella scelta dalla sequenza della lezione', async () => {

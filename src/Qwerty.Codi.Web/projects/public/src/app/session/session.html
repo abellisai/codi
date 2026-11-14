@@ -1,7 +1,4 @@
 <main class="session">
-  <!-- Dove si trova l'alunno: scuola, classe, lezione e — quando c'è — l'esercizio. Non sono
-       collegamenti, perché il bambino non naviga: è una sequenza da leggere, e il suo nome sta
-       subito sotto, sulla riga che gli appartiene. -->
   @if (whereAmI().length > 0) {
     <ol class="breadcrumb" aria-label="Dove sei">
       @for (level of whereAmI(); track level) {
@@ -9,108 +6,63 @@
       }
     </ol>
   }
-  <h1>{{ context()?.displayName ?? 'La mia lezione' }}</h1>
-
+  <div class="session-heading">
+    <div>
+      <p class="eyebrow">La tua lezione</p>
+      <h1>{{ displayName() }}</h1>
+    </div>
+    <span class="class-tag"><span aria-hidden="true">✦</span> Impariamo insieme</span>
+  </div>
   @if (needsJoin()) {
-    <p role="alert">Non sei più dentro la lezione. <a routerLink="/join">Entra di nuovo</a></p>
+    <p role="alert">
+      Non sei più dentro la lezione. <a class="button" routerLink="/join">Entra di nuovo</a>
+    </p>
   }
-
   @if (error(); as message) {
     <p class="error" role="alert">{{ message }}</p>
   }
-
-  <!-- Lo stato in cima, con icona, colore e parole: a otto anni «posso lavorare?» si legge a colpo
-       d'occhio, senza aprire un pannello. -->
+  @if (notice(); as message) {
+    <p role="alert">{{ message }}</p>
+  }
+  <div class="lesson-overview">
+    <section
+      class="next-action"
+      [class.waiting]="!editingEnabled()"
+      aria-label="Che cosa fare adesso"
+      aria-live="polite"
+    >
+      <span class="next-icon" aria-hidden="true">{{ editingEnabled() ? '➜' : '◷' }}</span>
+      <div>
+        <p class="eyebrow">Adesso</p>
+        <h2>{{ guidance().title }}</h2>
+        <p>{{ guidance().text }}</p>
+      </div>
+    </section>
+    @if (exercise(); as activity) {
+      <section class="assignment" aria-label="Esercizio assegnato">
+        <span class="assignment-icon" aria-hidden="true">✎</span>
+        <div>
+          <p class="eyebrow">La tua attività</p>
+          <h2>{{ activity.exerciseTitle }}</h2>
+          <p>{{ instructions() }}</p>
+        </div>
+      </section>
+    }
+  </div>
   <ul class="status-panel" aria-label="Come sta andando la lezione" aria-live="polite">
     @for (badge of badges(); track badge.label) {
       <app-status-badge [tone]="badge.tone" [icon]="badge.icon" [label]="badge.label" />
     }
   </ul>
-
-  <!-- CHAT DISABILITATA (2026-11-14, decisione Ale): la funzionalità chat maestro-alunno (§8,
-       §15.1) è sospesa in attesa di rivedere le specifiche. Il componente `ChatPanel` e il servizio
-       `ParticipantChat` restano nel sorgente intatti: per riattivarla ripristinare questo blocco.
-       Chat con il maestro (§8): è fra il maestro e questo bambino, mai fra bambini. Il pannello si
-       apre da sé quando arriva un messaggio, così a otto anni non c'è niente da cercare.
-  <app-chat-panel />
-  -->
-
-  @if (notice(); as message) {
-    <p role="alert">{{ message }}</p>
-  }
-  <details>
-    <summary>Informazioni per il docente</summary>
-    <p>Vista: {{ permissions()?.view }}</p>
-    <p>
-      Collegamento: {{ connectionLabel(connection()) }} · autorizzazione fino alle
-      {{ leaseValidUntilUtc() }}
-    </p>
-    @if (lastCommand(); as command) {
-      <p>Ultimo comando ricevuto: {{ command.commandName }} ({{ command.outcome }})</p>
-    }
-    @if (permissions(); as state) {
-      <section aria-label="Stato dei tuoi permessi">
-        <h2>Che cosa puoi fare adesso</h2>
-        <ul class="facts">
-          <li>
-            Lavoro:
-            {{
-              state.view === 'Exercise'
-                ? 'esercizio'
-                : state.view === 'Goodbye'
-                  ? 'concluso'
-                  : 'attesa'
-            }}
-          </li>
-          <li>Controlli: {{ state.interactionEnabled ? 'attivi' : 'chiusi' }}</li>
-          <li>Pausa dell’insegnante: {{ state.teacherPaused ? 'sì' : 'no' }}</li>
-          <li>Ripristino: {{ state.recoveryBlocked ? 'in corso' : 'regolare' }}</li>
-          <li>Riavvii imposti: {{ state.executionGeneration ?? '0' }}</li>
-          @if (state.executionDirective; as directive) {
-            <li>Istruzione ricevuta: {{ directive.kind }} ({{ directive.directiveId }})</li>
-          }
-        </ul>
-      </section>
-    }
-  </details>
-  @if (permissions()?.view === 'Waiting') {
-    <p role="status">Aspetta: l’insegnante sta preparando l’attività.</p>
-  }
-  @if (permissions()?.view === 'Goodbye') {
-    <p role="status">La lezione è conclusa. Puoi uscire.</p>
-  }
-
-  @if (exercise(); as activity) {
-    <section aria-label="Esercizio assegnato">
-      <h2>{{ activity.exerciseTitle }}</h2>
-      <p>{{ instructions() }}</p>
-    </section>
-  }
-
-  <!-- Progetto a sinistra, risultato a destra: si compone da una parte e si vede il risultato
-       dall'altra, senza scorrere. Su schermi stretti le due colonne tornano una sotto l'altra.
-       Entrambi gli esercizi a blocchi hanno il progetto; la griglia aggiunge la scena e la prova,
-       l'esercizio che conserva valori aggiunge variabili e uscita. Un esercizio dichiarativo non
-       compone nulla: legge, risponde e riceve un esito, quindi occupa una riga sola. -->
   <div class="work-area" [class.one-panel]="!usesBlocks()">
     @if (attempt(); as work) {
-      <!-- Il progetto a blocchi è il posto in cui il bambino compone, e serve sia al percorso sia
-           all'esercizio che conserva valori. Incorporarlo nel solo ramo della griglia lasciava
-           l'esercizio di valori senza editor: il difetto che il collaudo nel browser ha trovato. -->
       @if (usesBlocks()) {
-        <section aria-label="Il mio progetto">
-          <h2>Il mio progetto</h2>
-          <p class="facts">
-            Tentativo {{ work.attemptNumber }} · {{ work.status }} · revisione del progetto
-            {{ work.projectRevision }}
+        <section class="work-card" aria-label="Il mio progetto">
+          <h2><span class="step-number" aria-hidden="true">1</span> Il mio progetto</h2>
+          <p class="hint">Scegli un blocco a sinistra. Trascinalo qui e uniscilo agli altri.</p>
+          <p class="save-status" role="status">
+            <span aria-hidden="true">◇</span> {{ autosave.status() }}
           </p>
-          <p role="status">{{ autosave.status() }}</p>
-          @if (autosave.saved(); as receipt) {
-            <p>
-              Ultimo salvataggio: {{ receipt.lastSavedAtUtc }} · revisione
-              {{ receipt.projectRevision }}
-            </p>
-          }
           <app-participant-workspace
             [workspaceJson]="autosave.workspace() ?? work.workspaceJson"
             [allowedBlocks]="allowedBlocks()"
@@ -119,20 +71,12 @@
             [readOnly]="!editingEnabled()"
             (workspaceChanged)="workspaceChanged($event)"
           />
-          <details>
-            <summary>Dati del progetto</summary>
-            <pre>{{ work.workspaceJson }}</pre>
-          </details>
-          <p class="note">Il progetto conserva i tuoi blocchi.</p>
+          <p class="hint">I tuoi blocchi si salvano da soli.</p>
         </section>
       }
       @if (usesValues()) {
-        <section aria-label="Le variabili e l’uscita">
-          <h2>Le variabili e l’uscita</h2>
-          <p class="facts">
-            Tentativo {{ work.attemptNumber }} · {{ work.status }} · revisione del progetto
-            {{ work.projectRevision }}
-          </p>
+        <section class="work-card" aria-label="Le variabili e l’uscita">
+          <h2><span class="step-number" aria-hidden="true">2</span> Le variabili e l’uscita</h2>
           @if (exercise()?.definitionJson; as definition) {
             <app-value-program-panel
               [definitionJson]="definition"
@@ -145,12 +89,9 @@
           }
         </section>
       } @else if (showsQuiz()) {
-        <section aria-label="La mia risposta">
+        <section class="work-card quiz-card" aria-label="La mia risposta">
           <h2>La mia risposta</h2>
-          <p class="facts">
-            Tentativo {{ work.attemptNumber }} · {{ work.status }} · revisione del lavoro
-            {{ work.projectRevision }}
-          </p>
+          <p class="hint">Leggi la domanda. Scrivi la risposta e premi Conferma.</p>
           @if (exercise()?.definitionJson; as definition) {
             <app-quiz-panel
               [definitionJson]="definition"
@@ -163,81 +104,79 @@
         </section>
       }
     }
-
     @if (unsupportedType(); as message) {
-      <section aria-label="Il mio programma">
+      <section class="work-card" aria-label="Il mio programma">
         <p role="alert">{{ message }}</p>
-        <!-- I comandi restano al loro posto ma spenti: una pagina senza pulsanti non spiega che
-             cosa manca, e il bambino li cerca dove li ha sempre trovati. -->
         <p class="actions">
-          <button type="button" disabled>Prova</button>
-          <button type="button" disabled>Un passo</button>
+          <button type="button" disabled>Prova</button
+          ><button type="button" disabled>Un passo</button>
         </p>
       </section>
-    } @else if (showsGridProgram()) {
-      <section aria-label="Il mio programma">
-        <h2>Il mio programma</h2>
-        <p>
-          L’insegnante decide quando parte la classe. Qui puoi provare il tuo programma quando i
-          controlli sono attivi.
-        </p>
+    } @else if (showsGridProgram() && exercise()) {
+      <section class="work-card" aria-label="Il mio programma">
+        <h2><span class="step-number" aria-hidden="true">2</span> Il mio programma</h2>
+        <p class="hint">Premi Prova e guarda il personaggio. Raggiungi la stella!</p>
         @if (trial.active()) {
-          <p role="status">Stai provando: {{ trial.steps() }} passi.</p>
+          <p class="run-status" role="status">Stai provando: {{ trial.steps() }} passi.</p>
         } @else {
-          <p role="status">Stato: {{ runtimeLabel(runtime.status()) }}</p>
+          <p class="run-status" role="status">{{ runtimeLabel(runtime.status()) }}</p>
         }
         @if (board(); as scene) {
-          <table
-            class="board"
-            [attr.aria-label]="
-              'Griglia dell’esercizio, ' + scene.width + ' colonne per ' + scene.height + ' righe'
-            "
-          >
-            <tbody>
-              @for (row of rows(); track $index) {
-                <tr>
-                  @for (cell of row; track $index) {
-                    <td [class]="cellClasses(cell)" [attr.aria-label]="cellLabel(cell)">
-                      {{ cellSymbol(cell) }}
-                    </td>
-                  }
-                </tr>
-              }
-            </tbody>
-          </table>
+          <div class="board-scroll">
+            <table
+              class="board"
+              [attr.aria-label]="
+                'Griglia dell’esercizio, ' + scene.width + ' colonne per ' + scene.height + ' righe'
+              "
+            >
+              <tbody>
+                @for (row of rows(); track $index) {
+                  <tr>
+                    @for (cell of row; track $index) {
+                      <td [class]="cellClasses(cell)" [attr.aria-label]="cellLabel(cell)">
+                        {{ cellSymbol(cell) }}
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
         }
-
-        <!-- La prova è dell'alunno: non produce checkpoint, non aggiorna la telemetria e non compare
-           nella regia del docente. Il maestro vede solo la corsa che ha comandato. -->
-        <p class="actions">
-          <button type="button" [disabled]="!canTry()" (click)="tryProgram()">Prova</button>
-          <button type="button" [disabled]="!canTry() || trial.running()" (click)="stepProgram()">
-            Un passo
+        <p class="actions trial-actions">
+          <button class="primary" type="button" [disabled]="!canTry()" (click)="tryProgram()">
+            <span aria-hidden="true">▶</span><span>Prova</span>
           </button>
-          <button type="button" [disabled]="!trial.active()" (click)="resetTrial()">Da capo</button>
+          <button type="button" [disabled]="!canTry() || trial.running()" (click)="stepProgram()">
+            <span aria-hidden="true">▸</span><span>Un passo</span>
+          </button>
+          <button type="button" [disabled]="!trial.active()" (click)="resetTrial()">
+            <span aria-hidden="true">↻</span><span>Da capo</span>
+          </button>
           @if (trial.running()) {
-            <button type="button" (click)="stopTrial()">Ferma</button>
+            <button class="danger" type="button" (click)="stopTrial()">
+              <span aria-hidden="true">■</span><span>Ferma</span>
+            </button>
           }
         </p>
-        <p class="note">La prova è solo per te: non cambia il lavoro che vede il maestro.</p>
-
+        @if (!editingEnabled()) {
+          <p class="hint">Aspetta l’insegnante per provare.</p>
+        }
         @if (sceneProblem(); as message) {
           <p role="alert">{{ message }}</p>
         }
         @if (sceneMessage(); as message) {
-          <p role="status">{{ message }}</p>
-        }
-        @if (!trial.active() && runtime.outcome(); as result) {
-          <p class="note">
-            Esito dichiarato dal browser ({{ result.executions }} passi), non verificato dal server.
-          </p>
+          <app-result-feedback [success]="sceneSucceeded()" [message]="message" />
         }
       </section>
     }
   </div>
-
-  <p class="actions">
-    <button type="button" [disabled]="busy()" (click)="reload()">Ricarica</button>
-    <button type="button" [disabled]="busy()" (click)="leave()">Esci</button>
-  </p>
+  <!-- La chat pubblica resta sospesa come nella versione remota. -->
+  <footer class="session-footer">
+    <p class="hint">Se hai bisogno, chiedi all’insegnante.</p>
+    <div class="actions">
+      <button type="button" [disabled]="busy()" (click)="reload()">Ricarica</button>
+      <button type="button" [disabled]="busy()" (click)="leave()">Esci</button>
+    </div>
+  </footer>
 </main>

@@ -102,7 +102,7 @@ public sealed class AdminUserTests
         Assert.Throws<ArgumentException>(() => AdminUser.Restore(
             Guid.NewGuid(),
             "Maestra",
-            "maestro",
+            "insegnante",
             Hash,
             "stamp",
             isActive: true,

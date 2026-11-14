@@ -31,7 +31,7 @@ Le istruzioni esplicite dell'utente prevalgono sulle convenzioni locali. Per il 
 - Comandi di regia: coordinatore di sessione prima della transazione; stato, comando, consegne, idempotenza e outbox persistiti prima della notifica (§12.1).
 - Presenza, heartbeat e lease restano in memoria. L'anteprima segue l'eccezione esplicita `PublishWorkspacePreview` (§15.5); non trasformarla in salvataggio del progetto.
 - Frontend: servizi tipizzati per HTTP, due metodi di `ApiService` per il dispatcher e servizi di trasporto per gli endpoint dedicati. I componenti non usano `HttpClient` direttamente (§14.2, §20.7).
-- Web è un workspace con `projects/admin` (`web.admin`, Spartan, HTTPS 4200) e `projects/public` (`web.frontend`, UI alunni da definire, HTTPS 4300). Entrambe le cartelle avviano la propria app con `npm run start`; dipendenze e lockfile restano nella root Web. I launcher Windows nella root Codì sono documentati nel [README](../README.md#avvio-rapido-windows); API HTTPS 5200 e F5 senza browser. Usa Node già attivo tramite nvm.
+- Web è un workspace con `projects/admin` (`web.admin`, Spartan, HTTPS 4200) e `projects/public` (`web.frontend`, interfaccia propria per bambini e Three.js decorativo, HTTPS 4300). Entrambe le cartelle avviano la propria app con `npm run start`; dipendenze e lockfile restano nella root Web. I launcher Windows nella root Codì sono documentati nel [README](../README.md#avvio-rapido-windows); API HTTPS 5200 e F5 senza browser. Usa Node già attivo tramite nvm.
 - Nessun ACK presunto, credenziale in localStorage, replay automatico di vecchie direttive o esecuzione libera del codice dei bambini.
 
 ## Istruzioni da caricare per area

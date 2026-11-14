@@ -22,11 +22,11 @@ const STEP_DELAY_MS = 300;
 /**
  * Prova locale del programma dell'alunno (§13.1, §13.5, §14.4). L'alunno preme **Prova** e vede il
  * proprio personaggio muoversi sulla griglia: è lo stesso motore che esegue la corsa comandata dal
- * maestro e che l'anteprima dell'autore usa in stato isolato, ma la corsa vive **qui**.
+ * insegnante e che l'anteprima dell'autore usa in stato isolato, ma la corsa vive **qui**.
  *
  * Il confine è netto e dichiarato: la prova **non** è un'esecuzione della lezione. Non produce
  * checkpoint, non tocca il progetto salvato, non aggiorna la telemetria e non compare nella regia
- * del docente — il maestro continua a vedere soltanto la corsa che ha comandato. Per questo la prova
+ * del docente — l’insegnante continua a vedere soltanto la corsa che ha comandato. Per questo la prova
  * non passa dal worker del player: userebbe lo stesso canale dei comandi e potrebbe sovrapporsi a
  * una direttiva in arrivo.
  *
@@ -50,6 +50,7 @@ export class TrialRun {
 
   /** Esito didattico della prova, con i messaggi della definizione. */
   readonly message = signal('');
+  readonly succeeded = signal(false);
 
   /** Passi e rotazioni eseguiti: le operazioni che si vedono. */
   readonly steps = signal(0);
@@ -103,6 +104,7 @@ export class TrialRun {
     this.direction.set('East');
     this.problem.set('');
     this.message.set('');
+    this.succeeded.set(false);
     this.steps.set(0);
   }
 
@@ -159,6 +161,7 @@ export class TrialRun {
     if (state.outcome !== 'running') {
       this.stop();
       this.message.set(this.describeOutcome(state));
+      this.succeeded.set(state.outcome === 'success');
     }
   }
 

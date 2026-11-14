@@ -22,6 +22,11 @@ function badges(overrides: Partial<SessionStatusInput> = {}) {
 }
 
 describe('Riquadri di stato dell’alunno', () => {
+  it('non invita a lavorare quando perde il collegamento', () => {
+    expect(badges({ connection: 'reconnecting' })[1]?.label).toBe(
+      'Aspetta il collegamento alla lezione',
+    );
+  });
   it('non mostra lo stato Blockly per una domanda, anche dopo un errore del motore', () => {
     const result = badges({ showsProgram: false, runtimeStatus: 'Error' });
     expect(result).toHaveLength(2);
@@ -52,10 +57,10 @@ describe('Riquadri di stato dell’alunno', () => {
     expect(badge).toEqual({ tone, icon: expect.any(String), label });
   });
 
-  it('la pausa del maestro viene prima di ogni altra attesa', () => {
+  it('la pausa dell’insegnante viene prima di ogni altra attesa', () => {
     const [, work] = badges({ teacherPaused: true, view: 'Waiting', interactionEnabled: false });
 
-    expect(work).toEqual({ tone: 'stop', icon: 'pause', label: 'In pausa: guarda il maestro' });
+    expect(work).toEqual({ tone: 'stop', icon: 'pause', label: 'In pausa: guarda l’insegnante' });
   });
 
   it('il recupero in corso spiega perché il lavoro è fermo', () => {
@@ -86,12 +91,12 @@ describe('Riquadri di stato dell’alunno', () => {
     expect(badges({ interactionEnabled: false })[1]).toEqual({
       tone: 'wait',
       icon: 'lock',
-      label: 'Controlli chiusi: aspetta il maestro',
+      label: 'Controlli chiusi: aspetta l’insegnante',
     });
     expect(badges({ view: 'Waiting', interactionEnabled: false })[1]).toEqual({
       tone: 'wait',
       icon: 'hourglass',
-      label: 'Aspetta: il maestro prepara l’attività',
+      label: 'Aspetta: l’insegnante prepara l’attività',
     });
   });
 

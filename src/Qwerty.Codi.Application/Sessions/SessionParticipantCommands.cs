@@ -56,8 +56,8 @@ public sealed record JoinSessionOutcome(ParticipantJoinedDto Joined, string Cred
 /// consente prima di essere revocata. L'alunno la richiede dal proprio PC — per esempio quando il
 /// turno è finito — e il trasporto, dopo l'esito, cancella il cookie.
 ///
-/// L'uscita **revoca la credenziale** e non cancella nulla: la partecipazione resta, con il suo
-/// lavoro, perché uscire non è essere esclusi e il maestro deve continuare a vedere chi c'era.
+/// L'uscita registra il proprio istante e revoca le credenziali. La partecipazione e i lavori
+/// restano nello storico, ma la regia e i comandi collettivi non includono più chi è uscito.
 /// Una credenziale revocata non si riapre ripetendo l'uscita (§9.4): la ripetizione è rifiutata
 /// come richiesta senza identità, perché la revoca è una decisione e non una risposta persa.
 ///

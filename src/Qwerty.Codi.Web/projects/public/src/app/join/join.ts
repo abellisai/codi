@@ -11,7 +11,7 @@ import { AvailableClassroom, AvailableSchool, PlaySession, toApiError } from '@c
 import { ParticipantService } from '../core/participant-service';
 
 /**
- * Ingresso dell'alunno (§9.4, §10.3). La via ordinaria è il **codice di ingresso**: il maestro lo
+ * Ingresso dell'alunno (§9.4, §10.3). La via ordinaria è il **codice di ingresso**: l’insegnante lo
  * detta a voce, il bambino digita otto cifre e il proprio nome, e non deve conoscere né scuola né
  * classe — informazioni che a otto anni non si sanno dove prendere.
  *
@@ -23,8 +23,6 @@ import { ParticipantService } from '../core/participant-service';
  * più la via ordinaria, però un docente senza codice sotto mano o una lezione avviata prima che il
  * codice esistesse devono poter entrare lo stesso.
  *
- * **Interfaccia grezza, di proposito**: qui conta che il percorso funzioni e che cosa serve davvero
- * all'alunno di otto anni; l'aspetto si decide dopo, con il player e con i test in aula.
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,11 +39,11 @@ export class Join implements OnInit {
   /** Ogni quanto la home chiede se c'è una lezione in play: la stessa cadenza del battito (§11.5). */
   private static readonly PresenceIntervalMs = 3000;
 
-  /** Lunghezza del codice di ingresso: otto cifre, come lo detta il maestro (§9.4). */
+  /** Lunghezza del codice di ingresso: otto cifre, come lo detta l’insegnante (§9.4). */
   private static readonly JoinCodeLength = 8;
 
   /** Nome ricordato dal browser: **non** è una credenziale, è il nome da non riscrivere ogni volta. */
-  private static readonly NameStorageKey = 'codi:display-name';
+  private static readonly NameStorageKey = ParticipantService.DisplayNameStorageKey;
 
   protected readonly inPlay = signal(false);
   protected readonly presenceChecked = signal(false);

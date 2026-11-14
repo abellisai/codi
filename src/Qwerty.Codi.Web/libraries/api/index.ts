@@ -41,6 +41,7 @@ export type {
   ParticipantAssignment,
   ParticipantAttempt,
   ParticipantContext,
+  ParticipantProfile,
   ParticipantJoined,
   ParticipantPresence,
   ParticipantPreviewView,

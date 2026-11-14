@@ -3,15 +3,15 @@ import { ParticipantMessage } from '@codi/api';
 import { ParticipantChat } from '../core/participant-chat';
 
 /**
- * Chat del bambino con il maestro (§8, §15.1): legge ciò che il maestro ha scritto e risponde.
+ * Chat del bambino con l’insegnante (§8, §15.1): legge ciò che l’insegnante ha scritto e risponde.
  *
- * Il pannello **si apre da sé** quando c'è un messaggio del maestro: a otto anni non si cerca una
+ * Il pannello **si apre da sé** quando c'è un messaggio dell’insegnante: a otto anni non si cerca una
  * chat, e un messaggio che resta chiuso dietro un pulsante è un messaggio non letto. Quando non c'è
  * nulla, resta una sola riga con il pulsante per scrivere: un riquadro vuoto permanente sarebbe
  * rumore su una pagina che serve a lavorare.
  *
- * I messaggi si mostrano come testo, mai come HTML. Il thread è fra il maestro e questo bambino: non
- * esiste una chat fra bambini, e l'autore dell'altro lato è sempre il maestro.
+ * I messaggi si mostrano come testo, mai come HTML. Il thread è fra l’insegnante e questo bambino: non
+ * esiste una chat fra bambini, e l'autore dell'altro lato è sempre l’insegnante.
  */
 @Component({
   selector: 'app-chat-panel',
@@ -19,11 +19,13 @@ import { ParticipantChat } from '../core/participant-chat';
   template: `
     @if (!visible()) {
       <p class="actions">
-        <button type="button" (click)="opened.set(true)">Scrivi al maestro</button>
+        <button type="button" (click)="opened.set(true)">
+          <span aria-hidden="true">✉</span> Scrivi all’insegnante
+        </button>
       </p>
     } @else {
-      <section class="chat" aria-label="Messaggi con il maestro">
-        <h2>Messaggi con il maestro</h2>
+      <section class="chat" aria-label="Messaggi con l’insegnante">
+        <h2>Messaggi con l’insegnante</h2>
 
         <ol class="thread" aria-live="polite">
           @for (message of chat.messages(); track message.messageId) {
@@ -63,7 +65,7 @@ import { ParticipantChat } from '../core/participant-chat';
         } @else {
           <!-- La chat sta con la pagina: in attesa o in pausa il server rifiuta la scrittura, e il
                bambino deve sapere perché il campo non c'è invece di cercarlo. -->
-          <p role="status">Puoi rispondere quando il maestro apre l’attività.</p>
+          <p role="status">Puoi rispondere quando l’insegnante apre l’attività.</p>
           <p class="actions">
             <button type="button" (click)="opened.set(false)">Chiudi</button>
           </p>
@@ -74,11 +76,12 @@ import { ParticipantChat } from '../core/participant-chat';
   styles: `
     .chat {
       margin: 0.5rem 0 1rem;
-      padding: 0.75rem 1rem;
-      border: 1px solid #cbd5e1;
-      border-radius: 0.75rem;
+      padding: 1.5rem;
+      border: 2px solid #d6cbed;
+      border-radius: 1.5rem;
       background: #f8fafc;
       max-width: 48rem;
+      margin-top: 1.5rem;
     }
     .chat h2 {
       margin: 0 0 0.5rem;
@@ -104,7 +107,7 @@ import { ParticipantChat } from '../core/participant-chat';
       border-color: #bfdbfe;
     }
     .who {
-      font-size: 0.85rem;
+      font-size: 1rem;
       font-weight: 700;
       color: #3d5a73;
     }
@@ -148,7 +151,7 @@ export class ChatPanel {
 
   /** Autore del messaggio in parole: il contratto dice `Teacher` o `Participant`. */
   protected who(message: ParticipantMessage): string {
-    return message.author === 'Participant' ? 'Tu' : 'Il maestro';
+    return message.author === 'Participant' ? 'Tu' : 'L’insegnante';
   }
 
   protected typed(event: Event): void {

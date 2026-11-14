@@ -12,6 +12,7 @@ import {
   DesiredState,
   ParticipantContext,
   ParticipantMessage,
+  ParticipantProfile,
   ParticipantSnapshot,
 } from '@codi/api';
 import {
@@ -169,6 +170,7 @@ class RealtimeStub {
     this.workspaceHash = hash;
   }
   readonly authorized = signal(false);
+  readonly profile = signal<ParticipantProfile | null>(null);
   currentSnapshot(): ParticipantSnapshot | null {
     return null;
   }
@@ -222,6 +224,12 @@ class ChatStub {
 /** Sostituto del trasporto pubblico: il contesto arriva dalla credenziale, o manca. */
 class ParticipantStub {
   contextFailure: ApiError | null = null;
+  leaveFailure: ApiError | null = null;
+  rememberedName = '';
+
+  rememberDisplayName(name: string): void {
+    this.rememberedName = name;
+  }
 
   left = false;
 
@@ -246,6 +254,7 @@ class ParticipantStub {
   }
 
   async leave(): Promise<void> {
+    if (this.leaveFailure) throw this.leaveFailure;
     this.left = true;
   }
 
@@ -361,8 +370,8 @@ describe('Pagina dell’alunno', () => {
     await mount();
 
     expect(pageText()).toContain('Luca');
-    expect(pageText()).toContain('Controlli: attivi');
-    expect(pageText()).toContain('Pausa dell’insegnante: no');
+    expect(pageText()).toContain('Puoi lavorare!');
+    expect(pageText()).not.toContain('executionGeneration');
     expect(api.queries).toEqual(['GetParticipantSnapshot', 'GetAssignedExercise', 'GetAttempt']);
   });
 
@@ -409,16 +418,18 @@ describe('Pagina dell’alunno', () => {
 
     expect(pageText()).toContain('Disegno con i blocchi');
     expect(pageText()).toContain('Porta il personaggio alla stella.');
-    expect(pageText()).toContain('aula_start');
+    expect(pageText()).not.toContain('aula_start');
+    expect(page().querySelector('app-participant-workspace')).not.toBeNull();
     expect(pageText()).toContain('Lavoro salvato');
   });
 
-  it('dopo un salvataggio confermato il badge mostra la revisione confermata dal server', async () => {
-    // Il difetto trovato dal collaudo: il salvataggio riusciva ma il badge restava fermo al valore
-    // letto all’ingresso. La pagina unisce nel tentativo i campi della ricevuta dell’autosave.
+  it('dopo un salvataggio confermato il tentativo usa la revisione confermata dal server', async () => {
+    // La ricevuta aggiorna il modello del tentativo. Le revisioni non compaiono nella vista del bambino.
     realtime.authorized.set(true);
     await mount();
-    expect(pageText()).toContain('revisione del progetto 0');
+    const shownAttempt = () =>
+      (harness.routeDebugElement!.componentInstance as { attempt: () => Attempt }).attempt();
+    expect(shownAttempt().projectRevision).toBe('0');
 
     TestBed.inject(AttemptAutosave).saved.set({
       attemptId: 'a1',
@@ -431,11 +442,12 @@ describe('Pagina dell’alunno', () => {
     });
     await flush();
 
-    expect(pageText()).toContain('revisione del progetto 3');
+    expect(shownAttempt().projectRevision).toBe('3');
+    expect(shownAttempt().rowVersion).toBe('7');
     expect(realtime.workspaceHash).toBe('impronta-salvata');
   });
 
-  it('una ricevuta di un altro tentativo non aggiorna il badge', async () => {
+  it('una ricevuta di un altro tentativo non aggiorna il modello corrente', async () => {
     // Il confronto è sull’identificativo del tentativo: la ricevuta di un esercizio precedente,
     // ancora in memoria nell’autosave, non deve toccare la pagina di quello aperto.
     realtime.authorized.set(true);
@@ -452,7 +464,10 @@ describe('Pagina dell’alunno', () => {
     });
     await flush();
 
-    expect(pageText()).toContain('revisione del progetto 0');
+    const current = (
+      harness.routeDebugElement!.componentInstance as { attempt: () => Attempt }
+    ).attempt();
+    expect(current.projectRevision).toBe('0');
     expect(realtime.workspaceHash).toBe('impronta-progetto');
   });
   it('mostra la conclusione live e rimuove il progetto dopo Goodbye', async () => {
@@ -464,9 +479,9 @@ describe('Pagina dell’alunno', () => {
     });
     await flush();
     expect(pageText()).toContain('La lezione è conclusa. Puoi uscire.');
-    expect(pageText()).toContain('Lavoro: concluso');
+    expect(pageText()).toContain('Grazie per il tuo lavoro!');
     expect(pageText()).not.toContain('Il mio progetto');
-    expect(pageText()).toContain('Vista: Goodbye');
+    expect(pageText()).not.toContain('Vista: Goodbye');
   });
 
   it('in attesa non chiede il lavoro: non c’è un esercizio da mostrare', async () => {
@@ -517,7 +532,11 @@ describe('Pagina dell’alunno', () => {
 
     await mount();
 
-    expect(pageText()).toContain('Istruzione ricevuta: Run');
+    expect(pageText()).not.toContain('Istruzione ricevuta: Run');
+    expect(
+      realtime.desiredState()?.executionDirective?.kind ??
+        api.snapshot.desiredState.executionDirective?.kind,
+    ).toBe('Run');
   });
 
   it('invita a entrare di nuovo quando la credenziale non è più valida', async () => {
@@ -539,12 +558,38 @@ describe('Pagina dell’alunno', () => {
     expect(TestBed.inject(Router).url).toBe('/join');
   });
 
+  it('mostra il nome corretto dall’insegnante anche dopo la rilettura del contesto iniziale', async () => {
+    await mount();
+    realtime.profile.set({ participantId: 'p1', displayName: 'Luca Rossi', rowVersion: '2' });
+    await flush();
+    expect(page().querySelector('h1')?.textContent?.trim()).toBe('Luca Rossi');
+    expect(participants.rememberedName).toBe('Luca Rossi');
+    button('Ricarica').click();
+    await flush();
+    expect(page().querySelector('h1')?.textContent?.trim()).toBe('Luca Rossi');
+  });
+
+  it('resta nella lezione quando il server non conferma l’uscita', async () => {
+    await mount();
+    participants.leaveFailure = new ApiError(
+      'NetworkError',
+      0,
+      'Collegamento interrotto. Riprova.',
+    );
+    button('Esci').click();
+    await flush();
+    expect(TestBed.inject(Router).url).toBe('/lezione');
+    expect(pageText()).toContain('Collegamento interrotto. Riprova.');
+    expect(realtime.stopped).toBe(false);
+    expect(button('Esci').disabled).toBe(false);
+  });
+
   it('apre il collegamento realtime e mostra lo stato dell’operatività', async () => {
     await mount();
 
     expect(realtime.started).toBe(true);
-    expect(pageText()).toContain('Collegamento: collegato');
-    expect(pageText()).toContain('autorizzazione fino alle 2026-10-02T08:00:10Z');
+    expect(pageText()).toContain('Collegato alla lezione');
+    expect(pageText()).not.toContain('2026-10-02T08:00:10Z');
   });
 
   it('un comando consegnato cambia i permessi e fa rileggere il lavoro', async () => {
@@ -557,8 +602,8 @@ describe('Pagina dell’alunno', () => {
     realtime.lastCommand.set({ commandName: 'EnableActivity', outcome: 'Applied' });
     await flush();
 
-    expect(pageText()).toContain('Controlli: attivi');
-    expect(pageText()).toContain('Ultimo comando ricevuto: EnableActivity (Applied)');
+    expect(pageText()).toContain('Puoi lavorare!');
+    expect(pageText()).not.toContain('EnableActivity');
     expect(api.queries).toContain('GetAssignedExercise');
     expect(pageText()).toContain('Disegno con i blocchi');
   });
@@ -581,7 +626,7 @@ describe('Pagina dell’alunno', () => {
     realtime.notice.set('Un’altra scheda ha preso il posto di questa.');
     await flush();
 
-    expect(pageText()).toContain('Collegamento: sostituito da un’altra pagina');
+    expect(pageText()).toContain('Un’altra pagina ha preso il posto');
     expect(pageText()).toContain('Un’altra scheda ha preso il posto di questa.');
   });
 
@@ -612,17 +657,17 @@ describe('Pagina dell’alunno', () => {
     expect(page().querySelectorAll('app-status-badge svg').length).toBe(3);
   });
 
-  it('dice di aspettare quando i controlli sono chiusi e quando il maestro è in pausa', async () => {
+  it('dice di aspettare quando i controlli sono chiusi e quando l’insegnante è in pausa', async () => {
     api.snapshot = snapshot('Exercise', false);
     await mount();
 
-    expect(pageText()).toContain('Controlli chiusi: aspetta il maestro');
+    expect(pageText()).toContain('Controlli chiusi: aspetta l’insegnante');
     expect(page().querySelector('.badge-wait')).not.toBeNull();
 
     realtime.desiredState.set({ ...desiredState('Exercise', true, 'a1'), teacherPaused: true });
     await flush();
 
-    expect(pageText()).toContain('In pausa: guarda il maestro');
+    expect(pageText()).toContain('In pausa: guarda l’insegnante');
     expect(page().querySelector('.badge-stop')?.textContent).toContain('In pausa');
   });
 
@@ -640,7 +685,7 @@ describe('Pagina dell’alunno', () => {
     expect(page().querySelector('.board')).toBeNull();
   });
 
-  it('la prova è disponibile solo quando il maestro lascia lavorare', async () => {
+  it('la prova è disponibile solo quando l’insegnante lascia lavorare', async () => {
     api.snapshot = snapshot('Exercise', false);
     await mount();
     expect(button('Prova').disabled).toBe(true);
@@ -664,12 +709,12 @@ describe('Pagina dell’alunno', () => {
     // La prova vive nella pagina: il worker del player non riceve nulla (§13.1).
     expect(worker.sent.length).toBe(sentBeforeTrial);
     expect(pageText()).toContain('Stai provando: 1 passi.');
-    expect(pageText()).toContain('La prova è solo per te');
+    expect(pageText()).toContain('Premi Prova e guarda il personaggio');
     const character = page().querySelector('.cell-character');
     expect(character?.getAttribute('aria-label')).toContain('Riga 1, colonna 2');
   });
 
-  it('la prova si ferma e la scena resta quando il maestro mette in pausa', async () => {
+  it('la prova si ferma e la scena resta quando l’insegnante mette in pausa', async () => {
     realtime.authorized.set(true);
     await mount();
     button('Un passo').click();
@@ -679,7 +724,7 @@ describe('Pagina dell’alunno', () => {
     realtime.desiredState.set({ ...desiredState('Exercise', true, 'a1'), teacherPaused: true });
     await flush();
 
-    expect(pageText()).toContain('In pausa: guarda il maestro');
+    expect(pageText()).toContain('In pausa: guarda l’insegnante');
     expect(button('Prova').disabled).toBe(true);
     // La posizione raggiunta resta: si è smesso di muoverla, non si è cancellata.
     expect(page().querySelector('.cell-character')).not.toBeNull();
@@ -698,7 +743,9 @@ describe('Pagina dell’alunno', () => {
     // I comandi della prova stanno con la scena, non con l'editor.
     const program = area!.querySelector('section[aria-label="Il mio programma"]')!;
     expect(
-      [...program.querySelectorAll('button')].map((control) => control.textContent?.trim()),
+      [...program.querySelectorAll('button')].map((control) =>
+        control.querySelector('span:last-child')?.textContent?.trim(),
+      ),
     ).toEqual(['Prova', 'Un passo', 'Da capo']);
   });
 
@@ -734,7 +781,7 @@ describe('Pagina dell’alunno', () => {
     expect(area!.classList.contains('one-panel')).toBe(false);
     expect(pageText()).toContain('Somma uno');
     expect(pageText()).toContain('Le variabili e l’uscita');
-    expect(pageText()).toContain('Il progetto conserva i tuoi blocchi.');
+    expect(pageText()).toContain('I tuoi blocchi si salvano da soli.');
   });
 
   it('un esercizio che conserva valori non mostra il riquadro del programma del player', async () => {
@@ -793,17 +840,41 @@ describe('Pagina dell’alunno', () => {
     ]);
   });
 
-  it('con un solo pannello l’area di lavoro non lascia una colonna vuota', async () => {
+  it('in attesa mostra l’indicazione principale senza un programma vuoto', async () => {
     api.snapshot = snapshot('Waiting', false);
 
     await mount();
 
-    // In attesa non c'è ancora un progetto: resta il programma, ed è l'unico pannello dell'area.
+    // In attesa l'indicazione principale sostituisce editor e programma.
     const area = page().querySelector('.work-area');
     expect(area).not.toBeNull();
     expect(
       [...area!.querySelectorAll('section')].map((section) => section.getAttribute('aria-label')),
-    ).toEqual(['Il mio programma']);
+    ).toEqual([]);
+    expect(page().querySelector('.next-action')?.textContent).toContain('Aspetta l’insegnante');
+  });
+
+  it('indica l’azione e dà precedenza alla pausa e al collegamento', async () => {
+    realtime.authorized.set(true);
+    await mount();
+    const guidance = () => page().querySelector('.next-action')?.textContent;
+    expect(guidance()).toContain('Crea il tuo programma');
+    realtime.desiredState.set({ ...desiredState('Exercise', true, 'a1'), teacherPaused: true });
+    await flush();
+    expect(guidance()).toContain('Pausa: ascolta l’insegnante');
+    expect(button('Prova').disabled).toBe(true);
+    realtime.status.set('reconnecting');
+    await flush();
+    expect(guidance()).toContain('Sto cercando la tua lezione');
+    expect(guidance()).not.toContain('Crea il tuo programma');
+  });
+
+  it('non mostra dati tecnici o il documento del progetto al bambino', async () => {
+    await mount();
+    expect(page().querySelector('pre, details')).toBeNull();
+    expect(pageText()).not.toContain('revisione');
+    expect(pageText()).not.toContain('Tentativo');
+    expect(pageText()).not.toContain('impronta-progetto');
   });
 
   async function mount(): Promise<void> {
@@ -826,7 +897,12 @@ describe('Pagina dell’alunno', () => {
 
   function button(label: string): HTMLButtonElement {
     const found = [...page().querySelectorAll('button')].find(
-      (candidate) => (candidate.textContent ?? '').trim() === label,
+      (candidate) =>
+        (
+          candidate.querySelector('span:last-child')?.textContent ??
+          candidate.textContent ??
+          ''
+        ).trim() === label,
     );
     if (found === undefined) {
       throw new Error(`Pulsante non trovato: ${label}`);

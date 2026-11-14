@@ -35,7 +35,7 @@ internal static class SessionCommandTargets
             .ConfigureAwait(false);
 
         var admitted = rows
-            .Where(row => row.AdmissionStatusText == nameof(AdmissionStatus.Admitted))
+            .Where(row => row.AdmissionStatusText == nameof(AdmissionStatus.Admitted) && row.LeftAtUtcMs is null)
             .Select(row => row.Id)
             .ToHashSet(StringComparer.Ordinal);
 

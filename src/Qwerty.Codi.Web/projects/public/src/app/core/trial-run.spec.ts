@@ -86,6 +86,7 @@ describe('Prova locale del programma', () => {
     expect(trial.position()).toEqual({ x: 4, y: 0 });
     expect(trial.steps()).toBe(4);
     expect(trial.message()).toBe('Bravo!');
+    expect(trial.succeeded()).toBe(true);
   });
 
   it('un passo alla volta avanza di una sola operazione', () => {
@@ -112,6 +113,7 @@ describe('Prova locale del programma', () => {
     trial.step(withObstacle, program);
 
     expect(trial.message()).toBe('Attento!');
+    expect(trial.succeeded()).toBe(false);
     expect(trial.running()).toBe(false);
   });
 
@@ -153,6 +155,7 @@ describe('Prova locale del programma', () => {
 
     expect(trial.position()).toEqual({ x: 1, y: 0 });
     expect(trial.message()).toBe('');
+    expect(trial.succeeded()).toBe(false);
   });
 
   it('la prova non tocca il worker: nessun messaggio e nessuna risorsa condivisa', () => {

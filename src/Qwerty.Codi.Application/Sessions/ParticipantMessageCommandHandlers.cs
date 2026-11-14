@@ -150,7 +150,7 @@ public sealed class PostParticipantMessageHandler(
         {
             throw new CodiRequestException(
                 CodiErrorCodes.SessionStateConflict,
-                "La chat è ferma insieme alla pagina: il maestro deve riprendere il lavoro.");
+                "La chat è ferma insieme alla pagina: l’insegnante deve riprendere il lavoro.");
         }
 
         var message = new ParticipantMessageDto(

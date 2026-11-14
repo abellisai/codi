@@ -13,4 +13,5 @@ public sealed record ParticipantSnapshotDto(
     long EffectiveRevision,
     long ConnectionEpoch,
     DateTimeOffset IssuedAtUtc,
-    DesiredStateDto DesiredState);
+    DesiredStateDto DesiredState,
+    ParticipantProfileDto? Profile = null);

@@ -98,7 +98,7 @@ public sealed class CodiRequestException(string code, string message, Exception?
     /// sono chiusi. Il messaggio è per l'alunno, che non può fare nulla se non aspettare.
     /// </summary>
     public static CodiRequestException AdmissionsClosed() =>
-        new(CodiErrorCodes.AdmissionsClosed, "La lezione non accetta nuovi ingressi: chiedi al maestro.");
+        new(CodiErrorCodes.AdmissionsClosed, "La lezione non accetta nuovi ingressi: chiedi all’insegnante.");
 
     /// <summary>
     /// La stessa chiave di idempotenza con un contenuto diverso (§9.4): ripetere la richiesta non
@@ -117,7 +117,7 @@ public sealed class CodiRequestException(string code, string message, Exception?
     public static CodiRequestException InvalidJoinCode() =>
         new(
             CodiErrorCodes.InvalidJoinCode,
-            "Il codice non è valido: controlla le otto cifre e chiedile di nuovo al maestro.");
+            "Il codice non è valido: controlla le otto cifre e chiedile di nuovo all’insegnante.");
 
     /// <summary>
     /// Troppi codici errati in poco tempo dallo stesso browser o dallo stesso indirizzo (§17.3):
@@ -127,5 +127,5 @@ public sealed class CodiRequestException(string code, string message, Exception?
     public static CodiRequestException TooManyJoinAttempts() =>
         new(
             CodiErrorCodes.TooManyJoinAttempts,
-            "Troppi codici errati: aspetta un momento e riprova, oppure chiedi al maestro.");
+            "Troppi codici errati: aspetta un momento e riprova, oppure chiedi all’insegnante.");
 }

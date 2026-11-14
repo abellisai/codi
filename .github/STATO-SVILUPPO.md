@@ -1,7 +1,31 @@
 # Stato di sviluppo Codì
 
-Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.59 e funzionale 0.17.
+Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.61 e funzionale 0.19.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
+
+## Integrazione con origin/main e conservazione della grafica: 14 novembre 2026
+
+**CODICE INTEGRATO E VALIDATO LOCALMENTE.** Il pull richiesto dall'utente aggiorna `main` fino a `61c31e5`.
+La ripresa delle modifiche locali ha richiesto quattro risoluzioni di conflitto.
+La grafica pubblica conserva colori, layout, pulsanti grandi, personaggio e stelle Three.js.
+Gli aggiornamenti remoti conservano variabili dichiarate, caricamento assistito e aggiornamento del tentativo dopo il salvataggio.
+La chat pubblica resta sospesa secondo la decisione registrata nella versione remota.
+I test delle ricevute verificano il modello interno; le revisioni restano nascoste al bambino.
+
+Controlli eseguiti dall'agente sul codice integrato:
+
+- Build .NET Release: uscita 0, zero errori e avvisi.
+- Test .NET: 1.414 superati, con 400 dominio, 1.006 integrazione e 8 protocollo.
+- Test admin e librerie condivise: 420 superati in 39 file.
+- Test pubblici: 155 superati in 17 file.
+- ESLint e Prettier del workspace Web: uscita 0.
+- Bundle delle due app: uscita 0, nessun avviso, 470,72 kB admin e 263,13 kB public.
+- Chrome: sette scenari grafici superati dopo l'integrazione, con trasporti sintetici.
+- Ricerca dei marcatori di conflitto e `git diff --check`: nessuna anomalia.
+
+La diagnostica di canvas assente in jsdom resta nei test degli editor; nessun test risulta fallito.
+Le evidenze grafiche aggiornate risiedono in `TestResults/public-design-20261114`.
+Il server operativo non ha ricevuto la migrazione 0014; il riavvio con la nuova versione resta necessario.
 
 ## Azioni della card partecipante con etichetta visibile: 14 novembre 2026
 
@@ -24,6 +48,160 @@ card sostituisce il `.actions` globale nowrap e manda a capo le azioni.
   `libraries/exercise-engine/value-blocks.spec.ts:115`, introdotto da un'altra porzione di
   lavoro in corso sull'albero condiviso. Da riverificare dopo lo sbarco di quella porzione.
 - Evidenze: allegato `qa-b4-report.md` del task e screenshot della pagina partecipanti.
+
+## Nome corretto e uscita del partecipante: 14 novembre 2026
+
+**VALIDATO LOCALMENTE.** La rinomina dalla regia raggiunge la pagina pubblica nel successivo rinnovo del collegamento, anche durante una pausa.
+Snapshot e rinnovo portano il profilo autorevole con nome, identificativo del partecipante e versione della riga.
+Il client controlla il destinatario e confronta le versioni con `BigInt`.
+Un profilo precedente non ripristina il nome iniziale. La pagina ricorda il nome corretto per il prossimo ingresso.
+Il profilo non cambia permessi, direttive o stato dell'esercizio e non richiede una lettura periodica aggiuntiva.
+
+«Esci» registra `left_at_utc_ms` con la migrazione 0014 e revoca le credenziali del partecipante.
+Il coordinatore precede la transazione; uscita, revoche e disabilitazione del lavoro hanno un solo commit.
+La griglia e i comandi collettivi ignorano chi è uscito. La connessione registrata e la chat si chiudono dopo il commit.
+I lavori e la partecipazione restano nel database. Un nuovo ingresso crea una nuova partecipazione.
+La pagina torna all'ingresso solo dopo la conferma del server; un errore consente di riprovare.
+Le specifiche funzionale 0.19 e tecnica 0.61 descrivono i comportamenti richiesti.
+
+L'agente ha eseguito i controlli il 14 novembre 2026:
+
+| Controllo | Esito reale |
+|---|---|
+| Restore bloccato dalla sola fonte NuGet pubblica | Uscita 0 |
+| Build .NET Release in cartella separata | Uscita 0; zero avvisi e zero errori |
+| Test .NET Release | Uscita 0; 1.413 superati: 400 dominio, 1.005 integrazione, 8 protocollo |
+| Test pubblici | Uscita 0; 151 superati in 16 file |
+| Test admin e librerie condivise | Uscita 0; 408 superati in 38 file; diagnostica preesistente di canvas assente in jsdom |
+| ESLint e Prettier del workspace Web | Uscita 0 |
+| Bundle delle due app con `node scripts/build.mjs` | Uscita 0; nessun avviso; 470,63 kB admin e 263,32 kB public |
+| Formattazione .NET sui file modificati | Uscita 0; avviso di caricamento del workspace |
+
+I test verificano rinomina nel rinnovo, aggiornamento del titolo pubblico e memoria del nome corretto.
+Verificano inoltre versioni precedenti, destinatario estraneo e uscita non confermata.
+I test reali verificano scomparsa dalla griglia e dallo snapshot docente, nuovo ingresso e revoca.
+Una prova con esercizi assegnati conferma conservazione dei tentativi ed esclusione dalle consegne successive.
+La migrazione aggiorna uno schema 13 con partecipante esistente, conserva i dati e rifiuta un'uscita precedente all'ingresso.
+
+Build e test usano `-p:ArtifactsPath=C:\Development\codi\TestResults\participant-lifecycle-dotnet`.
+Il server già aperto e i dati operativi non hanno ricevuto la migrazione 0014.
+Per attivare i nuovi comportamenti sul server aperto serve il riavvio con la nuova versione.
+Nessun nuovo collaudo nel browser per questa porzione; il collaudo grafico precedente resta valido per il proprio perimetro.
+
+## Motivo dei pulsanti disabilitati nella regia: 14 novembre 2026
+
+**VALIDATO LOCALMENTE.** La sezione Attività mostra un messaggio visibile sotto i pulsanti disabilitati.
+Prima richiede di assegnare l'esercizio a tutti i bambini, poi di premere «Permetti di lavorare».
+Il motivo distingue anche collegamento, lezione non avviata, pausa, conclusione e assenza di alunni.
+Le pause individuali e il recupero rimandano alla pagina Partecipanti.
+Il testo segue lo stato corrente e scompare quando tutti i comandi sono disponibili.
+`aria-describedby` associa il motivo ai pulsanti disabilitati. `role="status"` annuncia l'aggiornamento.
+La modifica riguarda template, componente e test di `SessionDetail`; non cambia le precondizioni dei comandi.
+
+Controlli eseguiti dall'agente il 14 novembre 2026 dalla root Web:
+
+- ESLint sull'area sessioni: uscita 0.
+- Prettier sui tre file modificati: completato senza errori.
+- Test dell'area sessioni admin: uscita 0, 73 test superati in cinque file.
+- Quattro nuovi casi verificano lezione non avviata, in pausa, conclusa e classe vuota.
+- Il test della sequenza verifica messaggio e associazioni accessibili prima dell'assegnazione, dopo l'assegnazione e dopo il permesso.
+- Build `web.admin`: uscita 0, nessun avviso, bundle iniziale 470,63 kB.
+
+Nessuna verifica nel browser per questa modifica. La tecnica §14.3 descrive i messaggi.
+
+## Nomi dei comandi e precondizioni nella regia: 14 novembre 2026
+
+**VALIDATO LOCALMENTE.** I pulsanti diventano «Permetti di lavorare» ed «Esegui i programmi di tutti».
+La regia applica le precondizioni già descritte in tecnica §6.4–§6.5 prima dell'invio.
+Il permesso richiede un esercizio assegnato a tutti gli alunni ammessi e nessuna pausa.
+L'esecuzione e il riavvio richiedono anche il permesso di lavorare per tutti.
+Gli alunni esclusi non bloccano i comandi destinati agli ammessi.
+L'assegnazione resta disponibile quando gli alunni non hanno ancora un esercizio.
+Il servizio verifica i vincoli anche per chiamate dirette ai metodi dei comandi collettivi.
+
+File: `session-detail.html`, `session-detail.ts`, `session-regia-service.ts` e `session-detail.spec.ts` nell'area sessioni admin.
+Nessuna modifica a backend, protocollo o contratti. La tecnica §14.3 descrive i nomi e i vincoli.
+
+L'agente ha eseguito i controlli dalla root Web il 14 novembre 2026:
+
+- ESLint sulla cartella delle sessioni: uscita 0.
+- Prettier sui quattro file modificati: completato senza errori.
+- `ng test web.admin --watch=false --include=projects/admin/src/app/features/admin/sessions/*.spec.ts`: uscita 0, 69 test superati in cinque file.
+- Otto nuovi casi verificano assenza di assegnazione, classe mista, esclusi e disponibilità dopo assegnazione e permesso.
+- `ng build web.admin`: uscita 0, nessun avviso, bundle iniziale 470,63 kB.
+
+Nessuna verifica nel browser per questa modifica.
+
+## Regia admin senza riepiloghi tecnici: 14 novembre 2026
+
+**VALIDATO LOCALMENTE.** Su richiesta dell'utente, la regia non mostra più i riepiloghi testuali dei comandi.
+La modifica riguarda `session-detail.html` e rimuove nome tecnico e conteggi di consegna dalla pagina.
+Restano visibili gli avvisi di recupero del lavoro e di collegamento interrotto.
+Il servizio conserva i dati dei comandi e delle consegne.
+La tecnica §14.3 descrive la presentazione aggiornata, senza modifiche al protocollo o al backend.
+
+L'agente ha eseguito i controlli dalla root Web il 14 novembre 2026:
+
+- ESLint sulla cartella delle sessioni: uscita 0.
+- Prettier sul template modificato: uscita 0.
+- `ng test web.admin --watch=false --include=projects/admin/src/app/features/admin/sessions/session-detail.spec.ts`: uscita 0, 19 test superati.
+- `ng build web.admin`: uscita 0, nessun avviso, bundle iniziale 470,63 kB.
+
+Nessuna verifica nel browser per questa rimozione testuale.
+
+## Parte pubblica per bambini e animazioni Three.js: 14 novembre 2026
+
+**VALIDATO LOCALMENTE E NEL BROWSER CON TRASPORTI SINTETICI.**
+La richiesta dell'utente comprende terminologia, grafica per bambini di nove anni ed effetti Three.js.
+La ricerca nei file versionati non trova più la parola sostituita: i testi usano «insegnante».
+La sostituzione comprende messaggi del backend, commenti, documenti e dati dei test.
+I nomi dei contratti e le rotte restano invariati.
+
+Il benvenuto presenta un personaggio Three.js e un pulsante principale.
+L'ingresso numera nome e codice, conta le cifre e accetta Invio da tastiera.
+La lezione mostra «Adesso», consegna e due riquadri per progetto e programma.
+I pulsanti hanno un'altezza minima di 56 pixel, con focus visibile e comandi distinti.
+La vista del bambino non espone più documenti del progetto, revisioni o dettagli del protocollo.
+Il riquadro principale dà precedenza a collegamento, recupero, pausa e attesa.
+Il collegamento assente non mostra più «Puoi lavorare!».
+
+`LearningScene` carica Three.js solo quando serve e anima personaggio e stelle.
+`ResultFeedback` distingue risultato corretto e invito a riprovare con simboli, parole e colori.
+Il successo deriva dal motore o dalla correzione, anche quando i testi degli esiti coincidono.
+Il movimento termina entro 4,5 secondi, rispetta il movimento ridotto e si sospende fuori schermo.
+La distruzione libera le risorse grafiche. Senza WebGL resta il disegno statico.
+La revisione non cambia permessi, salvataggi, protocollo o schema.
+
+L'agente ha eseguito questi controlli il 14 novembre 2026:
+
+| Controllo | Esito reale |
+|---|---|
+| `ng test web.frontend --watch=false` | Uscita 0; 148 test superati in 16 file, inclusi 8 nuovi casi |
+| `eslint .` nella root Web | Uscita 0; nessun errore o avviso |
+| `prettier --check .` nella root Web | Uscita 0 |
+| `ng build web.frontend` | Uscita 0; nessun avviso; iniziale 263,20 kB, Three.js differito 589,74 kB |
+| Installazione Three.js e tipi con npm | Uscita 0; audit completo con zero vulnerabilità |
+| Restore bloccato e build .NET Release in cartella separata | Uscita 0; zero errori e avvisi |
+| Test .NET Release nella stessa cartella | Uscita 0; 1.409 superati: 398 dominio, 1.003 integrazione, 8 protocollo |
+| Chrome con Three.js e Blockly reali | 7 scenari superati; nessun errore JavaScript della pagina |
+| `git diff --check` e ricerca terminologica nei file versionati | Nessuna anomalia o occorrenza residua |
+
+La build .NET ordinaria ha incontrato file occupati dal server già aperto.
+La verifica successiva usa `-p:ArtifactsPath=C:\Development\codi\TestResults\public-redesign-dotnet`.
+Il restore usa `--locked-mode --source https://api.nuget.org/v3/index.json` senza cambiare la configurazione del progetto.
+La fonte NuGet privata configurata nell'ambiente produceva avvisi durante il primo restore.
+Il server e i dati operativi restano invariati.
+
+Il browser verifica benvenuto, ingresso da tastiera, esercizio, risultato, pausa, schermo stretto e assenza di WebGL.
+La verifica usa 1366×900 e 390×844 pixel. «Prova» compare entro lo schermo largo senza scorrimento.
+Le richieste HTTP e SignalR usano risposte sintetiche intercettate nel browser.
+Il browser non scrive al server. La verifica non sostituisce una lezione completa con backend reale.
+Script: `TestResults/public-design-check.mjs`.
+Evidenze: `TestResults/public-design-20261114/esiti.json` e otto schermate nella stessa cartella.
+
+Restano da verificare comprensione con bambini, tastiera nell'editor Blockly e prestazioni sui dodici PC fisici.
+Le specifiche funzionale 0.18 e tecnica 0.60 descrivono la nuova interfaccia.
+Il prossimo lavoro resta il collaudo in aula previsto da T9.
 
 ## ValueProgram: editor del progetto nella pagina dell'alunno: 14 novembre 2026
 
@@ -628,7 +806,7 @@ l'abilitazione gli arrivano **senza ricaricare**; il docente apre la chat dalla 
 messaggio arriva all'alunno **senza ricaricare**, e il pannello si apre da sé; l'alunno risponde; la
 risposta compare nella card del docente in tempo reale; il contatore dei non letti sale a ogni
 messaggio e si azzera alla rilettura (server: 2 → 0); la pausa del singolo toglie il campo e lascia
-la riga «Puoi rispondere quando il maestro apre l'attività» con il thread ancora leggibile; la
+la riga «Puoi rispondere quando l’insegnante apre l'attività» con il thread ancora leggibile; la
 ripresa lo restituisce; la ricarica rilegge il thread dal server; `GetParticipantMessages` restituisce
 gli stessi tre messaggi nello stesso ordine.
 
@@ -696,7 +874,7 @@ portano i cataloghi a **49 comandi e 32 query**.
 | `dotnet build` / `dotnet test` | 0 warning, 0 errori; **1.384 test** (398 dominio, 978 integrazione, 8 protocollo), 0 falliti — il backend non è stato toccato |
 
 **Che cosa NON c'è, dichiarato.** Nessun collaudo nel browser: la chat lato alunno è provata dai test
-DOM, non da due browser veri con un maestro che scrive e un bambino che risponde. Restano quindi non
+DOM, non da due browser veri con un insegnante che scrive e un bambino che risponde. Restano quindi non
 esercitati in aula il ritardo fra invio e comparsa, la leggibilità del pannello a distanza e il caso
 di dodici alunni collegati, che appartiene al laboratorio su 12 PC (T9). Il thread non si persiste e
 non si persisterà per questa decisione: chi ricarica la pagina lo rilegge dal server finché la
@@ -1232,7 +1410,7 @@ su 12 PC (T9). L'aspetto della pagina resta provvisorio per scelta.
 (`session/status-badge.ts|css`, `session/status-badges.ts`): collegamento (§11.6), che cosa può fare
 adesso (§6.2), che cosa fa il suo programma (§13.6, §13.7). La mappa è una **funzione pura**, quindi le
 precedenze si verificano senza montare la pagina: una lezione conclusa non torna indietro, il recupero
-in corso spiega perché il lavoro è fermo, la pausa del maestro viene prima dei controlli chiusi. Il
+in corso spiega perché il lavoro è fermo, la pausa dell’insegnante viene prima dei controlli chiusi. Il
 colore non è mai l'unica informazione: ogni riquadro porta icona e testo, e i toni sono cinque
 (ok, work, wait, stop, idle). Il pannello con le parole del contratto resta, ma dentro «Informazioni
 per il docente».
@@ -1242,7 +1420,7 @@ per il docente».
 nel worker, e disegna il personaggio sulla scena con i messaggi della definizione. Comandi: **Prova**
 (scorre i passi ogni 300 ms come il player), **Un passo**, **Da capo**, **Ferma** mentre scorre. Il
 confine è dichiarato e verificato: la prova non produce checkpoint, non tocca il progetto salvato, non
-aggiorna la telemetria e **non compare nella regia** — il maestro vede solo la corsa che ha comandato —
+aggiorna la telemetria e **non compare nella regia** — l’insegnante vede solo la corsa che ha comandato —
 ed è ammessa soltanto quando i controlli sono attivi. Si ferma da sé quando il docente comanda
 un'esecuzione o quando i controlli si chiudono, e si azzera quando il progetto cambia, perché appartiene
 al progetto con cui è cominciata. Un progetto che non si compila si spiega con il messaggio del motore.
@@ -1270,7 +1448,7 @@ public su 4301 con un proxy di collaudo, Edge headless pilotato dal DevTools Pro
 
 Esiti osservati, tutti con schermata in `TestResults/collaudo-alunno/shots`:
 
-- prima dell'assegnazione i riquadri dicono «Collegato alla lezione» (verde), «Aspetta: il maestro
+- prima dell'assegnazione i riquadri dicono «Collegato alla lezione» (verde), «Aspetta: l’insegnante
   prepara l'attività» (ambra), «Programma pronto» (grigio);
 - il pilota assegna e abilita l'attività **dal percorso amministrativo reale** e la pagina reagisce dal
   vivo: il secondo riquadro diventa verde «Puoi lavorare!», compaiono la consegna e la griglia con il
@@ -1343,9 +1521,9 @@ lezione è **51031539**.
 Esiti osservati, tutti con schermata in `TestResults/collaudo-codice/shots`:
 
 - la home dell'alunno **sente** la lezione e scrive «La lezione è iniziata! Chiedi il codice al
-  maestro e scrivilo qui», con il campo del codice in cifre grandi e la tastiera numerica;
+  insegnante e scrivilo qui», con il campo del codice in cifre grandi e la tastiera numerica;
 - un codice sbagliato (51031538) riceve dal server «Il codice non è valido: controlla le otto cifre e
-  chiedile di nuovo al maestro» e la pagina **resta** sull'ingresso;
+  chiedile di nuovo all’insegnante» e la pagina **resta** sull'ingresso;
 - il codice giusto con il nome «Luca» porta a `/lezione`, che mostra «Luca · Collegato alla lezione ·
   Aspetta: l'insegnante sta preparando l'attività · Stato: pronto»;
 - la **regia** mostra «Codice da dettare agli alunni **5 1 0 3 1 5 3 9**» con il pulsante «Copia il
@@ -1355,7 +1533,7 @@ Esiti osservati, tutti con schermata in `TestResults/collaudo-codice/shots`:
 - il ripiego **«Non ho il codice»** scopre la scelta di scuola e classe, carica le scuole «Scuola
   Collaudo Codice 012426» e offre «Entra con scuola e classe»;
 - dopo lo **Stop** la regia non mostra più il codice né il pulsante di copia; la home dichiara
-  «Nessuna lezione in corso: aspetta che il maestro inizi la lezione» e il vecchio codice riceve «La
+  «Nessuna lezione in corso: aspetta che l’insegnante inizi la lezione» e il vecchio codice riceve «La
   lezione è terminata.» restando sull'ingresso;
 - nessun errore in console; le richieste osservate sono un `bootstrap`, i sondaggi
   `GET /api/v1/public/in-play` e due `POST /api/v1/public/join` (tentativo errato e ingresso).
@@ -2445,7 +2623,7 @@ I cataloghi passano a **34 comandi e 18 query**; nessuno schema nuovo, nessun en
 
 `LeaveSession` (§9.2, §10.3, policy `AdmittedParticipant`) è l'uscita volontaria: revoca la
 credenziale corrente e **non cancella nulla** — la partecipazione resta ammessa e il lavoro non
-viene toccato, così il maestro continua a vedere chi c'era. L'identità arriva dal contesto
+viene toccato, così l’insegnante continua a vedere chi c'era. L'identità arriva dal contesto
 verificato dal trasporto, quindi il corpo è vuoto e un alunno non può far uscire un altro; la
 credenziale revocata non si riapre con una ripetizione (§9.4), perché la revoca è una decisione e
 non una risposta persa. L'endpoint dedicato esegue il comando e cancella il cookie del partecipante

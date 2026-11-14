@@ -334,7 +334,7 @@ public sealed class ParticipantHttpTests
     {
         // Arrange: la policy del partecipante vale per una sessione non terminata (§9.3), quindi la
         // chiusura toglie il contesto anche se il cookie resta nel browser. Regia e postazione sono
-        // due browser distinti, con due credenziali: il PC del maestro e quello dell'alunno.
+        // due browser distinti, con due credenziali: il PC dell’insegnante e quello dell'alunno.
         await using var server = await CodiHttpServer.CreateAsync();
         var session = await SeedSessionAsync(server);
         var regia = server.Cookies.ToArray();
@@ -423,7 +423,7 @@ public sealed class ParticipantHttpTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task Uscita_NonCancellaLaPartecipazione()
+    public async Task Uscita_NascondeLaPartecipazioneSenzaCancellarla()
     {
         // Arrange
         await using var server = await CodiHttpServer.CreateAsync();
@@ -438,9 +438,7 @@ public sealed class ParticipantHttpTests
         using var leave = await server.SendAsync(HttpMethod.Post, "/api/v1/public/participant/leave");
         Assert.Equal(HttpStatusCode.NoContent, leave.StatusCode);
 
-        // Assert: uscire revoca la credenziale, non cancella chi c'era. La partecipazione resta
-        // ammessa e il lavoro non viene toccato, così il maestro continua a vedere l'alunno
-        // (§9.2, §10.3).
+        // La riga resta nello storico, ma non concede più l'ammissione.
         await using var work = await server.Services
             .GetRequiredService<IUnitOfWorkContext>()
             .CreateAsync(cancellationToken: CancellationToken.None);
@@ -448,7 +446,21 @@ public sealed class ParticipantHttpTests
             .GetAsync(participantId.ToString("D"), CancellationToken.None);
 
         Assert.NotNull(row);
-        Assert.True(row!.ToDomain().IsAdmitted);
+        Assert.False(row!.ToDomain().IsAdmitted);
+        Assert.NotNull(row.LeftAtUtcMs);
+        Assert.Null(row.ExcludedAtUtcMs);
+        using var login = await server.LoginAsync();
+        using var list = await server.SendAsync(HttpMethod.Post, "/api/v1/admin/execute/query/ListSessionParticipants", new { sessionId = session.SessionId });
+        var listed = await list.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(HttpStatusCode.OK, list.StatusCode);
+        Assert.Equal(0, listed.GetArrayLength());
+        using var overview = await server.SendAsync(HttpMethod.Post, "/api/v1/admin/execute/query/GetSessionOverview", new { sessionId = session.SessionId });
+        var state = await overview.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(0, state.GetProperty("participants").GetArrayLength());
+        await JoinAsync(server, session, "Luca");
+        using var newProfile = await server.SendAsync(HttpMethod.Get, "/api/v1/public/auth/me");
+        var next = await newProfile.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.NotEqual(participantId, next.GetProperty("participantId").GetGuid());
     }
 
     [Fact]

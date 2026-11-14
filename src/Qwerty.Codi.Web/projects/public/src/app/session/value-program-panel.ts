@@ -3,6 +3,8 @@ import { ApiService, Attempt, toApiError, type ValueProgramOutcome } from '@codi
 import { AttemptTransport } from '../core/attempt-transport';
 import { WorkspacePreviewPublisher } from '../core/workspace-preview';
 import { setValueProgramVariables } from '@exercise-engine/value-blocks';
+
+import { ResultFeedback } from '../shared/result-feedback';
 import {
   ValueProgramRunner,
   type ValueInstruction,
@@ -24,6 +26,7 @@ import { compileValueProgram, type ProgramProblem } from '@exercise-engine/value
  * viene anticipato né corretto: il pannello chiede passi al runner e mostra ciò che riceve.
  */
 @Component({
+  imports: [ResultFeedback],
   selector: 'app-value-program-panel',
   template: `
     @if (variables().length > 0) {
@@ -74,9 +77,11 @@ import { compileValueProgram, type ProgramProblem } from '@exercise-engine/value
     }
 
     @if (esito(); as risultato) {
-      <p role="status" class="esito">
-        {{ risultato.passed ? risultato.successMessage : risultato.wrongMessage }}
-      </p>
+      <app-result-feedback
+        class="esito"
+        [success]="risultato.passed"
+        [message]="risultato.passed ? risultato.successMessage : risultato.wrongMessage"
+      />
       @if (risultato.problem.length > 0) {
         <!-- La diagnosi del server: che cosa il programma ha mostrato, o che cosa non si esegue.
              Senza, «Riprova» lascerebbe il bambino a cercare l'errore a caso. -->
@@ -85,19 +90,23 @@ import { compileValueProgram, type ProgramProblem } from '@exercise-engine/value
     }
 
     <p class="actions">
-      <button type="button" [disabled]="!enabled() || inCorso()" (click)="prova()">
+      <button class="primary" type="button" [disabled]="!enabled() || inCorso()" (click)="prova()">
         Prova il programma
       </button>
       <button type="button" [disabled]="!inCorso()" (click)="azzera()">Da capo</button>
       <!-- Chiedere l'esito è una cosa diversa dal provare: la prova è dell'alunno e non viene
            verificata, l'esito lo calcola il server eseguendo il programma sui casi di prova. -->
-      <button type="button" [disabled]="!enabled() || busy()" (click)="chiediEsito()">
+      <button
+        class="secondary"
+        type="button"
+        [disabled]="!enabled() || busy()"
+        (click)="chiediEsito()"
+      >
         Fai correggere
       </button>
     </p>
     <p class="note">
-      La prova è solo per te: non cambia il lavoro che vede il maestro. «Fai correggere» chiede al
-      server di eseguire il programma sui casi di prova dell'esercizio.
+      Premi Prova per vedere il risultato. Quando hai finito, premi Fai correggere.
     </p>
   `,
   styles: `
@@ -107,8 +116,8 @@ import { compileValueProgram, type ProgramProblem } from '@exercise-engine/value
     }
     .variables th,
     .variables td {
-      border: 1px solid currentColor;
-      padding: 0.25rem 0.75rem;
+      border: 2px solid #dce2ef;
+      padding: 0.7rem 1rem;
       text-align: left;
     }
     .uscita {
@@ -123,7 +132,7 @@ import { compileValueProgram, type ProgramProblem } from '@exercise-engine/value
     .campo input {
       font-size: 1.2rem;
       padding: 0.4rem 0.6rem;
-      width: 8rem;
+      width: min(100%, 12rem);
     }
     .actions button {
       font-size: 1.1rem;
@@ -139,7 +148,7 @@ export class ValueProgramPanel {
   readonly definitionJson = input.required<string>();
   readonly attempt = input.required<Attempt>();
   readonly connectionEpoch = input.required<string>();
-  /** Vero quando il maestro lascia lavorare: fuori da lì il pannello è in sola lettura. */
+  /** Vero quando l’insegnante lascia lavorare: fuori da lì il pannello è in sola lettura. */
   readonly enabled = input(false);
   /** Il progetto a blocchi dell'alunno, così com'è nel workspace. */
   readonly workspaceJson = input.required<string>();

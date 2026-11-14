@@ -201,7 +201,7 @@ internal static class SessionGridReader
             .ConfigureAwait(false);
 
         return new SessionGridRows(
-            participants,
+            participants.Where(row => row.LeftAtUtcMs is null).ToList(),
             states.ToDictionary(row => row.Id, StringComparer.Ordinal),
             attempts.ToDictionary(row => row.Id, StringComparer.Ordinal));
     }

@@ -1,7 +1,7 @@
 # Codì: specifica tecnica della piattaforma didattica
 
-Versione: 0.59 — Progetto tecnico iniziale approfondito
-Data: 12 novembre 2026
+Versione: 0.61 — Progetto tecnico iniziale approfondito
+Data: 14 novembre 2026
 Stato: proposta implementativa, non software già realizzato
 Documento funzionale di riferimento: [Specifiche della piattaforma didattica](./SPECIFICHE_PIATTAFORMA_DIDATTICA.md)
 
@@ -96,7 +96,7 @@ Due editor contemporanei della stessa lezione restano fuori perimetro.
 |---|---|---|
 | Distribuzione | Un solo processo ASP.NET Core e un solo database SQLite. | Carico contenuto e gestione semplice nel laboratorio. |
 | Interfaccia | Due SPA Angular nello stesso workspace: `web.admin` e `web.frontend` (public). | Bundle, routing e stili indipendenti; contratti e motore condivisi. |
-| UI amministrativa | Spartan UI (Brain e Helm) con Tailwind CSS 4. | Controlli accessibili e sorgenti dello stile personalizzabili; UI alunni da definire separatamente. |
+| UI amministrativa | Spartan UI (Brain e Helm) con Tailwind CSS 4. | Controlli accessibili e sorgenti dello stile personalizzabili; interfaccia alunni separata, con Three.js decorativo (§14.4). |
 | Hosting | Frontend e API sullo stesso origin HTTPS. | Cookie, connessioni live e pubblicazione più semplici. |
 | Accesso dati | RepoDB con `Microsoft.Data.Sqlite`. | Rispetta lo stack richiesto e mantiene esplicite query e transazioni. |
 | Regia | Comandi HTTP persistiti, distribuzione SignalR, conferme SignalR. | Un solo ingresso per le mutazioni del docente e recupero dopo errori di rete. |
@@ -486,7 +486,7 @@ un'altra lezione, e NULL non partecipa al vincolo, così le sessioni non avviate
 della `0010` convivono senza codice; il codice si genera all'avvio e non si cancella al termine, così
 la riga conserva la memoria della lezione mentre la spendibilità dipende dallo stato, non dalla
 presenza del codice.
-| `session_participant` | `id`, `session_id`, `station_id?`, `display_name`, `admission_status`, `connection_epoch`, `joined_at_utc_ms`, `excluded_at_utc_ms?` | Unico `(session_id, id)` per FK composte; nome 1–30 grafemi, validato dall’applicazione; nomi duplicati ammessi. |
+| `session_participant` | `id`, `session_id`, `station_id?`, `display_name`, `admission_status`, `connection_epoch`, `joined_at_utc_ms`, `excluded_at_utc_ms?`, `left_at_utc_ms?` | Unico `(session_id, id)` per FK composte; nome 1–30 grafemi; nomi duplicati ammessi. L'uscita volontaria ha un istante distinto dall'esclusione e non precede l'ingresso. |
 | `activity_assignment` | `id`, `session_id`, `lesson_exercise_id?`, `scope`, `target_participant_id?`, `exercise_version_id` | `scope` vale `Class` o `Participant`; `target_participant_id` è obbligatorio solo con `Participant`. Versione esercizio fissata all’assegnazione; non cambia modificando la sequenza. **Presente** dalla `0008`, con chiavi candidate `(session_id, id)` e `(id, exercise_version_id)`. |
 | `participant_state` | `participant_id` PK, `session_id`, `effective_revision`, `assignment_id?`, `attempt_id?`, `view`, `interaction_enabled`, `teacher_paused`, `recovery_blocked`, `execution_generation`, `directive_json?`, `resume_context_json?` | Relazione partecipante/sessione coerente; uno stato per partecipante. |
 | `exercise_attempt` | `id`, `participant_id`, `assignment_id`, `exercise_version_id`, `attempt_number`, `status`, `workspace_json`, `workspace_hash`, `project_revision`, `checkpoint_json?`, `checkpoint_engine_version?`, `last_saved_at_utc_ms?`, `completed_at_utc_ms?` | Unico `(participant_id, assignment_id, attempt_number)`; riferimento versione coerente con assegnazione. **Presente** dalla `0008`, che aggiunge anche `session_id` come scelta locale registrata nel suo commento e realizza la coerenza di sessione e di versione con chiavi esterne composte; i valori di `status` sono scelti localmente (pronto, in esecuzione, sospeso, concluso, archiviato). |
@@ -780,7 +780,7 @@ Restano endpoint dedicati i casi in cui il trasporto è parte del contratto: coo
 | `POST /api/v1/admin/auth/logout` | Admin | Revoca sessione credenziale e cookie. |
 | `GET /api/v1/admin/auth/me` | Admin | Profilo minimo e permessi della credenziale amministrativa verificata. |
 | `GET /api/v1/public/auth/me` | Partecipante | **Implementato**: profilo minimo del partecipante verificato — identità, ammissione, vista e stato della sessione, più i nomi del percorso `schoolName`, `classroomName`, `lessonTitle` (0.40) — letto da `GetParticipantContext` a ogni richiesta. |
-| `POST /api/v1/public/participant/leave` | Partecipante | **Implementata**: esegue `LeaveSession`, che revoca la credenziale corrente senza cancellare la partecipazione né il lavoro, e cancella i cookie del partecipante e del token antiforgery. |
+| `POST /api/v1/public/participant/leave` | Partecipante | **Implementata**: esegue `LeaveSession`, registra l'uscita e revoca le credenziali. Il partecipante scompare dalla regia; i lavori restano. Cancella i cookie del partecipante e del token antiforgery. |
 | `GET /health/live` | Pubblico | Il processo risponde. |
 | `GET /health/ready` | Pubblico limitato | Bootstrap, migrazioni e storage disponibili, senza dettagli sensibili. |
 | `PUT /api/v1/public/participant/attempts/{id}/workspace` | Connessione operativa | Salvataggio del progetto con epoch, revisione e chiave idempotente (§15.2). |
@@ -877,14 +877,14 @@ Un handler per comando, denominato `<Comando>Handler`. La colonna Policy è quel
 
 | Comando | Policy | Effetto |
 |---|---|---|
-| `LeaveSession` | `AdmittedParticipant` | **Implementata**: uscita volontaria — revoca la credenziale corrente senza cancellare la partecipazione né il lavoro; l'identità arriva dalla credenziale, quindi il corpo è vuoto. |
+| `LeaveSession` | `AdmittedParticipant` | **Implementata**: uscita volontaria, revoca delle credenziali e rimozione dalla regia e dai destinatari dei comandi. Il lavoro resta; l'identità arriva dalla credenziale, quindi il corpo è vuoto. |
 | `InitializeParticipantConnection` | `AdmittedParticipant` | Acquisisce l'operatività, incrementa l'epoch e associa la connessione (§11.2). **Implementata**: l'epoca è persistita, l'associazione vive nel registro in memoria. |
 | `AcknowledgeCommand` | `ActiveParticipantConnection` | Registra l'esito applicativo di un comando consegnato (§12.2). **Implementata**: ammessa anche su una lezione terminata quando la connessione è ancora operativa, perché confermare non riapre permessi di lavoro (A-04). |
 | `SaveAttemptWorkspace`, `SaveAttemptCheckpoint` | `ActiveParticipantConnection` | Salvataggi del player, inviati dagli endpoint dedicati di §10.3 (§15.2). |
 | `PublishWorkspacePreview` | `ActiveParticipantConnection` | Pubblica l'anteprima oltre il limite SignalR (§15.5). |
 | `ReportRecoveryBlocked` | `ActiveParticipantConnection` | Materializza la pausa di recupero quando il client non è certo dello stato eseguito (§12.3). |
 | `FinalizeAttempt` | `FinalizingParticipant` | Unico salvataggio conclusivo consentito dal grant (§12.7). |
-| `PostParticipantMessage` | `ActiveParticipantConnection` | **Implementata**: messaggio dell'alunno nella chat con il maestro (§15.7). Né la sessione né il partecipante sono parametri: l'identità arriva dalla credenziale e la sessione dal registro delle connessioni, quindi un alunno non può scrivere nel thread di un altro. Rifiutata quando la pagina è in attesa o in pausa, perché la chat sta con i controlli. |
+| `PostParticipantMessage` | `ActiveParticipantConnection` | **Implementata**: messaggio dell'alunno nella chat con l’insegnante (§15.7). Né la sessione né il partecipante sono parametri: l'identità arriva dalla credenziale e la sessione dal registro delle connessioni, quindi un alunno non può scrivere nel thread di un altro. Rifiutata quando la pagina è in attesa o in pausa, perché la chat sta con i controlli. |
 
 Note sul catalogo:
 
@@ -934,7 +934,7 @@ La tabella dichiara la policy per riga, come le tabelle a policy mista di §10.4
 | `GetAssignedExercise` | Definizione pubblica dell'attività assegnata. |
 | `GetAttempt` | Progetto e checkpoint del proprio tentativo. |
 | `GetAttemptFinalizations` | Permessi conclusivi della credenziale corrente; policy `FinalizingParticipant`. |
-| `GetOwnMessages` | **Implementata**: il proprio thread della chat con il maestro (§15.7), letto dalla sola credenziale. Il conteggio dei non letti è una misura del docente e per l'alunno vale zero: il server non misura se un bambino ha letto, e non finge di farlo. |
+| `GetOwnMessages` | **Implementata**: il proprio thread della chat con l’insegnante (§15.7), letto dalla sola credenziale. Il conteggio dei non letti è una misura del docente e per l'alunno vale zero: il server non misura se un bambino ha letto, e non finge di farlo. |
 
 L'identità si ricava dalla credenziale, non dai parametri: un identificativo nel corpo della query è soltanto la risorsa richiesta e non autorizza l'accesso. Una versione copiata da un altro client non rende leggibile un esercizio non assegnato. La scoperta pubblica precedente al join non usa il dispatcher, perché richiede un contesto autenticato che in quella fase non esiste ancora (§10.3).
 
@@ -1629,8 +1629,8 @@ collegamento all'ingresso, la seconda è l'ingresso — il sito chiede periodica
 in play e, quando c'è, chiede il codice di otto cifre e il nome; la scelta di scuola e classe resta
 dietro «Non ho il codice» — e la terza è la lezione, che
 apre il collegamento con l'hub, esegue il progetto nel worker, mostra l'esito dichiarato dal browser e
-persiste i checkpoint. L'aspetto di queste pagine è provvisorio per scelta: la grafica definitiva degli
-alunni si decide dopo il primo uso in aula.
+persiste i checkpoint. La revisione grafica del 14 novembre 2026 applica funzionale §8.
+Il collaudo con bambini e sui dodici PC resta da eseguire.
 Una sessione amministrativa già valida non rivede il modulo di accesso: la pagina chiede
 il contesto al server e prosegue.
 
@@ -1669,27 +1669,73 @@ leggono il dettaglio e l'anteprima dei blocchi, letti per il solo alunno aperto 
 
 Le anteprime della scena usano canvas/SVG leggero; non aprire 12 editor Blockly completi nella griglia. Caricare un workspace Blockly in sola lettura soltanto nel dettaglio del partecipante selezionato. Il monitor non esegue programmi degli alunni.
 
-Per una pausa collettiva visualizzare, ad esempio, “10 confermati, 1 in attesa, 1 scollegato”. Un colore verde non può dipendere soltanto dall'invio del comando.
+La regia non mostra il registro testuale dei comandi con i conteggi delle consegne.
+Gli avvisi di recupero e di collegamento restano visibili.
+Un colore verde non può dipendere soltanto dall'invio del comando.
+
+La regia distingue «Permetti di lavorare» (`EnableActivity`) da «Esegui i programmi di tutti» (`RunProgram`).
+Il primo comando richiede un esercizio assegnato a ciascun alunno ammesso, nella vista dell'esercizio e senza pause.
+Il secondo comando richiede anche il permesso di lavorare per tutti i destinatari.
+Le stesse precondizioni dell'esecuzione valgono per «Riavvia la classe».
+I pulsanti disabilitati e il servizio condiviso applicano questi vincoli prima dell'invio.
+Un messaggio visibile sotto i pulsanti spiega la prima condizione mancante.
+Senza esercizio indica «Prima assegna un esercizio a tutti i bambini».
+Dopo l'assegnazione indica «Prima premi Permetti di lavorare», finché tutti hanno il permesso.
+Il messaggio considera prima collegamento, stato della lezione, presenza e pause.
+I pulsanti disabilitati indicano il messaggio con `aria-describedby`; il messaggio si aggiorna con `role="status"`.
+Quando tutte le azioni sono disponibili, il messaggio non compare.
+«Assegna esercizio» resta disponibile prima dell'assegnazione.
+Gli alunni esclusi non partecipano al controllo collettivo, come in §6.5.
 
 Se la dashboard perde la connessione al server, marcare tutti i dati come non aggiornati e disabilitare i comandi finché uno snapshot non ripristina il contesto. L'assenza del browser docente non ferma automaticamente la classe: il server mantiene lo stato corrente. Un'opzione futura può prevedere una pausa automatica, ma non è il comportamento iniziale.
 
 ### 14.4 Player e accessibilità
 
-Usare testo italiano, pulsanti con area interattiva proposta di almeno 48×48 CSS px, focus visibile, etichette accessibili e messaggi associati alle icone. Verificare la navigazione da tastiera, inclusa l'effettiva accessibilità dell'integrazione Blockly scelta.
+**Profilo e uscita, funzionale 0.19.** Lo snapshot del partecipante e il rinnovo dell'autorizzazione portano `profile`.
+Il profilo contiene `participantId`, `displayName` e `rowVersion` come stringa decimale per la versione.
+Il nome non cambia permessi o direttive. Il rinnovo usa il profilo già letto nello snapshot del server.
+Il client applica soltanto profili del proprio partecipante e scarta versioni precedenti.
+La pagina pubblica preferisce il profilo aggiornato al contesto iniziale e ricorda il nome corretto per l'ingresso.
+La cadenza del battito limita l'attesa ordinaria alla successiva risposta, senza una lettura periodica aggiuntiva.
+
+La migrazione 0014 aggiunge `session_participant.left_at_utc_ms`, annullabile per chi non è uscito.
+L'uscita acquisisce il coordinatore della sessione prima della transazione.
+La transazione registra l'uscita, disabilita il lavoro e revoca le credenziali del partecipante.
+La griglia e i comandi collettivi escludono le righe con l'istante di uscita.
+I lavori e la riga della partecipazione restano nello storico. L'uscita non equivale all'esclusione del docente.
+Dopo la conferma del server, il client chiude il collegamento e torna all'ingresso.
+Se l'uscita riceve un errore, la pagina resta aperta e mostra il motivo.
+
+Usare testo italiano, pulsanti con area interattiva di almeno 56×56 CSS px, focus visibile, etichette accessibili e messaggi associati alle icone. Verificare la navigazione da tastiera, inclusa l'effettiva accessibilità dell'integrazione Blockly scelta.
+
+**Revisione pubblica del 14 novembre 2026, funzionale 0.18.** Il modulo di ingresso numera nome e codice.
+Il codice dichiara quante cifre mancano. Invio da tastiera usa la stessa verifica del pulsante.
+Il riquadro «Adesso» considera conclusione, collegamento, recupero, pausa, attesa e permessi prima dell'azione proposta.
+La pagina non espone più il pannello tecnico, le revisioni o il documento del progetto.
+Blocchi e programma restano affiancati; gli schermi stretti usano una colonna.
+
+`LearningScene` carica Three.js con import dinamico e disegna un personaggio o stelle decorative.
+La scena limita la densità dei pixel a 1,5 e il movimento a 30 fotogrammi al secondo.
+Il movimento termina entro 4,5 secondi di animazione.
+Scheda nascosta, scena fuori schermo e `prefers-reduced-motion` sospendono il movimento.
+La distruzione smaltisce renderer, geometrie, materiali, osservatori e ascoltatori.
+Senza WebGL resta il disegno statico. Il canvas non riceve il puntatore né informazioni necessarie all'esercizio.
+`ResultFeedback` usa l'esito del motore o della correzione, senza dedurre il successo dal testo.
+Le animazioni non cambiano permessi, salvataggi, telemetria o valutazione.
 
 **Stato a colpo d'occhio (0.38).** La pagina dell'alunno mostra in cima tre riquadri con **icona, colore e
 parole**: il collegamento (§11.6), che cosa può fare adesso (§6.2) e che cosa sta facendo il suo
 programma (§13.6, §13.7). Il colore non è mai l'unica informazione — un bambino che non distingue i
 colori deve capire lo stesso — e il testo evita le parole del contratto: «Puoi lavorare!», «In pausa:
-guarda il maestro», «Stiamo recuperando il tuo lavoro», «Collegato alla lezione». La precedenza è
+guarda l’insegnante», «Stiamo recuperando il tuo lavoro», «Collegato alla lezione». La precedenza è
 dichiarata e verificata: una lezione conclusa non torna indietro, il recupero spiega perché il lavoro è
-fermo, la pausa del maestro viene prima dei controlli chiusi.
+fermo, la pausa dell’insegnante viene prima dei controlli chiusi.
 
 Il Quiz mostra soltanto collegamento e permessi, perché non esegue un programma Blockly.
 
 Sotto la scena stanno i comandi della **prova** (0.38): «Prova», «Un passo», «Da capo» e «Ferma» mentre
 scorre. Sono abilitati solo quando i controlli sono attivi, e una frase dice che la prova è dell'alunno
-e non cambia il lavoro che vede il maestro.
+e non cambia il lavoro che vede l’insegnante.
 
 **Impaginazione (0.39).** La pagina dell'alunno occupa **tutta la larghezza** e mette il **progetto a
 sinistra** e il **programma a destra** nella stessa area di lavoro, così si compone da una parte e si
@@ -1711,7 +1757,7 @@ arrivato la testata mostra un ripiego — «La mia lezione» e nessun percorso �
 
 La vista è determinata dal server, non dal percorso digitato dal bambino. Il pulsante indietro o un refresh ricostruiscono il contesto dal server senza permettere la scelta di attività non assegnate.
 
-Durante pausa e attesa il progetto rimane in memoria o salvato, ma i controlli sono disabilitati. Mostrare messaggi come “Guarda il maestro” o “Sto cercando di ricollegarmi”. I dettagli tecnici restano nel pannello docente e nei log.
+Durante pausa e attesa il progetto rimane in memoria o salvato, ma i controlli sono disabilitati. Mostrare messaggi come “Guarda l’insegnante” o “Sto cercando di ricollegarmi”. I dettagli tecnici restano nel pannello docente e nei log.
 
 ## 15. Salvataggio, telemetria e monitoraggio
 
@@ -1773,10 +1819,10 @@ Se un client satura il canale, interrompere il flusso live, invalidare il permes
 
 Per 12 client a 2 Hz con 8 KiB ciascuno, il solo flusso scene in ingresso ha un massimo teorico di circa 192 KiB/s, prima dell'overhead. Questo è un calcolo di budget, non una misura; i payload medi attesi sono più piccoli e devono essere rilevati.
 
-### 15.7 Chat fra il maestro e il singolo alunno
+### 15.7 Chat fra l’insegnante e il singolo alunno
 
-La chat è **fra il maestro e un alunno**: non esiste una chat fra bambini e non esiste un thread di
-classe. Il maestro scrive dalla card dell'alunno nella pagina dei partecipanti, il bambino scrive
+La chat è **fra l’insegnante e un alunno**: non esiste una chat fra bambini e non esiste un thread di
+classe. L’insegnante scrive dalla card dell'alunno nella pagina dei partecipanti, il bambino scrive
 dalla propria pagina, ed entrambi vedono lo stesso thread, che è uno solo per alunno.
 
 Il thread **non si persiste**: vive in memoria nel processo e viene eliminato alla fine della
@@ -1789,13 +1835,13 @@ scelta di comodo: 200 messaggi per thread e 64 thread aperti; oltre la capienza 
 
 **Forma del messaggio.** Il testo è di 1–300 **grafemi**, senza caratteri di controllo e conservato
 senza spazi ai bordi. Non esiste un filtro sul contenuto: verificare le parole contro un elenco
-direbbe al maestro quali messaggi sono ammessi, mentre la chat serve proprio a dire ciò che non è
+direbbe all’insegnante quali messaggi sono ammessi, mentre la chat serve proprio a dire ciò che non è
 prevedibile. Si verifica la forma, non l'argomento.
 
 **La chat sta con la pagina.** Il bambino legge il thread anche durante una pausa — un messaggio del
-maestro non si perde perché i controlli sono chiusi — ma **scrive** soltanto quando la pagina è al
+insegnante non si perde perché i controlli sono chiusi — ma **scrive** soltanto quando la pagina è al
 lavoro: `PostParticipantMessage` rifiuta con `SessionStateConflict` una scrittura mentre la vista è
-in attesa o il maestro ha messo in pausa. Il campo disabilitato nella pagina non basta: un client non
+in attesa o l’insegnante ha messo in pausa. Il campo disabilitato nella pagina non basta: un client non
 allineato non deve poter scrivere mentre la pagina è ferma, quindi il rifiuto è del server.
 
 **Trasporto.** Due eventi dichiarati annunciano i messaggi nuovi — `ParticipantMessageReceived`
@@ -1806,8 +1852,8 @@ arrivati dopo la lettura, deduplicando per identificativo. I messaggi della chat
 dall'outbox di §12.2, perché non c'è una consegna da registrare né un ACK da attendere; un
 destinatario assente non è un errore, dato che il messaggio resta nel thread e chi torna lo legge.
 
-**Non letti.** Il server conta i messaggi dell'alunno che il maestro non ha ancora letto; il
-conteggio si azzera quando il maestro apre il thread (`GetParticipantMessages`) e viaggia nella riga
+**Non letti.** Il server conta i messaggi dell'alunno che l’insegnante non ha ancora letto; il
+conteggio si azzera quando l’insegnante apre il thread (`GetParticipantMessages`) e viaggia nella riga
 dei partecipanti, così la card lo mostra. Per l'alunno lo stesso conteggio vale zero: non è una
 misura che il server faccia su di lui, e mostrargli un numero non misurato sarebbe peggio che non
 mostrarlo.
@@ -2354,6 +2400,8 @@ Fonti primarie consultate per la baseline del 30 settembre 2026. I riferimenti s
 
 | Versione | Data | Modifiche |
 |---|---|---|
+| 0.61 | 2026-11-14 | Profilo autorevole in snapshot e rinnovo dell'autorizzazione per sincronizzare la rinomina. Migrazione 0014 per registrare l'uscita volontaria ed escludere il partecipante dalla regia e dai comandi. |
+| 0.60 | 2026-11-14 | Parte pubblica per bambini di nove anni, funzionale 0.18. Comandi grandi, ingresso numerato, indicazione dello stato e risultati con Three.js differito. Riduzione del movimento e disegno statico senza WebGL. Nessun cambiamento al protocollo o allo schema. |
 | 0.59 | 2026-11-12 | La lista dei partecipanti espone `rowVersion` come stringa decimale. La regia usa i comandi esistenti per rinomina, esclusione e ingressi. Il client distingue i rifiuti definitivi dei salvataggi dagli esiti di rete incerti. Nessuna migrazione o nuova rotta. |
 | 0.58 | 2026-10-22 | **Eliminazione di una versione pubblicata**, su richiesta dell'utente del 22 ottobre 2026 («lasciamo la possibilità di eliminare una versione, purché non sia pubblicata»), precisata con la scelta dell'utente: una versione **pubblicata** si elimina purché **non sia la più recente**. La versione si elimina dalla tabella delle versioni con conferma nella riga, e con lei la riga compagna privata. L'ultima versione è rifiutata con `409 LatestExerciseVersion` e una versione già assegnata con `409 ExerciseVersionInUse`; numero o esercizio inesistenti rispondono `404`. Nuovo comando `DeleteExerciseVersion` (policy `Admin`) nel catalogo di §10.4: il catalogo passa a **51 comandi e 32 query**. Nessuna migrazione: le due eliminazioni usano un predicato sull'identificativo, perché `exercise_version` è immutabile e senza `row_version`. Descritto in §13.8 e nella riga di `CopyExerciseVersionToDraft`; verificato con build, **1.397 test .NET** (398 dominio, 991 integrazione, 8 protocollo) e **389 test Angular** admin. La revisione del 23 ottobre 2026 non ha trovato difetti funzionali e ha allineato §7.3 e `docs/API-ENDPOINTS.md`: nessun cambiamento di contratto. |
 | 0.57 | 2026-10-22 | **Esito della verifica della bozza**, su richiesta dell'utente del 22 ottobre 2026: «Verifica la bozza» mostra il risultato con un **avviso** — «La bozza è pubblicabile.» o «La bozza non è ancora pubblicabile.» — invece di una riga nella barra; l'elenco dei problemi resta in pagina, cliccabile, perché è quello che serve per correggere. La pubblicazione mantiene il proprio esito composto nella pagina. Nessuna modifica a backend, catalogo o schema. Annotato in §14.1. |
@@ -2364,7 +2412,7 @@ Fonti primarie consultate per la baseline del 30 settembre 2026. I riferimenti s
 | 0.52 | 2026-10-22 | **Eliminazione di una sessione**, su richiesta dell'utente del 22 ottobre 2026. Nuovo comando `DeleteSession` (policy `SessionController`) nel catalogo di §10.4: elimina una sessione conclusa o mai avviata con revisione attesa, rimuovendo nella stessa transazione i figli tecnici in ordine di dipendenza e poi la riga con il controllo di `row_version`; una sessione in corso è rifiutata e la ripetizione risponde `404`. Nessuna migrazione, nessuna rotta nuova: il comando passa dal dispatcher admin. Il catalogo passa a **50 comandi e 32 query**. Specificata la rimozione in §7 e l'azione nell'elenco admin, con pulsante a sola icona e conferma in linea nella riga, come per l'archiviazione di scuole, classi, corsi ed esercizi. |
 | 0.51 | 2026-10-16 | Pubblicazione admin semplificata: sequenza unica dei comandi esistenti, stato di disponibilità nei dettagli e nell'elenco, barra sticky ed errori con focus sui controlli. Nessun endpoint o schema dati nuovo. |
 | 0.50 | 2026-10-16 | Rinomina locale in **Codì**. Soluzione, progetti e namespace `Qwerty.Codi`; configurazione `Codi`, variabili `CODI_*`, alias Angular `@codi/api`, cookie e header `Codi`. Database locale `codi.db`, con contenuto invariato. Tipi dei blocchi `aula_*` e archivio IndexedDB conservati per compatibilità. Migrazioni SQL e repository GitHub invariati. Procedura in `docs/RINOMINA-CODI.md`. |
-| 0.49 | 2026-10-14 | **Chat fra il maestro e il singolo alunno**, su richiesta dell'utente del 13–14 ottobre 2026: il maestro scrive nella card dell'alunno e il bambino risponde dalla propria pagina. Nuova §15.7: il thread è uno per alunno, vive **in memoria** — 200 messaggi per thread, 64 thread aperti — e non si persiste, quindi non c'è migrazione né repository e l'unica idempotenza è la chiave dichiarata dal client; il testo è di 1–300 **grafemi** e non si filtra sul contenuto. La chat **sta con la pagina**: si legge sempre, si scrive solo quando la pagina è al lavoro, e `PostParticipantMessage` rifiuta con `SessionStateConflict` in attesa e in pausa. Quattro nomi nuovi nel catalogo — `PostTeacherMessage` (`SessionController`), `PostParticipantMessage` (`ActiveParticipantConnection`), `GetParticipantMessages` (`SessionController`) e `GetOwnMessages` (`AdmittedParticipant`): i cataloghi passano a **49 comandi e 32 query** — e due eventi dichiarati, `ParticipantMessageReceived` e `ParticipantMessagePosted`, che portano il messaggio e non il thread. Lato alunno `ParticipantChat` ricompone il thread (lettura più messaggi dell'hub, deduplicati per identificativo) e `ChatPanel` lo mostra aprendosi da sé quando arriva un messaggio; lato docente la card mostra i non letti e il thread. Verificato con build, **1.384 test .NET** (398 dominio, 978 integrazione, 8 protocollo) e **484 test Angular** (131 pubblici, 353 admin). |
+| 0.49 | 2026-10-14 | **Chat fra l’insegnante e il singolo alunno**, su richiesta dell'utente del 13–14 ottobre 2026: l’insegnante scrive nella card dell'alunno e il bambino risponde dalla propria pagina. Nuova §15.7: il thread è uno per alunno, vive **in memoria** — 200 messaggi per thread, 64 thread aperti — e non si persiste, quindi non c'è migrazione né repository e l'unica idempotenza è la chiave dichiarata dal client; il testo è di 1–300 **grafemi** e non si filtra sul contenuto. La chat **sta con la pagina**: si legge sempre, si scrive solo quando la pagina è al lavoro, e `PostParticipantMessage` rifiuta con `SessionStateConflict` in attesa e in pausa. Quattro nomi nuovi nel catalogo — `PostTeacherMessage` (`SessionController`), `PostParticipantMessage` (`ActiveParticipantConnection`), `GetParticipantMessages` (`SessionController`) e `GetOwnMessages` (`AdmittedParticipant`): i cataloghi passano a **49 comandi e 32 query** — e due eventi dichiarati, `ParticipantMessageReceived` e `ParticipantMessagePosted`, che portano il messaggio e non il thread. Lato alunno `ParticipantChat` ricompone il thread (lettura più messaggi dell'hub, deduplicati per identificativo) e `ChatPanel` lo mostra aprendosi da sé quando arriva un messaggio; lato docente la card mostra i non letti e il thread. Verificato con build, **1.384 test .NET** (398 dominio, 978 integrazione, 8 protocollo) e **484 test Angular** (131 pubblici, 353 admin). |
 | 0.44 | 2026-10-09 | **Primo tipo dichiarativo `Quiz` (`quiz-1`)**, su richiesta dell'utente del 9 ottobre 2026 («procedi con il passo successivo», dopo la fase 0). Nuova §13.9.1: l'alunno legge una rappresentazione, produce una risposta e riceve un esito. La versione dichiara catalogo dei blocchi vuoto, nessun blocco di ingresso e `CheckpointSchemaVersion` 0, perché non c'è un'esecuzione da sospendere né un checkpoint da produrre. Dati del tipo in `QuizData` (rappresentazione, domanda, modo di confronto `Text`/`Integer`, messaggi); la sezione `quiz` sostituisce `scene` e `completion` nel documento, e la scrittura omette le sezioni nulle, quindi l'impronta di una versione già pubblicata non cambia. La risposta attesa vive nella **soluzione privata** della versione e non esce mai verso gli alunni; il lavoro del tentativo è un **verbale di risposta** (`{"answer":"testo"}`) nello stesso campo del progetto a blocchi, distinto dal tipo dichiarato (`ExerciseWorkspaceValidator`). Nuova lettura `GetQuizOutcome` (policy `AdmittedParticipant`): la correzione la fa il server e il DTO non porta la soluzione. Lato alunno, `QuizPanel` sostituisce progetto e programma e non mostra i comandi della prova. Realizzato e verificato con **1.286 test .NET** (347 dominio, 931 integrazione, 8 protocollo, di cui 19 sul formato dichiarativo, 5 end-to-end e 1 sulla migrazione del tipo) e **391 test Angular** (117 pubblici, 274 admin), tutti superati; la pagina dell'esercizio instrada sulla form del tipo, e resta da fare la vista del verbale nel pannello del docente. |
 | 0.48 | 2026-10-09 | **Collaudo completo nel browser**, su richiesta dell'utente, guidato con Playwright 1.64 e Chrome reale contro il sistema in esecuzione (API 5200 in ambiente Development con dati isolati, admin 4200, alunni 4300). **22 verifiche su 22**: 9 sul percorso del docente (accesso, creazione dei due tipi di esercizio, editor della griglia e form dichiarativa, bozza, sessione, pubblicazione, assegnazione, codice di lezione), 9 sul percorso dell'alunno per il tipo dichiarativo (ingresso con il codice, domanda a schermo, nessun pannello del programma, risposta corretta e sbagliata con i messaggi del docente, verbale di risposta leggibile dal docente con il motore dell'assegnazione), 4 sul tipo a blocchi (scena disegnata, editor Blockly, prova del programma). **Tre difetti trovati e corretti**, nessuno visibile ai test unitari: il salvataggio del pannello dichiarativo usava `projectRevision` invece di `clientProjectRevision` (§10.2, il server rifiutava il corpo con `InvalidPayload`); l'impronta del lavoro non veniva attesa, perché `workspaceDigest` è asincrona, e nel corpo partiva un oggetto vuoto; il verbale non veniva pubblicato come anteprima, quindi la card del docente restava vuota per questo tipo (§15.5). Le prove unitarie sono state estese perché fissino anche il **nome** del campo e la forma dell'impronta: erano passate proprio perché leggevano il nome sbagliato. Limiti dichiarati nello stato: un alunno per volta, pausa e recupero durante una risposta non provati, giudizio umano su leggibilità non sostituito dalle schermate. |
 | 0.47 | 2026-10-09 | **Vista del verbale nel pannello del docente**, chiusura della porzione sul tipo dichiarativo. `ParticipantAssignmentDto` espone `EngineVersion` — la versione **fissata dall'assegnazione**, non quella dell'anagrafica — così il dettaglio dell'alunno sa come leggere il lavoro: `describeWork` sceglie fra elenco di blocchi e verbale di risposta, una risposta vuota si legge «Nessuna risposta scritta», e un lavoro letto con il motore sbagliato non produce righe invece di mostrare una card vuota. Verificato con build, **1.286 test .NET** e **397 test Angular** (117 pubblici, 280 admin). Con questo, il tipo dichiarativo funziona dal docente all'alunno: creazione, composizione, assegnazione, risposta, correzione e lettura del lavoro. | `ParticipantAssignmentDto` espone `EngineVersion` — la versione **fissata dall'assegnazione**, non quella dell'anagrafica — così il dettaglio dell'alunno sa come leggere il lavoro: `describeWork` sceglie fra elenco di blocchi e verbale di risposta, una risposta vuota si legge «Nessuna risposta scritta», e un lavoro letto con il motore sbagliato non produce righe invece di mostrare una card vuota. Verificato con build, **1.286 test .NET** e **397 test Angular** (117 pubblici, 280 admin). Con questo, il tipo dichiarativo funziona dal docente all'alunno: creazione, composizione, assegnazione, risposta, correzione e lettura del lavoro. |

@@ -68,7 +68,7 @@ public sealed class AttemptSaveService(IUnitOfWorkContext factory, ISessionCoord
         var credential = await work.Repo<ICredentialSessionRepository>().GetAsync(credentialId.ToString("D"), cancellationToken).ConfigureAwait(false);
         var attempt = await work.Repo<IExerciseAttemptRepository>().GetAsync(attemptKey, cancellationToken).ConfigureAwait(false)
             ?? throw CodiRequestException.ResourceNotFound();
-        if (participant is null || participant.AdmissionStatusText != "Admitted" || credential is null ||
+        if (participant is null || participant.LeftAtUtcMs is not null || participant.AdmissionStatusText != "Admitted" || credential is null ||
             credential.ParticipantId != participantKey || credential.RevokedAtUtcMs is not null || credential.ExpiresAtUtcMs <= nowMs)
             throw CodiRequestException.AuthenticationRequired(name);
         if (participant.ConnectionEpoch != epoch) throw Conflict("La connessione del salvataggio è superata.");

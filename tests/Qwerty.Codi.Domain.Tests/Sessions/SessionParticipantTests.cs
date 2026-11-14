@@ -18,6 +18,29 @@ public sealed class SessionParticipantTests
 
     [Fact]
     [Trait("Category", "Unit")]
+    public void Leave_ConPartecipanteAmmesso_RegistraUscitaRipetibileSenzaEsclusione()
+    {
+        var participant = SessionParticipant.Create(SessionId, "Luca", null, Now);
+        participant.Leave(Now.AddMinutes(1));
+        participant.Leave(Now.AddMinutes(2));
+        Assert.False(participant.IsAdmitted);
+        Assert.Equal(Now.AddMinutes(1), participant.LeftAtUtc);
+        Assert.Null(participant.ExcludedAtUtc);
+        Assert.Equal(participant.LeftAtUtc, participant.WithRowVersion(2).LeftAtUtc);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    public void Leave_PrimaDellIngresso_RifiutaSenzaCambiareStato()
+    {
+        var participant = SessionParticipant.Create(SessionId, "Luca", null, Now);
+        Assert.Throws<ArgumentException>(() => participant.Leave(Now.AddSeconds(-1)));
+        Assert.True(participant.IsAdmitted);
+        Assert.Null(participant.LeftAtUtc);
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
     public void Create_ConDatiValidi_CreaAmmessoSenzaEpocaEConIlNomeRipulito()
     {
         // Act

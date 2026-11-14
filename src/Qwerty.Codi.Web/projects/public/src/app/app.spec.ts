@@ -20,7 +20,7 @@ describe('Ingresso alunni', () => {
 
     expect(router.url).toBe('/');
     const page = fixture.nativeElement as HTMLElement;
-    expect(page.querySelector('h1')?.textContent).toBe('Benvenuto in aula!');
+    expect(page.querySelector('h1')?.textContent).toBe('Piccole idee.Grandi scoperte!');
     expect(page.querySelector('a[href="/join"]')).not.toBeNull();
   });
 
