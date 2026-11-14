@@ -27,9 +27,13 @@
     }
   </ul>
 
-  <!-- Chat con il maestro (§8): è fra il maestro e questo bambino, mai fra bambini. Il pannello si
-       apre da sé quando arriva un messaggio, così a otto anni non c'è niente da cercare. -->
+  <!-- CHAT DISABILITATA (2026-11-14, decisione Ale): la funzionalità chat maestro-alunno (§8,
+       §15.1) è sospesa in attesa di rivedere le specifiche. Il componente `ChatPanel` e il servizio
+       `ParticipantChat` restano nel sorgente intatti: per riattivarla ripristinare questo blocco.
+       Chat con il maestro (§8): è fra il maestro e questo bambino, mai fra bambini. Il pannello si
+       apre da sé quando arriva un messaggio, così a otto anni non c'è niente da cercare.
   <app-chat-panel />
+  -->
 
   @if (notice(); as message) {
     <p role="alert">{{ message }}</p>

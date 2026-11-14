@@ -30,7 +30,8 @@ import { GRID_PATH_EXERCISE_TYPE } from '@exercise-engine/grid-path-scene';
 import { VALUE_PROGRAM_EXERCISE_TYPE } from '@exercise-engine/value-blocks';
 import { ParticipantWorkspace } from './participant-workspace';
 import { ValueProgramPanel } from './value-program-panel';
-import { ChatPanel } from './chat-panel';
+// CHAT DISABILITATA (2026-11-14, decisione Ale): vedi il blocco commentato in `session.html`.
+// import { ChatPanel } from './chat-panel';
 import { StatusBadge } from './status-badge';
 import { sessionStatusBadges, type StatusBadgeSpec } from './status-badges';
 
@@ -65,7 +66,9 @@ interface Board {
 /** Progetto dell'alunno, player Blockly nel worker e salvataggio automatico. */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, ParticipantWorkspace, QuizPanel, ValueProgramPanel, ChatPanel, StatusBadge],
+  // CHAT DISABILITATA (2026-11-14, decisione Ale): `ChatPanel` tolto dai imports; ripristinarlo
+  // insieme al blocco commentato in `session.html`.
+  imports: [RouterLink, ParticipantWorkspace, QuizPanel, ValueProgramPanel, StatusBadge],
   selector: 'app-participant-session',
   styleUrl: './session.css',
   templateUrl: './session.html',

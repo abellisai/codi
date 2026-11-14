@@ -206,13 +206,18 @@ export class SessionParticipants implements OnInit {
         enabled: true,
         toggle: true,
       },
-      {
-        key: 'chat',
-        label: 'Chat con l’alunno',
-        icon: 'lucideMessageSquare',
-        enabled: this.canChat(participant),
-        toggle: true,
-      },
+      // CHAT DISABILITATA (2026-11-14, decisione Ale): la chat maestro-alunno (§8, §15.1) è
+      // sospesa in attesa di rivedere le specifiche. L'azione 'Chat con l'alunno' è commentata:
+      // senza di essa la chat della card non si può aprire. Per riattivarla ripristinare questo
+      // blocco insieme al caso 'chat' in `runAction` e alle bind `chat*` in
+      // `session-participants.html`.
+      // {
+      //   key: 'chat',
+      //   label: 'Chat con l’alunno',
+      //   icon: 'lucideMessageSquare',
+      //   enabled: this.canChat(participant),
+      //   toggle: true,
+      // },
     ];
   }
 
