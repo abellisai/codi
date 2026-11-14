@@ -1,6 +1,4 @@
-/* Azioni della card: icona più etichetta visibile (QA/B4). Le nove azioni non stanno in una
-   riga sola su card strette: il contenitore va a capo senza rompere il layout. Lo stile locale
-   prevale sul `.actions` globale, che è pensato per le azioni di riga delle tabelle. */
+/* Azioni a icona con tooltip. Il contenitore va a capo sulle card strette. */
 .actions {
   flex: 1 1 100%;
   flex-wrap: wrap;
@@ -9,10 +7,6 @@
   padding-block: 0.75rem;
 }
 
-.actions .action-label {
-  white-space: normal;
-  text-align: left;
-}
 /* Stili propri della card di un partecipante: il contenitore della pagina e i messaggi d'errore
    arrivano dai fogli globali dell'admin, come le azioni di riga. Qui la card selezionata, i fatti,
    il dettaglio aperto e l'anteprima dei blocchi. */

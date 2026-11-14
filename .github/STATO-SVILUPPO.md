@@ -3,6 +3,24 @@
 Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.61 e funzionale 0.19.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
 
+## Azioni del partecipante a icona con tooltip: 14 novembre 2026
+
+**VALIDATO LOCALMENTE.** Su richiesta dell'utente, le azioni della card tornano a mostrare soltanto le icone.
+I pulsanti usano `size="icon-xs"` e conservano tooltip e nome accessibile con il nome dell'alunno.
+Anche il trigger del dialogo di conferma usa la sola icona. I testi nel dialogo restano leggibili.
+La modifica rimuove le due etichette visibili e il relativo stile; conserva la disposizione a capo.
+La parte pubblica resta invariata. Questa scelta sostituisce la presentazione descritta nella precedente porzione QA/B4.
+
+Controlli eseguiti dall'agente nella root Web:
+
+- ESLint sull'area sessioni: uscita 0.
+- Prettier sui quattro file modificati: uscita 0.
+- `ng test web.admin --watch=false --include=projects/admin/src/app/features/admin/sessions/participant-card.spec.ts`: uscita 0, 16 test superati.
+- `ng build web.admin`: uscita 0, nessun avviso, bundle iniziale 470,72 kB.
+- `git diff --check`: nessuna anomalia.
+
+Nessuna verifica nel browser per questa rimozione delle etichette.
+
 ## Integrazione con origin/main e conservazione della grafica: 14 novembre 2026
 
 **CODICE INTEGRATO E VALIDATO LOCALMENTE.** Il pull richiesto dall'utente aggiorna `main` fino a `61c31e5`.
