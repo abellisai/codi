@@ -1,7 +1,38 @@
 # Stato di sviluppo Codì
 
-Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.62 e funzionale 0.20.
+Aggiornato: 15 novembre 2026. Baseline documentale: specifica tecnica 0.62 e funzionale 0.20.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
+
+## Trascinamento reale dei blocchi Blockly dal cassetto: 15 novembre 2026
+
+**VALIDATO LOCALMENTE.** Il copione `scripts/collaudi/collaudo-trascinamento-blockly.mjs` guida Chromium con
+Playwright e compie solo gesti di puntatore: pointerdown, pointermove multipli, pointerup. Il copione non
+usa mai `newBlock()` né `window.ng.getComponent` per creare blocchi. Run 8 chiuso con uscita 0 e 16 controlli
+verdi su API 5200 e admin 4200.
+
+Controlli eseguiti dall'agente il 15 novembre 2026:
+
+- Pulizia iniziale del workspace QA: tre blocchi residui rimossi a ciclo con menu Elimina blocco
+  («Delete Block», «Delete 2 Blocks»); canvas finale vuoto, nessun genitore annidato.
+- Trascinamento reale di `val_start` e `val_show` dal cassetto; connessione `val_start.next = val_show`
+  misurata via API del workspace.
+- Trascinamento reale di `val_number` dentro l'ingresso VALUE di `val_show`;
+  `targetConnection.getSourceBlock()` restituisce `val_number`.
+- Due salvataggi bozza HTTP 200; sqlite `exercise_draft` row_version 21 → 22 → 23; `workspace_json`
+  contiene la catena `val_start → next.block val_show → inputs.VALUE.block val_number` (campo NUM 1).
+- `ng test web.admin`: uscita 0, 420 test superati in 39 file.
+- `ng test web.frontend`: uscita 0, 162 test superati in 18 file.
+- `dotnet test` non eseguito: nessun file backend toccato da questo incremento.
+
+Correzioni tecniche fissate nel copione: Blockly 13.4 espone sulla connessione solo `getSourceBlock()`;
+`getTargetBlock()` e `getBlock()` sollevano TypeError. Blockly aggancia la preview del blocco trascinato
+alla tacca candidata, quindi durante l'aggancio di un ingresso di valore la geometria riporta `dx=0` con
+`connected=false` finché non avviene il rilascio. Le copie del cassetto compaiono in `getAllBlocks` e vanno
+filtrate escludendo la subtree `.blocklyFlyout`. Il seriale salva la catena come `next: { block: ... }`
+sul blocco padre. Lavorato solo sulla bozza QA dell'esercizio 8c8782fe; nessun esercizio reale del corso
+modificato, nessuna tabella QA cancellata.
+
+Resta da eseguire: lo stesso copione sui dodici PC del laboratorio.
 
 ## Ciclo dei checkpoint ed effetti pubblici: 14 novembre 2026
 
