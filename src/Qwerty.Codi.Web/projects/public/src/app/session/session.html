@@ -81,7 +81,6 @@
             <app-value-program-panel
               [definitionJson]="definition"
               [attempt]="work"
-              [connectionEpoch]="snapshot()?.connectionEpoch ?? ''"
               [workspaceJson]="autosave.workspace() ?? work.workspaceJson"
               [enabled]="editingEnabled()"
               (confirmed)="answerConfirmed()"

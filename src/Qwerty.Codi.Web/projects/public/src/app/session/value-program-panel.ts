@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { ApiService, Attempt, toApiError, type ValueProgramOutcome } from '@codi/api';
-import { AttemptTransport } from '../core/attempt-transport';
+import { AttemptAutosave } from '../core/attempt-autosave';
 import { WorkspacePreviewPublisher } from '../core/workspace-preview';
 import { setValueProgramVariables } from '@exercise-engine/value-blocks';
 
@@ -141,13 +141,12 @@ import { compileValueProgram, type ProgramProblem } from '@exercise-engine/value
   `,
 })
 export class ValueProgramPanel {
-  private readonly transport = inject(AttemptTransport);
+  private readonly autosave = inject(AttemptAutosave);
   private readonly api = inject(ApiService);
   private readonly preview = inject(WorkspacePreviewPublisher);
 
   readonly definitionJson = input.required<string>();
   readonly attempt = input.required<Attempt>();
-  readonly connectionEpoch = input.required<string>();
   /** Vero quando l’insegnante lascia lavorare: fuori da lì il pannello è in sola lettura. */
   readonly enabled = input(false);
   /** Il progetto a blocchi dell'alunno, così com'è nel workspace. */
@@ -325,8 +324,11 @@ export class ValueProgramPanel {
   }
 
   /**
-   * Pubblica l'uscita come anteprima del lavoro. Per questo motore il lavoro che il docente guarda è
-   * **che cosa il programma mostra**, non i blocchi: senza pubblicarla, la sua card resterebbe vuota.
+   * Pubblica l'uscita come anteprima del lavoro e assicura che il server abbia il progetto. Per
+   * questo motore il lavoro che il docente guarda è **che cosa il programma mostra**, non i
+   * blocchi: senza pubblicarla, la sua card resterebbe vuota. Il progetto lo salva l'autosave del
+   * tentativo: una seconda scrittura diretta dal pannello correrebbe in parallelo alla prima, con
+   * revisione e versione di riga divergenti, e il server rifiuterebbe una delle due.
    */
   private async pubblica(): Promise<void> {
     const stato = this.stato();
@@ -338,15 +340,7 @@ export class ValueProgramPanel {
     );
 
     try {
-      await this.transport.save(this.attempt().attemptId, 'workspace', {
-        saveId: crypto.randomUUID(),
-        connectionEpoch: this.connectionEpoch(),
-        baseRowVersion: this.attempt().rowVersion ?? '1',
-        // Il campo si chiama come il contratto del server: `clientProjectRevision`. Un nome diverso è
-        // un corpo che il server non sa leggere.
-        clientProjectRevision: (BigInt(this.attempt().projectRevision) + 1n).toString(),
-        workspaceJson: this.workspaceJson(),
-      });
+      await this.autosave.flush();
       this.confirmed.emit();
     } catch (failure) {
       this.messaggio.set(toApiError(failure).message);
