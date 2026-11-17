@@ -18,6 +18,15 @@ interface SaveState {
   timer: ReturnType<typeof setTimeout> | null;
 }
 
+/**
+ * L'epoch del collegamento applicato dall'hub: solo da 1 in su dichiara uno snapshot in vigore.
+ * Con epoch 0 il server non può collocare il salvataggio su un collegamento e lo rifiuta: il
+ * client deve attendere lo snapshot, non farsi rifiutare.
+ */
+function epochApplicato(epoch: string): boolean {
+  return /^[1-9]\d*$/.test(epoch);
+}
+
 /** Coalescenza, copia locale e ricevute. Una richiesta in corso per tentativo. */
 @Injectable({ providedIn: 'root' })
 export class AttemptAutosave {
@@ -87,11 +96,38 @@ export class AttemptAutosave {
           : 'Lavoro salvato.',
     );
     this.saved.set(null);
+    // La copia recuperata riparte non appena il collegamento è in linea: il salvataggio non
+    // aspetta una modifica nuova, che potrebbe non arrivare mai.
+    if (state.dirty && !state.conflict && this.operative && epochApplicato(state.epoch))
+      this.schedule(state, true);
   }
 
   setOperative(operative: boolean): void {
     this.operative = operative;
     if (operative && this.current?.dirty) this.schedule(this.current, true);
+  }
+
+  /**
+   * Il collegamento ha uno snapshot con epoch più recente di quello su cui il salvataggio è
+   * agganciato: l'epoch segue lo snapshot senza ricaricare il progetto. È la correzione della
+   * corsa fra lease concesso e reinnesco del lavoro, che altrimenti manderebbe salvataggi con
+   * epoch 0 su un collegamento già in linea.
+   */
+  retarget(snapshot: ParticipantSnapshot | null): void {
+    const state = this.current;
+    if (
+      state === null ||
+      snapshot === null ||
+      !/^\d+$/.test(snapshot.connectionEpoch) ||
+      snapshot.connectionEpoch === state.epoch
+    )
+      return;
+    if (BigInt(snapshot.connectionEpoch) < BigInt(state.epoch || '0')) return;
+    state.epoch = snapshot.connectionEpoch;
+    if (!state.dirty || state.conflict) return;
+    if (this.operative && epochApplicato(state.epoch)) this.schedule(state, true);
+    else if (this.current === state)
+      this.status.set('In attesa del collegamento. Il lavoro resta salvato sul dispositivo.');
   }
 
   change(workspaceJson: string): void {
@@ -154,6 +190,13 @@ export class AttemptAutosave {
   private async flushState(state: SaveState): Promise<void> {
     if (state.busy !== null) return state.busy;
     if (!state.dirty || state.conflict || state.finalizing || !this.operative) return;
+    // Il primo salvataggio aspetta lo snapshot dell'hub: con epoch 0 il server non colloca la
+    // richiesta su un collegamento e risponderebbe 400 a ogni tentativo.
+    if (!epochApplicato(state.epoch)) {
+      if (this.current === state)
+        this.status.set('In attesa del collegamento. Il lavoro resta salvato sul dispositivo.');
+      return;
+    }
     if (state.rejectedRevision === state.copy.projectRevision) return;
     state.busy = this.send(state).finally(() => {
       state.busy = null;

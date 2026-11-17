@@ -437,6 +437,9 @@ export class ParticipantSession implements OnInit {
     });
     effect(() => {
       this.autosave.setOperative(this.realtime.authorized());
+      // Il lease arriva dall'hub, che ha già il suo snapshot: l'autosave aggancia quell'epoch
+      // prima del reinnesco del lavoro, altrimenti il primo salvataggio parte con epoch 0.
+      if (this.realtime.authorized()) this.autosave.retarget(this.realtime.currentSnapshot());
     });
     // L'anteprima segue l'operatività del collegamento, non il permesso di modificare: il docente
     // guarda i blocchi soprattutto durante una pausa (§15.5).
@@ -594,6 +597,9 @@ export class ParticipantSession implements OnInit {
     if (handshake !== null && handshake.connectionEpoch !== this.snapshot()?.connectionEpoch) {
       this.snapshot.set(handshake);
       force = true;
+      // L'epoch del salvataggio segue subito lo snapshot: il reinnesco può essere assorbito dal
+      // caricamento già in corso per lo stesso tentativo, e l'epoch non deve restare indietro.
+      this.autosave.retarget(handshake);
     }
     if (desired.view !== 'Exercise' || desired.attemptId === null) {
       ++this.workLoadGeneration;

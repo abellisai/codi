@@ -265,4 +265,54 @@ describe('AttemptAutosave', () => {
     expect(transport.calls[1].body['workspaceJson']).toBe('{"a":2}');
     expect(transport.calls[1].body['baseRowVersion']).toBe('2');
   });
+  it('non manda salvataggi con epoch 0: attende lo snapshot dell\'hub e poi riparte', async () => {
+    // Il trasporto HTTP consegna lo snapshot prima dell'handshake SignalR: epoch 0.
+    await save.attach({ ...snapshot, connectionEpoch: '0' }, { ...attempt });
+    save.change('{"a":1}');
+    await save.flush();
+    expect(transport.calls).toHaveLength(0);
+    expect(save.status()).toContain('In attesa del collegamento');
+    // Il messaggio dell'attesa non è un rifiuto: l'alunno non ha fatto nulla di sbagliato.
+    expect(save.status()).not.toContain('rifiutat');
+
+    // L'handshake applica lo snapshot: l'epoch segue, il lavoro sporco riparte da solo.
+    vi.useFakeTimers();
+    save.retarget({ ...snapshot, connectionEpoch: '1' });
+    await vi.advanceTimersByTimeAsync(500);
+    expect(transport.calls).toHaveLength(1);
+    expect(transport.calls[0].body['connectionEpoch']).toBe('1');
+  });
+  it('la copia recuperata con epoch 0 si salva da sola quando il collegamento è pronto', async () => {
+    await store.put({
+      key: 's:p:t',
+      sessionId: 's',
+      participantId: 'p',
+      attemptId: 't',
+      workspaceJson: '{"a":9}',
+      workspaceHash: '',
+      projectRevision: '1',
+      baseRowVersion: '1',
+      checkpoint: null,
+      pending: null,
+      expiresAt: 1,
+    });
+    await save.attach({ ...snapshot, connectionEpoch: '0' }, { ...attempt });
+    expect(transport.calls).toHaveLength(0);
+    vi.useFakeTimers();
+    save.retarget({ ...snapshot, connectionEpoch: '2' });
+    await vi.advanceTimersByTimeAsync(500);
+    expect(transport.calls).toHaveLength(1);
+    expect(transport.calls[0].body['connectionEpoch']).toBe('2');
+    expect(transport.calls[0].body['workspaceJson']).toBe('{"a":9}');
+  });
+  it('un epoch più vecchio dello stato in corso non sposta il salvataggio', async () => {
+    save.change('{"a":1}');
+    await save.flush();
+    expect(transport.calls).toHaveLength(1);
+    save.retarget({ ...snapshot, connectionEpoch: '0' });
+    save.change('{"a":2}');
+    await save.flush();
+    expect(transport.calls).toHaveLength(2);
+    expect(transport.calls[1].body['connectionEpoch']).toBe('1');
+  });
 });
