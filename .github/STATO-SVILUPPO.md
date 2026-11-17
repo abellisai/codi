@@ -1,7 +1,30 @@
 # Stato di sviluppo Codì
 
-Aggiornato: 14 novembre 2026. Baseline documentale: specifica tecnica 0.62 e funzionale 0.20.
+Aggiornato: 17 novembre 2026. Baseline documentale: specifica tecnica 0.62 e funzionale 0.20.
 Questo registro accompagna §21.1; va confrontato con i file a ogni ripresa. Non sostituisce le specifiche.
+
+## Versione .NET installata per l'avvio locale: 17 novembre 2026
+
+**RISOLUZIONE DEL KIT E COMPILAZIONE VALIDATE.** Su richiesta dell'utente, `global.json` richiede `10.0.100`, presente sulla macchina.
+La policy `latestPatch` resta invariata. Il README riporta la stessa versione.
+Il target resta `net10.0`.
+
+Il lockfile del server conteneva soltanto dipendenze vuote prima della correzione.
+L'agente ha salvato il file in `TestResults/sdk-10.0.100/packages.lock.before.json` prima del ripristino.
+La rigenerazione ha recuperato le dipendenze senza modifiche sostanziali rispetto ai lockfile versionati.
+
+Controlli eseguiti dall'agente:
+
+- `dotnet --version`: uscita 0, versione `10.0.100`.
+- Restore del progetto server con `--force-evaluate --source https://api.nuget.org/v3/index.json`: uscita 0.
+- Build Debug del progetto server con `--no-restore`: uscita 0, zero errori e zero avvisi.
+- `start-server.bat`: log di avvio completato, ascolto su `https://localhost:5200`, database pronto con schema 14.
+- `git diff --check`: uscita 0, nessuna anomalia.
+
+Il launcher ha mostrato avvisi NU1507 e NU1900 per le fonti NuGet configurate sulla macchina.
+La fonte privata non risponde alla verifica delle vulnerabilità. Gli avvisi non hanno impedito l'avvio osservato.
+La verifica successiva di `/health/ready` resta da validare: il sandbox non raggiunge il servizio.
+L'utente ha rifiutato la verifica fuori dal sandbox. Nessun test applicativo eseguito per questa modifica di configurazione.
 
 ## Ciclo dei checkpoint ed effetti pubblici: 14 novembre 2026
 

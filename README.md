@@ -65,7 +65,7 @@ Per le prove usa un database isolato. Conserva i dati esistenti prima di pianifi
 
 | Requisito | Valore | Dove è fissato |
 |---|---|---|
-| Kit di sviluppo .NET | `10.0.401`, `rollForward: latestPatch` | [`global.json`](global.json) |
+| Kit di sviluppo .NET | `10.0.100`, `rollForward: latestPatch` | [`global.json`](global.json) |
 | Node.js | 24, versione locale gestita tramite nvm | [Guida del workspace Web](src/Qwerty.Codi.Web/README.md#avvio-e-verifiche) |
 | npm | 11 (dichiarato da `packageManager`) | [`src/Qwerty.Codi.Web/package.json`](src/Qwerty.Codi.Web/package.json) |
 | SQLite | provider `RepoDb.Sqlite.Microsoft` inizializzato all'avvio | [`src/Qwerty.Codi.Infrastructure`](src/Qwerty.Codi.Infrastructure) |
